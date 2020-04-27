@@ -236,14 +236,14 @@ class DhServer {
                     if (t.accountId !== req.params['accountId']) return false;
                     if (req.query["oldest-time"]) {
                         if (!t.postingDateTime) return false;
-                        if (moment(t.postingDateTime).isBefore(moment(req.query["oldest-time"]))) return false;
+                        if (moment(t.postingDateTime).isBefore(moment(<any>req.query["oldest-time"]))) return false;
                     } else {
                         if (moment(t.postingDateTime).isBefore(moment().subtract(90,'days'))) return false;
                     }
 
                     if (req.query["newest-time"]) {
                         if (!t.postingDateTime) return false;
-                        if (moment(t.postingDateTime).isAfter(moment(req.query["newest-time"]))) return false;
+                        if (moment(t.postingDateTime).isAfter(moment(<any>req.query["newest-time"]))) return false;
                     }
 
                     return true;

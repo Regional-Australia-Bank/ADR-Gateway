@@ -91,7 +91,7 @@ export class MockRegister {
             MockDataArray(async (req:express.Request) => _.filter(await DataHolders((await this.configFn()).MockDhBaseUri,(await this.configFn()).MockDhBaseMtlsUri), (t:any) => {
                 if (req.query["updated-since"]) {
                     if (!t.lastUpdated) return true;
-                    if (moment(t.lastUpdated).isSameOrAfter(moment(req.query["updated-since"]))) return true;
+                    if (moment(t.lastUpdated).isSameOrAfter(moment(<any>req.query["updated-since"]))) return true;
                     return false;
                 }
                 return true;
