@@ -1,0 +1,107 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Data Holder server",
+            "program": "${workspaceFolder}\\out\\MockServices\\DhServer\\Server\\start.js",
+            "args": ["-d",".local-env\\dh-server"],
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
+            },
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ADR Gateway server",
+            "program": "${workspaceFolder}\\out\\AdrGateway\\Server\\start.js",
+            "args": ["-d",".local-env\\adr-gateway"],
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+            },
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Housekeeper",
+            "program": "${workspaceFolder}\\out\\AdrGateway\\Housekeeper\\start.js",
+            "args": ["-d",".local-env\\adr-gateway"],
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+            },
+//            "preLaunchTask": "tsc: build - tsconfig.json",
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+        },        
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Mock Register server",
+            "program": "${workspaceFolder}\\out\\MockServices\\Register\\Server\\start.js",
+            "args": ["-d",".local-env\\mock-register"],
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+            },
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ADR Server",
+            "program": "${workspaceFolder}\\out\\AdrServer\\Server\\start.js",
+            "args": ["-d",".local-env\\adr-server"],
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
+                "LOG_LEVEL": "debug"
+            },
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+        },
+        {
+			"type": "node",
+			"request": "launch",
+			"name": "Mocha All",
+            "args": ["-r", "source-map-support/register", "--colors","out/Tests/**/*.spec.js"],
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+			"cwd": "${workspaceRoot}",
+            "protocol": "inspector",
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
+                "MOCK_EVIDENCE_OUT":".evidence"
+            },
+            "internalConsoleOptions": "neverOpen",
+            "console": "integratedTerminal"
+        },
+        {
+			"type": "node",
+			"request": "launch",
+			"name": "Mocha Security Profile",
+            "args": ["--colors","out/Tests/**/*SecurityProfile.spec.js"],
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+			"cwd": "${workspaceRoot}",
+			"protocol": "inspector",
+            "internalConsoleOptions": "neverOpen",
+            "console": "integratedTerminal"
+        }
+    ]
+}
