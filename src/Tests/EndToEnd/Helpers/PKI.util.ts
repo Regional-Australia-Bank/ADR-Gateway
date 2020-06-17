@@ -1,7 +1,22 @@
 import forge from "node-forge"
 import _ from "lodash"
+import moment from "moment"
+const seedrandom = require('seedrandom');
 
 let PKI = forge.pki
+
+export const prng = (seed:string) => {
+  let rng = seedrandom(seed, {state: true})
+  
+  let getBytesSync = (length:number) => {
+      let a = [];
+      for (let i=0; i < length; i++) {
+          a.push(Math.abs(rng.int32()) % 256)
+      }
+      return {charCodeAt:(i:number) => a[i]};
+  }
+  return {getBytesSync}
+}
 
 export function attrArrayMap (o) {
     return _.map(_.keys(o),k => {
@@ -20,14 +35,8 @@ export function createCertificate(options) {
     var issuer = options.issuer;
     var isCA = options.isCA;
     var serialNumber = options.serialNumber || '01';
-    var notBefore = options.notBefore || new Date();
-    var notAfter;
-    if(options.notAfter) {
-      notAfter = options.notAfter;
-    } else {
-      notAfter = new Date(notBefore);
-      notAfter.setFullYear(notAfter.getFullYear() + 1);
-    }
+    var notBefore = moment("2020-01-01T14:00:00+1100").toDate();
+    var notAfter = moment("2040-01-01T14:00:00+1100").toDate();
 
     var cert = PKI.createCertificate();
     cert.publicKey = publicKey;
@@ -79,4 +88,4 @@ export function createCertificate(options) {
 
     return cert;
   }
-  module.exports = { createCertificate, attrArrayMap }
+  

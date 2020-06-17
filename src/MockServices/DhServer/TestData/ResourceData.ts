@@ -1,6 +1,6 @@
 import moment from "moment"
 import _ from "lodash"
-import { ConsumerForbiddenError } from "../../MockServices/DhServer/Server/Middleware/OAuth2ScopeAuth"
+import { ConsumerForbiddenError } from "../Server/Middleware/OAuth2ScopeAuth"
 
 type URIString = string
 type MaskedAccountString = string
@@ -167,10 +167,10 @@ export const testBalanceList:BankAccountBalance[] = _.map(testAccountDetailList,
 
 const testAccountList:BankAccount[] = _.map(testAccountDetailList,det => _.pick(det,'accountId','displayName','nickname','isOwned','maskedNumber','productCategory','productName','consentStatus'));
 
-const NUMBER_OF_TRANSACTIONS = 50;
+const NUMBER_OF_TRANSACTIONS = 500;
 const MIN_AMOUNT = -5000
 const MAX_AMOUNT = 5000
-const MIN_DATE = moment("2019-07-01")
+const MIN_DATE = moment().subtract(12,'months')
 const MAX_DATE = moment();
 const dateInterval = Math.abs(MIN_DATE.diff(MAX_DATE,'seconds'))
 

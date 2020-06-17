@@ -7,6 +7,17 @@ import uuid = require("uuid");
 import _ from "lodash"
 import { RegistrationRequestParts } from "../Server/Handlers/ClientRegistration";
 
+enum SoftwareProductStatusAtRegister {
+    NONE = '',
+    ACTIVE = 'ACTIVE'
+}
+
+enum SoftwareProductStatus {
+    ACTIVE = 'ACTIVE',
+    DELETED = 'DELETED'
+}
+
+
 @Entity({name: 'DhClientRegistration'})
 class ClientRegistration extends BaseEntity {
     @PrimaryGeneratedColumn()
@@ -21,10 +32,17 @@ class ClientRegistration extends BaseEntity {
     jwks_uri!: string;
 
     @Column({
-        type: "simple-enum"
+        type: "simple-enum",
+        enum: SoftwareProductStatus,
+        default: SoftwareProductStatus.ACTIVE
     })
-
     status!: SoftwareProductStatus;
+
+    @Column({
+        type: "simple-enum",
+        enum: SoftwareProductStatusAtRegister,
+        default: SoftwareProductStatusAtRegister.ACTIVE
+    })
     registerStatus!: SoftwareProductStatusAtRegister;
 
 
@@ -59,15 +77,6 @@ class ClientRegistration extends BaseEntity {
 
 }
 
-enum SoftwareProductStatusAtRegister {
-    NONE = '',
-    ACTIVE = 'ACTIVE'
-}
-
-enum SoftwareProductStatus {
-    ACTIVE = 'ACTIVE',
-    DELETED = 'DELETED'
-}
 
 
 @injectable()

@@ -20,7 +20,7 @@ const SafeFileName = (s:string) => {
         let right = _.filter(_.map(s),c => {
             if (/^[a-zA-Z0-9\-_\. ]$/.test(c)) return true;
         }).join("").substr(0,MAX_RIGHT)
-        safefilenames[s] = path.join(process.env.CACHE_FOLDER,`$${right}`.trim())
+        safefilenames[s] = path.join(process.env.CACHE_FOLDER,`${right}`.trim())
     }
     return safefilenames[s]
 }

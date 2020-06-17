@@ -11,7 +11,7 @@ const oidcSpec = {
       AccessToken: 'jwt',
       ClientCredentials: 'jwt',
     },
-    jwks: <JWKS.KeyStore><any>undefined,
+    jwks: undefined,
     scopes: ["cdr-register:bank:read"],
     features: {
       clientCredentials: {
@@ -35,8 +35,8 @@ const oidcSpec = {
     // ...
   };
 
-  export const GenerateOidcSpec = (jwks: JWKS.KeyStore) => {
+  export const GenerateOidcSpec = (jwks: JSONWebKeySet) => {
     let x = oidcSpec;
-    x.jwks = jwks
+    x.jwks = jwks // remove private key
     return x;
   }

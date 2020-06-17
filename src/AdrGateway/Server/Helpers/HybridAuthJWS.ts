@@ -1,6 +1,7 @@
 import { JWKS, JWT, JWK } from "jose";
 import * as _ from "lodash"
 import { Dictionary } from "../../../Common/Server/Types";
+import { URL } from "url";
 
 interface BaseJwt {
     iss: string;
@@ -80,7 +81,7 @@ const getAuthPostGetRequestUrl = (req: AuthSignatureRequest) => {
       },
       issuer: req.clientId
     }
-  
+    
     const signature = JWT.sign(
       payload,
       req.adrSigningJwk,

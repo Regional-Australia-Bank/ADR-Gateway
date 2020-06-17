@@ -11,6 +11,19 @@ import { IssuerSpec } from "../Server/Helpers/TokenConfigProviders";
 const {Entropy,charset64} = require("entropy-string")
 const entropy256bit = new Entropy({ charset: charset64, bits: 256 })
 
+
+enum TokenRevocationStatus {
+    NONE = '',
+    ACTIVE = 'active',
+    REVOKED = 'revoked'
+}
+
+enum AuthCodeStatus {
+    NONE = '',
+    READY = 'ready',
+    CONSUMED = 'consumed'
+}
+
 @Entity({name: 'DhConsent'})
 class Consent extends BaseEntity {
     @PrimaryGeneratedColumn()
@@ -29,12 +42,16 @@ class Consent extends BaseEntity {
     clientCertThumbprint?: string; // thumbprint of cert used for gaining access token
 
     @Column({
-        type: "simple-enum"
+        type: "simple-enum",
+        enum: TokenRevocationStatus,
+        default: TokenRevocationStatus.ACTIVE
     })
     tokenRevocationStatus!: TokenRevocationStatus;
 
     @Column({
-        type: "simple-enum"
+        type: "simple-enum",
+        enum: AuthCodeStatus,
+        default: AuthCodeStatus.NONE
     })
     authCodeStatus!: AuthCodeStatus;
 
@@ -138,18 +155,6 @@ class Consent extends BaseEntity {
         return await this.save();
     }
 
-}
-
-enum TokenRevocationStatus {
-    NONE = '',
-    ACTIVE = 'active',
-    REVOKED = 'revoked'
-}
-
-enum AuthCodeStatus {
-    NONE = '',
-    READY = 'ready',
-    CONSUMED = 'consumed'
 }
 
 type ConsentRequestInitial = Pick<Consent,'state'|'drAppClientId'|'sharingDurationSeconds'|'nonce'|'redirect_uri'> & {scopes:string[]};

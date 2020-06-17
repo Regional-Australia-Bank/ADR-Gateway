@@ -41,6 +41,10 @@ export const SerializeConsentDetails = async (c:ConsentRequestLog, dataHolderMet
             revoked: c.revocationDate,
             revocationPropagated: c.revocationPropagationDate,
         },
+        softwareProduct: {
+            productKey: c.productKey,
+            softwareProductId: c.softwareProductId
+        },
         dataHolder: _.pick(
             await dataHolderMetadataProvider.getDataHolder(c.dataHolderId),
             "dataHolderBrandId",

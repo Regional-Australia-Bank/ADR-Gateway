@@ -1,6 +1,7 @@
-import { JWKS, JWK, ECCurve } from "jose";
+import { JWKS, JWK, ECCurve, JSONWebKeySet } from "jose";
 import fs from "fs";
 import _ from "lodash"
+import { axios } from "../Axios/axios";
 
 const existingKeySets:{seed:any,jwks:JWKS.KeyStore}[] = [];
 
@@ -48,18 +49,22 @@ export const GenerateRegisterJwks = () => {
     return new JWKS.KeyStore([JWK.generateSync('RSA', 2048, { alg: 'PS256', use: 'sig' })])
 }
 
-export const GetJwks = (config:{Jwks: string | JWKS.KeyStore}):JWKS.KeyStore => {
+export const GetJwks = async (config:{Jwks: string | JSONWebKeySet}):Promise<JWKS.KeyStore> => {
     let jwks = config.Jwks;
     let result:JWKS.KeyStore;
     if (typeof jwks == 'undefined') throw 'No Private JWKS configured';
     if (typeof jwks == 'string') {
-        try {
-            result = JWKS.asKeyStore(JSON.parse(jwks))
-        } catch (e) {
-            // Not JSON, must be a file
-            result = JWKS.asKeyStore(JSON.parse(fs.readFileSync(jwks,'utf8')));
+        if (jwks.startsWith("http://") || jwks.startsWith("https://")) {
+            return JWKS.asKeyStore((await axios.get(jwks,{responseType:"json"})).data);
+        } else {
+            try {
+                result = JWKS.asKeyStore(JSON.parse(jwks))
+            } catch (e) {
+                // Not JSON, must be a file
+                result = JWKS.asKeyStore(JSON.parse(fs.readFileSync(jwks,'utf8')));
+            }
+            return result;    
         }
-        return result;
     }
-    else return jwks;
+    else return JWKS.asKeyStore(jwks);
 }

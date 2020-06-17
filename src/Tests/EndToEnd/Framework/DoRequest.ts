@@ -9,9 +9,7 @@ export const TransformMtlsOptions = (config:AxiosRequestConfig) => {
     let mtlsOptions = _.pick(config,'key','cert','ca','passphrase');
     config = _.omit(config,'key','cert','ca','passphrase')
     if (Object.keys(mtlsOptions).length > 0) {
-        config.httpsAgent = new https.Agent(_.merge({
-            rejectUnauthorized: false // TODO from env
-        },mtlsOptions))
+        config.httpsAgent = new https.Agent(_.merge({},mtlsOptions))
 
     }
     return config;
@@ -45,7 +43,8 @@ class DoRequest extends TestAction<DoRequestResult> {
         console.log(this.parameters.requestOptions)
         const p = new Promise<DoRequestResult>(async (resolve,reject) => {
             try {
-                let response = await axios.request(TransformMtlsOptions(this.parameters.requestOptions));
+                let requestOptions = TransformMtlsOptions(this.parameters.requestOptions)
+                let response = await axios.request(requestOptions);
                 resolve({error:undefined, response: response,body:response.data})
             } catch (e) {
                 resolve({error:e, response: e?.response,body:e?.response?.data})

@@ -61,8 +61,8 @@ export const Tests = (() => {
 
 
   async function BearerJwtVerify(audience: string, assumedClientId:string|undefined, authHeaderValue:string|undefined) {
-    await verifier.verifyClientId(audience,assumedClientId,authHeaderValue, async (clientId:string) => {
-      return await (<any>pw.DataHolderJwks(<any>clientId).GetWithHealing(() =>Promise.resolve(true)))
+    await verifier.verifyClientId(audience,assumedClientId,authHeaderValue, (clientId:string) => {
+      return <any>pw.DataHolderJwks(<any>clientId)
     })
   }
 

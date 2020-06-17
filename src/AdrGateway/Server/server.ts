@@ -18,6 +18,8 @@ import { UserInfoProxyMiddleware } from "./Middleware/UserInfo";
 import { DefaultPathways } from "./Connectivity/Pathways";
 import { ConsentDetailsMiddleware } from "./Middleware/ConsentDetails";
 import { CatchPromiseRejection } from "./Middleware/ErrorHandling";
+import URLParse from "url-parse";
+import qs from "qs";
 
 @injectable()
 class AdrGateway {
@@ -52,14 +54,35 @@ class AdrGateway {
         } );
 
         app.get( "/cdr/data-holders", async ( req, res ) => {
-            let dataholders = await this.dataHolderMetadataProvider.getDataHolders();
-            res.json(_.map(dataholders,dh => _.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn')));
+            try {
+                let dataholders = await this.dataHolderMetadataProvider.getDataHolders();
+                res.json(_.map(dataholders,dh => _.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn')));    
+            } catch {
+                res.status(500).json({error:"ecosystem_outage"})
+            }
             
         } );
 
         app.get( "/cdr/consents",
             this.consentListingMiddleware.handler()
         );
+
+        app.get( "/cdr/products", async (req,res) => {
+            try {
+                return res.json(await this.pw.SoftwareProductConfigs().GetWithHealing())
+            } catch (e) {
+                return res.status(500).send();
+            }
+        });
+
+        app.get( "/config/products", async (req,res) => {
+            try {
+                let config = await this.pw.AdrConnectivityConfig().GetWithHealing();
+                return res.json(config.SoftwareProductConfigUris)
+            } catch (e) {
+                return res.status(500).send();
+            }
+        });
 
 
         // TODO test and fix invalid data holder id returns 404 (currently returns 500)
@@ -78,7 +101,26 @@ class AdrGateway {
         );
 
         app.patch( "/cdr/consents/:consentId",
-            bodyParser.json(),
+            bodyParser.raw({type:['text/plain','application/json']}),
+            (req,res,next) => {
+                try {
+                    let body = Buffer.from(req.body).toString('utf-8');
+                    if (typeof body === "string") {
+                        try {
+                            req.body = JSON.parse(body)
+                        } catch {
+                            let hash = URLParse(body).hash;
+                            if (hash[0] === '#') {
+                                req.body = qs.parse(hash.substring(1));
+                            }    
+                        }
+                    }
+
+                } catch {
+                    res.status(406).json({"error":"Could not parse body. Must be a valid URL with a hash component or a JSON body of the hash components."})
+                }
+                next()
+            },
             CatchPromiseRejection(this.consentConfirmationMiddleware.handle)
         );
 

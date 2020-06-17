@@ -8,7 +8,7 @@ import { AdrServerStartup } from "../../../AdrServer/Server/startup";
 import { MockRegisterServerStartup } from "../../../MockServices/Register/Server/startup";
 import { TestHttpsProxy } from "../Helpers/TestHttpsProxy";
 import fs from "fs"
-import { AdrGatewayConfig } from "../../../AdrGateway/Config";
+import { AdrGatewayConfig, SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { AdrServerConfig } from "../../../AdrServer/Server/Config";
 import { AdrGatewayStartup } from "../../../AdrGateway/Server/startup";
 import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
@@ -21,6 +21,12 @@ import https from "https"
 import { TestPKI } from "../Helpers/PKI";
 import { CertsFromFilesOrStrings } from "../../../Common/SecurityProfile/Util";
 import { type } from "os";
+import { MockSoftwareProductServerStartup } from "../../../MockServices/SoftwareProduct/Server/startup";
+import { MockSoftwareProductConfig } from "../../../MockServices/SoftwareProduct/Server/Config";
+import { AdrJwksStartup } from "../../../AdrJwks/startup";
+import { AdrJwksConfig } from "../../../AdrJwks/Config";
+import { AxiosRequestConfig } from "axios";
+import { DefaultClientCertificateInjector, TLSInject } from "../../../AdrGateway/Services/ClientCertificateInjection";
 
 const getPort = require('get-port');
 
@@ -72,7 +78,9 @@ export class E2ETestEnvironment {
     }
 
     PromiseFunctionify = <Config>(p:ServiceDefinitionParameterized<Config>,filter?:(config:NonNullable<Config>) => Promise<NonNullable<Config>>):(() => Promise<NonNullable<Config>>) => {
-        if (typeof p === 'undefined' || p === null) return () => {throw 'ServiceDefinition is undefined'}
+        if (typeof p === 'undefined' || p === null) {
+            return () => {throw 'ServiceDefinition is undefined'}
+        }
 
         let configResolver:() => Promise<NonNullable<Config>>;
 
@@ -90,6 +98,18 @@ export class E2ETestEnvironment {
             return () => configResolver().then(filter)
         }
     }
+
+    OnlySoftwareProductConfig = async ():Promise<SoftwareProductConnectivityConfig> => {
+        let softwareProduct = await this.OnlySoftwareProduct()
+        return this.TestServices.adrGateway.connectivity.SoftwareProductConfig(softwareProduct).Evaluate()
+    }
+
+    OnlySoftwareProduct = async () => {
+        let adrConfig = await this.TestServices.adrGateway.connectivity.AdrConnectivityConfig().Evaluate();
+        let softwareProduct = _.first(Object.keys(adrConfig.SoftwareProductConfigUris));
+        if (!softwareProduct) throw 'Expected exactly one software product to be configured';
+        return softwareProduct;
+    }
     
     Config:EndToEndTestingConfig
     SystemUnderTest = {
@@ -106,6 +126,8 @@ export class E2ETestEnvironment {
     TestServices:{
         adrDbConn?: Promise<Connection>
         adrServer?: {port:number,server:Server}
+        softwareProduct?: {port:number,server:Server}
+        adrJwks?: {port:number,server:Server}
         adrGateway?: {port:number,server:Server,connectivity:DefaultPathways}
         mockRegister?: {port:number,server:Server},
         mockDhServer?: {port:number,server:Server},
@@ -118,12 +140,17 @@ export class E2ETestEnvironment {
         }
     }
     GetServiceDefinition: {
-        AdrGateway: () => Promise<AdrGatewayConfig>
+        SoftwareProduct: () => Promise<MockSoftwareProductConfig>
+        AdrJwks: () => Promise<AdrJwksConfig>
+        Connectivity: () => Promise<AdrConnectivityConfig>
+        AdrGateway: () => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>
         AdrServer: () => Promise<AdrServerConfig>
         MockDhServer: () => Promise<DhServerConfig>
     }
 
     logger: winston.Logger
+
+    _clientCert: {key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}
 
     constructor(testConfig:EndToEndTestingConfig) {
         this.Name = testConfig.Name
@@ -133,31 +160,46 @@ export class E2ETestEnvironment {
         this.logger = winston.createLogger()
 
         this.GetServiceDefinition = {
-            AdrGateway: this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrGateway,async (config) => {
-                if (typeof config.Port == 'undefined') {
-                    config.Port = await getPort()
-                }
-                if (typeof config.BackEndBaseUri == 'undefined') {
-                    config.BackEndBaseUri = `http://localhost:${config.Port}`   
-                }
+            Connectivity: this.PromiseFunctionify(this.Config.TestServiceDefinitions.Connectivity,async (config) => {
                 let testingCerts = await TestPKI.TestConfig();
                 config.mtls = config.mtls || {
                     ca: testingCerts.caCert,
                     key: testingCerts.client.key,
                     cert: testingCerts.client.certChain,
                 }
+                
+                config.SoftwareProductConfigUris = config.SoftwareProductConfigUris || {
+                    sandbox: `http://localhost:${this.TestServices.softwareProduct.port}/software.product.config`
+                }
+
+                return config;
+            }),
+            AdrGateway: <() => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>> this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrGateway,async (config) => {
+                if (typeof config.Port == 'undefined') {
+                    config.Port = await getPort()
+                }
+                if (typeof config.BackEndBaseUri == 'undefined') {
+                    config.BackEndBaseUri = `http://localhost:${config.Port}`   
+                }
                 return config;
             }),
             AdrServer: this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrServer),
+            SoftwareProduct: this.PromiseFunctionify(this.Config.TestServiceDefinitions.SoftwareProduct,async (config) => {
+                if (typeof config.Port == 'undefined') {
+                    config.Port = await getPort()
+                }
+                return config;
+            }),
+            AdrJwks: this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrJwks),
             MockDhServer: this.PromiseFunctionify(this.Config.TestServiceDefinitions.MockDhServer)
         }
     }
 
     GetAdrPrivateJwks = async ():Promise<JWKS.KeyStore> => {
         return InTestConfigBase(async () => {
-            let jwksy = (await this.GetServiceDefinition.AdrGateway())
+            let jwksy = (await this.GetServiceDefinition.Connectivity())
             if (typeof jwksy === 'undefined')  throw 'Cannot get JWKS on undefined AdrGateway'
-            return GetJwks(jwksy)
+            return await GetJwks(jwksy)
         })
     }
 
@@ -176,12 +218,23 @@ export class E2ETestEnvironment {
             }
         }
 
+        // Start Mock Product
+        this.TestServices.softwareProduct = await MockSoftwareProductServerStartup.Start(async () => {
+            return await this.GetServiceDefinition.SoftwareProduct();
+        })
+
+        // Start Jwks Service
+        if (serviceDefinitions.AdrJwks) {
+            await this.GetServiceDefinition.AdrJwks();
+            this.TestServices.adrJwks = await AdrJwksStartup.Start(this.GetServiceDefinition.AdrJwks)
+        }
+
         // Start Mock Register
         if (serviceDefinitions.MockRegister) {
             if (typeof serviceDefinitions.MockRegister == 'function') {
                 const clientProvider = async ():Promise<{clientId:string, jwksUri:string}> => {
                     const jwksUri = this.SystemUnderTest.AdrGateway().FrontEndUrls.JWKSEndpoint;
-                    const clientId = (await this.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId
+                    const clientId = (await this.GetServiceDefinition.Connectivity()).BrandId
                     return {clientId,jwksUri}
                 }
                 this.TestServices.mockRegister = await MockRegisterServerStartup.Start(serviceDefinitions.MockRegister.bind(this,this),clientProvider)
@@ -193,7 +246,13 @@ export class E2ETestEnvironment {
         }
         // Start AdrGateway (depends on AdrDb)
         if (serviceDefinitions.AdrGateway) {
-            this.TestServices.adrGateway = await AdrGatewayStartup.Start(this.GetServiceDefinition.AdrGateway, this.TestServices.adrDbConn)
+            let configFn:() => Promise<AdrGatewayConfig> = async () => {
+                let connConfig = await this.GetServiceDefinition.Connectivity();
+                this._clientCert = connConfig.mtls
+                let r = _.merge(await this.GetServiceDefinition.AdrGateway(),connConfig)
+                return r;
+            }
+            this.TestServices.adrGateway = await AdrGatewayStartup.Start(configFn, this.TestServices.adrDbConn)
         }
 
         // Start Mock DhServer
@@ -203,22 +262,21 @@ export class E2ETestEnvironment {
 
         // Start TestHttpsProxy for started services
 
-        // Prepare server certs
-        let tlsCerts = await TestPKI.TestConfig()
+        // Prepare mock PKI certs
+        let mockCerts = await TestPKI.TestConfig()
         let tlsConfig = {
-            key: CertsFromFilesOrStrings(tlsCerts.server.key),
-            cert: CertsFromFilesOrStrings(tlsCerts.server.certChain),
-            ca: CertsFromFilesOrStrings(tlsCerts.caCert),
+            key: CertsFromFilesOrStrings(mockCerts.server.key),
+            cert: CertsFromFilesOrStrings(mockCerts.server.certChain),
+            ca: CertsFromFilesOrStrings(mockCerts.caCert),
             requestCert: false
         }
     
         let mtlsConfig = {
-            key: CertsFromFilesOrStrings(tlsCerts.server.key),
-            cert: CertsFromFilesOrStrings(tlsCerts.server.certChain),
-            ca: CertsFromFilesOrStrings(tlsCerts.caCert),
+            key: CertsFromFilesOrStrings(mockCerts.server.key),
+            cert: CertsFromFilesOrStrings(mockCerts.server.certChain),
+            ca: CertsFromFilesOrStrings(mockCerts.caCert),
             requestCert: true
-        }    
-
+        }
 
         if (serviceDefinitions.TestHttpsProxy) {
             this.TestServices.httpsProxy = this.TestServices.httpsProxy || {}
@@ -263,6 +321,8 @@ export class E2ETestEnvironment {
         let httpsMockDhServerClosed = PromiseToClose(this.TestServices.httpsProxy?.mockDhServer)
         let httpsMockDhServerMTLSClosed = PromiseToClose(this.TestServices.httpsProxy?.mockDhServerMTLS)
         let httpsMockRegisterClosed = PromiseToClose(this.TestServices.httpsProxy?.mockRegister)
+        let mockSoftwareProductClosed = PromiseToClose(this.TestServices.softwareProduct)
+        let adrJwksClosed = PromiseToClose(this.TestServices.adrJwks)
 
         let dbClosed = new Promise((resolve,reject) => {
             if (typeof this.TestServices.adrDbConn != 'undefined') {
@@ -273,22 +333,25 @@ export class E2ETestEnvironment {
         })
 
 
-        return await Promise.all([adrServerClosed,mockRegisterClosed,mockDhServerClosed,adrGatewayClosed,httpsAdrGatewayClosed,httpsAdrServerClosed,httpsMockRegisterClosed,httpsMockDhServerClosed,httpsMockDhServerMTLSClosed,dbClosed]);
+        await Promise.all([mockSoftwareProductClosed,adrJwksClosed,adrServerClosed,mockRegisterClosed,mockDhServerClosed,adrGatewayClosed,httpsAdrGatewayClosed,httpsAdrServerClosed,httpsMockRegisterClosed,httpsMockDhServerClosed,httpsMockDhServerMTLSClosed,dbClosed]);
+
+        return;
 
     }
 
     async Mtls(o:any) {
         return await InTestConfigBase(async () => {
-            let mtls = (await this.GetServiceDefinition.AdrGateway()).mtls
-            o.httpsAgent = new https.Agent({
-                cert: mtls.cert && CertsFromFilesOrStrings(mtls.cert),
-                key: mtls.cert && CertsFromFilesOrStrings(mtls.key),
-                ca: mtls.cert && CertsFromFilesOrStrings(mtls.ca),
-                passphrase: mtls.passphrase,
-                rejectUnauthorized: false // TODO from env
-            })   
+            let mtls = (await this.GetServiceDefinition.Connectivity()).mtls
+            let inj = new DefaultClientCertificateInjector(mtls);
+            o = inj.inject(o);
             return o                
         })
+    }
+
+    Util = {        
+        TlsAgent: (request:AxiosRequestConfig) => {
+            return TLSInject(request,this._clientCert)
+        }
     }
 
 }

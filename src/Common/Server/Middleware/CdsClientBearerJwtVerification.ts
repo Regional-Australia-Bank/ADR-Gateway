@@ -9,9 +9,10 @@ import { IncomingMessage } from "http";
 import { BearerJwtVerifier } from "../../SecurityProfile/Logic.ClientAuthentication";
 import {default as UrlParse} from "url-parse"
 import { inject, singleton, injectable } from "tsyringe";
-import { IAppConfig } from "../Config";
 import { GetJwks } from "../../Init/Jwks";
 import urljoin from "url-join";
+import { CompoundNeuron } from "../../Connectivity/Neuron";
+import { JoseBindingConfig } from "../Config";
 
 @injectable()
 export class ClientBearerJwtVerificationMiddleware {
@@ -19,10 +20,10 @@ export class ClientBearerJwtVerificationMiddleware {
     constructor(
         @inject("Logger") private logger: winston.Logger,
         private jwtVerifier: BearerJwtVerifier,
-        @inject("IAppConfig") private configFn:() => Promise<IAppConfig>
+        @inject("JoseBindingConfig") private configFn:() => Promise<JoseBindingConfig>
     ) {}
 
-    verifyClientId = async (acceptableClientId:string|undefined, authHeaderValue:string | undefined,audienceBaseUri:string, GetJwks:(assumedClientId:string) => Promise<JWKS.KeyStore>) => {
+    verifyClientId = async (acceptableClientId:string|undefined, authHeaderValue:string | undefined,audienceBaseUri:string, GetJwks:(assumedClientId:string) => CompoundNeuron<void,JWKS.KeyStore>) => {
 
         this.logger.debug("ClientBearerJwtVerification: Auth header.", {acceptableClientId, authHeaderValue, audienceBaseUri})
 
@@ -31,7 +32,7 @@ export class ClientBearerJwtVerificationMiddleware {
     }
 
     // TODO apply to the Dataholder Metadata endpoint
-    handler = (GetJwks: (assumedClientId:string) => Promise<JWKS.KeyStore>, acceptableClientId?:string) => {
+    handler = (GetJwks: (assumedClientId:string) => CompoundNeuron<void,JWKS.KeyStore>, acceptableClientId?:string) => {
         return async (req:IncomingMessage & express.Request,res:express.Response,next: NextFunction) => {
             // extract the base Uri from the url
             try {

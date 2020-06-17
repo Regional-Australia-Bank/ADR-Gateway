@@ -8,28 +8,35 @@ import { CertsFromFilesOrStrings } from "../../Common/SecurityProfile/Util";
 
 interface ClientCertificateInjector {
     inject(options: AxiosRequestConfig):AxiosRequestConfig
+    injectCa(options: AxiosRequestConfig):AxiosRequestConfig
 }
 
 class DevClientCertificateInjector implements ClientCertificateInjector{
     inject = (options: AxiosRequestConfig):AxiosRequestConfig => {
         if (typeof options.headers == 'undefined') options.headers = {}
-        options.headers["x-cdrgw-cert-thumbprint"] = "CERT_THUMBPRINT"
+        options.headers["x-cdrgw-cert-thumbprint"] = "adr-THUMBPRINT"
         return options;
     }
+    injectCa = (options: AxiosRequestConfig):AxiosRequestConfig => options
+}
+
+export const TLSInject = (request:AxiosRequestConfig,options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) => {
+    let inj = new DefaultClientCertificateInjector(options);
+    return inj.inject(request)
 }
 
 @injectable()
 class DefaultClientCertificateInjector implements ClientCertificateInjector{
-    key:Buffer;
+    key:Buffer|Buffer[];
     cert:Buffer|Buffer[];
-    ca:Buffer;
+    ca:Buffer|Buffer[];
     passphrase:string|undefined;
     
-    constructor(options:{key:string, cert:string|string[],ca: string, passphrase?:string}) {
-        this.key = CertsFromFilesOrStrings(options.key);
-        this.cert = CertsFromFilesOrStrings(options.cert);
-        this.ca = CertsFromFilesOrStrings(options.ca);
-        this.passphrase = options.passphrase;
+    constructor(options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) {
+        this.key = CertsFromFilesOrStrings(options?.key);
+        this.cert = CertsFromFilesOrStrings(options?.cert);
+        this.ca = CertsFromFilesOrStrings(options?.ca);
+        this.passphrase = options?.passphrase;
     }
 
     inject = (options: AxiosRequestConfig):AxiosRequestConfig => {
@@ -38,11 +45,18 @@ class DefaultClientCertificateInjector implements ClientCertificateInjector{
             cert: this.cert,
             key: this.key,
             ca: this.ca,
-            passphrase: this.passphrase,
-            rejectUnauthorized: false // TODO from env
+            passphrase: this.passphrase
         })        
         return options;
     }
+
+    injectCa = (options: AxiosRequestConfig):AxiosRequestConfig => {
+        options.httpsAgent = new https.Agent({
+            ca: this.ca
+        })        
+        return options;
+    }
+
 }
 
 

@@ -1,4 +1,4 @@
-import { JWKS, JWT } from "jose";
+import { JWKS, JWT, JWS } from "jose";
 import { JtiLogManager } from "../Entities/JtiLog";
 import {injectable,inject} from "tsyringe";
 import { ClientJwksManager } from "../Entities/ClientJwks";
@@ -28,7 +28,7 @@ class BearerJwtVerifier {
     ) {}
 
     // TODO acceptableClientId can be removed
-    verifyClientId = async (acceptableClientId: string|undefined, authHeaderValue:string|undefined, audienceBaseUri:string, GetJwks:(assumedClientId:string) => Promise<JWKS.KeyStore>):Promise<string> => {
+    verifyClientId = async (acceptableClientId: string|undefined, authHeaderValue:string|undefined, audienceBaseUri:string, GetJwks:(assumedClientId:string) => CompoundNeuron<void,JWKS.KeyStore>):Promise<string> => {
     
         if (typeof authHeaderValue == 'undefined') throw new Error("Authorization header is not present");
     
@@ -42,14 +42,18 @@ class BearerJwtVerifier {
 
 
         let verified = <JWT.completeResult|undefined>undefined;
-        let jwks = await GetJwks(assumedClientId);
+        // get the key the verifies the signature
+        let jwks = await GetJwks(assumedClientId).GetWithHealing((jwks) => {
+            JWS.verify(bearerTokenJwt,jwks);
+            return true;
+        });
 
         verified = JWT.verify(bearerTokenJwt,jwks,{
             complete: true,
             audience: audienceBaseUri,
             issuer: assumedClientId,
             subject: assumedClientId,
-            algorithms: ["PS256"]
+            algorithms: ["PS256","ES256"]
         });
 
         // further checks aside from jose processing

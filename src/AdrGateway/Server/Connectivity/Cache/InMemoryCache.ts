@@ -12,7 +12,7 @@ export class InMemoryCache<T> extends AbstractCache<T> {
         stores[this.storeName] = v;
     }
     FetchCache = async ():Promise<T> => {
-        if (typeof stores[this.storeName] == 'undefined') throw 'InMemoryCache: Cache value is undefined'
+        if (typeof stores[this.storeName] == 'undefined') throw 'InMemoryCache: Cache value is uPndefined'
         return stores[this.storeName];
     }
     EmptyCache = async ():Promise<void> => {

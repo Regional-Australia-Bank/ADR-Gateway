@@ -6,7 +6,7 @@ import { DataRecipientJwks } from "./Neurons/DataRecipientJwks"
 import { Neuron, CompoundNeuron } from "../../../Common/Connectivity/Neuron"
 import { GetSoftwareProductStatusNeuron } from "./Neurons/SoftwareProductStatus"
 import { RegisterTokenNeuron } from "./Neurons/RegisterToken"
-import { GetDataHolderOidcNeuron, DataHolderRegistrationAccessTokenNeuron, NewClientRegistrationNeuron, BootstrapClientRegistrationNeuron, GetDataHolderJwksNeuron, DataholderOidcResponse, CheckAndUpdateClientRegistrationNeuron } from "./Neurons/DataholderRegistration"
+import { GetDataHolderOidcNeuron, DataHolderRegistrationAccessTokenNeuron, NewClientRegistrationNeuron, BootstrapClientRegistrationNeuron, GetDataHolderJwksNeuron, DataholderOidcResponse, CheckAndUpdateClientRegistrationNeuron, GetDataHolderJwksFromRegisterNeuron } from "./Neurons/DataholderRegistration"
 import { DataHolderRegistrationManager, DataHolderRegistration } from "../../Entities/DataHolderRegistration"
 import { ConsentRequestParams, AuthorizationRequestNeuron } from "./Neurons/AuthorizationRequest"
 import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/ConsentRequestLog"
@@ -21,6 +21,7 @@ import { ConsentRevocationPropagationNeuron } from "./Neurons/ConsentRevocationP
 import { ConsumerDataAccessCredentialsNeuron } from "./Neurons/ConsumerDataAccessCredentials"
 import { ConsentNewAccessTokenNeuron, ValidateConsentNeuron } from "./Neurons/ConsentAccessToken"
 import winston from "winston"
+import { SoftwareProductConfig, SoftwareProductConfigs } from "./Neurons/SoftwareProductConfig"
 
 let DataHolderStatus:ReturnType<typeof DataHolderStatusNeurons>
 
@@ -48,6 +49,14 @@ export class DefaultPathways {
         () => Neuron.NeuronZero().Extend(this.nf.Simple(async () => await this.configFn()))) 
 
 
+    SoftwareProductConfigs = this.nf.GenerateOnce(
+        () => this.AdrConnectivityConfig().Extend(this.nf.Make(SoftwareProductConfigs))
+    )
+
+    SoftwareProductConfig = this.nf.GenerateOnce(
+        (softwareProductId:string) => this.AdrConnectivityConfig().Extend(this.nf.Make(SoftwareProductConfig,softwareProductId))
+    )
+
     DataRecipientJwks = this.nf.GenerateOnce(
         () => this.AdrConnectivityConfig().Extend(this.nf.Make(DataRecipientJwks)))    
 
@@ -58,6 +67,7 @@ export class DefaultPathways {
     SoftwareProductStatusIsActive = this.nf.GenerateOnce(
         () => 
             this.AdrConnectivityConfig()
+            // TODO implement
             .Extend(this.nf.Make(GetSoftwareProductStatusNeuron))             
     )
 
@@ -93,18 +103,25 @@ export class DefaultPathways {
     DataHolderJwks = this.nf.GenerateOnce(
         (dataHolderBrandId:string) => 
             this.DataHolderOidc(dataHolderBrandId)
-            .Extend(this.nf.Make(GetDataHolderJwksNeuron,dataHolderBrandId))
+            .Extend(this.nf.Make(GetDataHolderJwksNeuron,dataHolderBrandId,this.cert))
+    )
+
+    DataHolderJwks_ForRevokeNotifyToAdr = this.nf.GenerateOnce(
+        (dataHolderBrandId:string) => 
+            this.DataHolderBrandMetadata(dataHolderBrandId)
+            .Extend(this.nf.Make(GetDataHolderJwksFromRegisterNeuron,dataHolderBrandId))
     )
 
     // TODO cache?
     SoftwareStatementAssertion = this.nf.GenerateOnce(
-        () => Neuron.Require(
+        (softwareProductId:string) => Neuron.Require(
             this.AdrConnectivityConfig(),
+            this.SoftwareProductConfig(softwareProductId),
             this.RegisterAccessCredentials())            
             .Extend(this.nf.Make(RegisterGetSSANeuron,this.cert)))
 
     // TODO cache
-    // TODO reinstate DataHolderStatus.UpAndRunning assertions
+    // TODO reinstate assertions
     DataHolderUpAndReady = this.nf.GenerateOnce(
         (dataHolderBrandId:string) => Neuron.Require(
             this.AdrConnectivityConfig(),
@@ -114,22 +131,23 @@ export class DefaultPathways {
     )
 
     BootstrapClientRegistration = this.nf.GenerateOnce(
-        (dataHolderBrandId:string) => Neuron.Require(
-            this.AdrConnectivityConfig(),
+        (softwareProductId:string,dataHolderBrandId:string) => Neuron.Require(
+            this.SoftwareProductConfig(softwareProductId),
             this.DataHolderUpAndReady(dataHolderBrandId)
         )
         .Extend(this.nf.Make(BootstrapClientRegistrationNeuron,this.dataholderRegistrationManager))
-        .Do(this.DhNewClientRegistration(dataHolderBrandId)).When(reg => _.isUndefined(reg)).Else(this.nf.Passthru<DataHolderRegistration|undefined>())
+        .Do(this.DhNewClientRegistration(softwareProductId,dataHolderBrandId)).When(reg => _.isUndefined(reg)).Else(this.nf.Passthru<DataHolderRegistration|undefined>())
         .AssertNotUndefined()
     )
 
     DhNewClientRegistration = this.nf.GenerateOnce(
-        (dataHolderBrandId:string) => Neuron.Require(
+        (softwareProductId:string,dataHolderBrandId:string) => Neuron.Require(
             this.AdrConnectivityConfig(),
+            this.SoftwareProductConfig(softwareProductId),
             this.DataRecipientJwks(),
             this.DataHolderOidc(dataHolderBrandId),
             this.DataHolderUpAndReady(dataHolderBrandId),
-            this.SoftwareStatementAssertion()
+            this.SoftwareStatementAssertion(softwareProductId)
         ).Extend(this.nf.Make(NewClientRegistrationNeuron,this.dataholderRegistrationManager,this.cert))
     )
 
@@ -137,19 +155,19 @@ export class DefaultPathways {
      * This is the main pathway responsible for ensuring an that a cient registration exists at a dataholder and is up to date
      */ 
     CheckAndUpdateClientRegistration = this.nf.GenerateOnce(
-        (dataHolderBrandId:string) => Neuron.Require(
+        (softwareProductId:string,dataHolderBrandId:string) => Neuron.Require(
             this.AdrConnectivityConfig(),
+            this.SoftwareProductConfig(softwareProductId),
             this.DataRecipientJwks(),
             this.DataHolderUpAndReady(dataHolderBrandId),
             this.DataHolderOidc(dataHolderBrandId),
-            this.SoftwareStatementAssertion(),
-            this.BootstrapClientRegistration(dataHolderBrandId),
-            this.DhRegAccessToken(dataHolderBrandId)
+            this.SoftwareStatementAssertion(softwareProductId),
+            this.BootstrapClientRegistration(softwareProductId,dataHolderBrandId),
+            this.DhRegAccessToken(softwareProductId,dataHolderBrandId)
         ).Extend(this.nf.Make(CheckAndUpdateClientRegistrationNeuron,dataHolderBrandId,this.dataholderRegistrationManager,this.cert)) // TODO result is to be cached with an expiry. Alternatively, with right-to-left evaluation, leave uncached for 
     );
 
-    // CheckAndUpdateClientRegistration_WORKAROUND = this.BootstrapClientRegistration // TODO remove workaround: Don't check and update client registration. Reinstate below
-
+    // CheckAndUpdateClientRegistration_WORKAROUND = this.BootstrapClientRegistration // TODO remove this switch. Perhaps configure as environment veriable
     CheckAndUpdateClientRegistration_WORKAROUND = this.CheckAndUpdateClientRegistration
 
     // TODO cache?
@@ -157,13 +175,14 @@ export class DefaultPathways {
      * The Dataholder DCR access token is needed to get/update the current registration
      */
     DhRegAccessToken = this.nf.GenerateOnce(
-        (dataHolderBrandId:string) => Neuron.Require(
+        (softwareProductId:string,dataHolderBrandId:string) => Neuron.Require(
             this.DataRecipientJwks(),
             this.DataHolderOidc(dataHolderBrandId),
-            this.BootstrapClientRegistration(dataHolderBrandId)
+            this.BootstrapClientRegistration(softwareProductId,dataHolderBrandId)
         ).Extend(this.nf.Make(DataHolderRegistrationAccessTokenNeuron,this.cert))
     ,)
 
+    DhClientAuthenticationCheck = this.DhRegAccessToken
  
     GetAuthorizationRequest = this.nf.Parameterize(
         (params:ConsentRequestParams) => Neuron.Presume(
@@ -176,22 +195,27 @@ export class DefaultPathways {
                 DataHolderStatus.UpAtDataholder, 'NoCache'
             ))
         ).Extend(Neuron.Require(
-                this.CheckAndUpdateClientRegistration_WORKAROUND(params.dataholderBrandId),
+                this.CheckAndUpdateClientRegistration_WORKAROUND(params.productKey,params.dataholderBrandId),
                 this.DataHolderOidc(params.dataholderBrandId),
                 this.AdrConnectivityConfig(),
+                this.SoftwareProductConfig(params.productKey),
                 this.DataRecipientJwks(),
                 Neuron.Value(params)
             )
         ).Extend(this.nf.Make(AuthorizationRequestNeuron,this.consentManager))
+        // TODO review the efficiency of the below approach
+        // It is a requirement of the ecosystem that the data recipient must not contact the data holder if the cache is older
+        // than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Neuron below
+        .Assert(this.DataHolderBrandMetadata(params.dataholderBrandId))
     )
 
     ValidIdTokenCode = this.nf.Parameterize(
-        (dataholderBrandId:string,idToken:string) => 
+        (softwareProductId,dataholderBrandId:string,idToken:string) => 
             Neuron.Require(
                 this.DataRecipientJwks(),
                 this.DataHolderJwks(dataholderBrandId),
                 this.DataHolderOidc(dataholderBrandId),
-                this.CheckAndUpdateClientRegistration_WORKAROUND(dataholderBrandId),
+                this.CheckAndUpdateClientRegistration_WORKAROUND(softwareProductId,dataholderBrandId),
             ).Extend(this.nf.Make(IdTokenCodeValidationNeuron,idToken))
     )
 
@@ -199,7 +223,7 @@ export class DefaultPathways {
         <CompoundNeuron<void,ConsentRequestLog>> Neuron.Require(
             this.DataRecipientJwks(),
             this.DataHolderOidc(consent.dataHolderId),
-            this.CheckAndUpdateClientRegistration_WORKAROUND(consent.dataHolderId),
+            this.CheckAndUpdateClientRegistration_WORKAROUND(consent.productKey,consent.dataHolderId),
             Neuron.Value(consent).Do(this.ConsentNewRefreshToken(consent)).When(c => !c.HasCurrentAccessToken()).Else(Neuron.Value(consent))
             .AssertNotUndefined()
         )
@@ -211,7 +235,7 @@ export class DefaultPathways {
         <CompoundNeuron<void,ConsentRequestLog>> Neuron.Require(
             this.DataRecipientJwks(),
             this.DataHolderOidc(consent.dataHolderId),
-            this.CheckAndUpdateClientRegistration_WORKAROUND(consent.dataHolderId),
+            this.CheckAndUpdateClientRegistration_WORKAROUND(consent.productKey,consent.dataHolderId),
         ).Extend(this.nf.Make(ConsentRefreshTokenNeuron,this.cert,consent,{grant_type:"refresh_token"},this,this.consentManager))
     )
 
@@ -220,15 +244,23 @@ export class DefaultPathways {
             this.DataHolderUpAndReady(consent.dataHolderId),
             this.DataHolderOidc(consent.dataHolderId),
             this.ConsentCurrentAccessToken(consent)
-        ).Extend(this.nf.Make(ConsumerDataAccessCredentialsNeuron,this.cert,resourcePath))
+        )
+        .Extend(this.nf.Make(ConsumerDataAccessCredentialsNeuron,this.cert,resourcePath))
+        // It is a requirement of the ecosystem that the data recipient must not contact the data holder if the cache is older
+        // than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Neuron below
+        .Assert(this.DataHolderBrandMetadata(consent.dataHolderId))
     )
 
     UserInfoAccessCredentials = this.nf.Parameterize((consent:ConsentRequestLog) => 
-    Neuron.Require(
-        this.DataHolderUpAndReady(consent.dataHolderId),
-        this.DataHolderOidc(consent.dataHolderId),
-        this.ConsentCurrentAccessToken(consent)
-    ).Extend(this.nf.Make(ConsumerDataAccessCredentialsNeuron,this.cert))
+        Neuron.Require(
+            this.DataHolderUpAndReady(consent.dataHolderId),
+            this.DataHolderOidc(consent.dataHolderId),
+            this.ConsentCurrentAccessToken(consent)
+        )
+        .Extend(this.nf.Make(ConsumerDataAccessCredentialsNeuron,this.cert))
+        // It is a requirement of the ecosystem that the data recipient must not contact the data holder if the cache is older
+        // than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Neuron below
+        .Assert(this.DataHolderBrandMetadata(consent.dataHolderId))
 )
 
     ConsentUserInfo = this.nf.Parameterize((consent:ConsentRequestLog,newAccessToken?:AccessTokenHolder) => 
@@ -246,7 +278,7 @@ export class DefaultPathways {
             Neuron.Require(
                 this.DataRecipientJwks(),
                 this.DataHolderOidc(consent.dataHolderId),
-                this.CheckAndUpdateClientRegistration_WORKAROUND(consent.dataHolderId),
+                this.CheckAndUpdateClientRegistration_WORKAROUND(consent.productKey,consent.dataHolderId),
             ).Extend(this.nf.Make(ConsentRefreshTokenNeuron,this.cert,consent,{grant_type:"authorization_code",code},this,this.consentManager)
         )       
     )
@@ -256,7 +288,7 @@ export class DefaultPathways {
             Neuron.Require(
                 this.DataRecipientJwks(),
                 this.DataHolderOidc(consent.dataHolderId),
-                this.CheckAndUpdateClientRegistration_WORKAROUND(consent.dataHolderId),
+                this.BootstrapClientRegistration(consent.productKey,consent.dataHolderId), // was CheckAndUpdateClientRegistration, but there should be no need to in the case of revocation
             ).Extend(this.nf.Make(ConsentRevocationPropagationNeuron,this.cert,consent,this,this.consentManager)
         )       
     )

@@ -13,6 +13,7 @@ import { JWT } from "jose";
 import moment from "moment";
 import { DhServerStartup } from "../../MockServices/DhServer/Server/startup";
 import qs from "qs";
+import { NO_CACHE_LENGTH } from "../../Common/Connectivity/Neuron";
 
 export const RegisterSymbols = {
     Context: {
@@ -56,22 +57,24 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     environment.SystemUnderTest.Register().PublicUri,
                     'v1/banking/data-recipients',
                 )
-                return DoRequest.Options({
+                return DoRequest.Options(environment.Util.TlsAgent({
                     method: "GET",
                     responseType: "json",
                     headers: {
                         'accept':'application/json'
                     },
                     url
-                })
+                }))
             })
             .When(SetValue,async (ctx) => {
-                let myDr = (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication
+                let connectivityConfig = (await environment.GetServiceDefinition.Connectivity())
+                let softwareProductConfig = await environment.TestServices.adrGateway.connectivity.SoftwareProductConfig("sandbox").Evaluate()
+
                 let drs:any[] = (await (ctx.GetResult(DoRequest))).body.data
                 
-                let myDrStatus = _.filter(drs,dr => dr.legalEntityId === myDr.LegalEntityId)[0];
-                let myBrandStatus = _.filter(myDrStatus.dataRecipientBrands,b => b.dataRecipientBrandId === myDr.BrandId)[0];
-                let myProductStatus = _.filter(myBrandStatus.softwareProducts,b => b.softwareProductId === myDr.ProductId)[0];
+                let myDrStatus = _.filter(drs,dr => dr.legalEntityId === connectivityConfig.LegalEntityId)[0];
+                let myBrandStatus = _.filter(myDrStatus.dataRecipientBrands,b => b.dataRecipientBrandId === connectivityConfig.BrandId)[0];
+                let myProductStatus = _.filter(myBrandStatus.softwareProducts,b => b.softwareProductId === softwareProductConfig.ProductId)[0];
                 
                 let legalEntity = myDrStatus.status
                 let brand = myBrandStatus.status
@@ -97,11 +100,14 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             .Given('Cold start')
             .PreTask(DoRequest,async () => {
                 console.log(environment.SystemUnderTest.Register())
-                return ({requestOptions:await environment.Mtls({
-                method: "GET",
-                url: environment.SystemUnderTest.Register().DiscoveryUri+"/.well-known/openid-configuration",
-                responseType:"json"
-            })})})
+                return ({
+                    requestOptions:await environment.Mtls({
+                        method: "GET",
+                        url: environment.SystemUnderTest.Register().DiscoveryUri+"/.well-known/openid-configuration",
+                        responseType:"json"
+                    })
+                })
+            })
             .PreTask(SetValue,async (ctx) => 
                 (await (ctx.GetResult(DoRequest))).body.jwks_uri
             ,"jwksEndpoint")
@@ -123,7 +129,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 await ctx.GetTestContext(RegisterSymbols.Context.RegisterOpenIdDiscoveryResponse).GetValue("tokenEndpoint")
             ,"tokenEndpoint")
             .PreTask(DoRequest,async (ctx) => {
-                let client_id = (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId
+                let client_id = (await environment.GetServiceDefinition.Connectivity()).BrandId
                 let endpoint = await ctx.GetValue("tokenEndpoint")
                 return DoRequest.Options(await environment.Mtls({
                     method: "POST",
@@ -164,9 +170,9 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 let url = urljoin(
                     environment.SystemUnderTest.Register().SecureUri,
                     'v1/banking/data-recipients/brands',
-                    (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
+                    (await environment.GetServiceDefinition.Connectivity()).BrandId,
                     'software-products',
-                    (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
+                    (await environment.OnlySoftwareProductConfig()).ProductId,
                     'ssa'
                 )
                 return {requestOptions: await environment.Mtls({
@@ -203,7 +209,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                         'v1/banking/data-recipients/brands',
                         'invalid-brand-id',
                         'software-products',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
+                        (await environment.OnlySoftwareProductConfig()).ProductId,
                         'ssa'
                     )
                     return {requestOptions: await environment.Mtls({
@@ -228,7 +234,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let url = urljoin(
                         environment.SystemUnderTest.Register().SecureUri,
                         'v1/banking/data-recipients/brands',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
+                        (await environment.GetServiceDefinition.Connectivity()).BrandId,
                         'software-products',
                         'invalid-software-product-id',
                         'ssa'
@@ -258,33 +264,21 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                         throw 'Cannot proceed'
                     }
                 })
-                .PreTask(DoRequest,async (ctx) => {
-                    let url = urljoin(
-                        environment.SystemUnderTest.Register().SecureUri,
-                        'v1/banking/data-recipients/brands',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
-                        'software-products',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
-                        'ssa'
-                    )
-                    return {requestOptions: await environment.Mtls({
-                        method: "GET",
-                        responseType: "json",
-                        headers: {Authorization: `Bearer ${await ctx.GetTestContext(RegisterSymbols.Context.RegisterToken).GetValue("token")}`},
-                        url
-                    })}
+                .When(SetValue,async (ctx) => {
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH}).catch(console.error)
                 })
-                .When(SetValue,async (ctx) => 
-                    JSON.parse((await (ctx.GetResult(DoRequest))).body)
-                    ,"SSA")
                 .Then(async ctx => {
-                    let requestResult = await (ctx.GetResult(DoRequest));
+                    let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
 
-                    expect(requestResult.response.status).to.eq(403)
-
+                    if (log.config.url.endsWith("ssa")) {
+                        expect(log.response.status).to.eq(403)
+                    } else {
+                        // token endpoint returns 401
+                        expect(log.response.status).to.eq(400)
+                    }
                 })
 
-            Scenario($ => it.apply(this,$('TS_067')), undefined, 'Get SSA while DR software product is Inactive')
+            Scenario($ => it.apply(this,$('TS_068')), undefined, 'Get SSA while DR software product is Inactive')
                 .Given('Current token')
                 .Precondition("Software product is Inactive",async (ctx) => {
                     let statuses = await ctx.GetTestContext(RegisterSymbols.Context.DRStatuses).GetValue("Statuses")
@@ -292,33 +286,21 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                         throw 'Cannot proceed'
                     }
                 })
-                .PreTask(DoRequest,async (ctx) => {
-                    let url = urljoin(
-                        environment.SystemUnderTest.Register().SecureUri,
-                        'v1/banking/data-recipients/brands',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
-                        'software-products',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
-                        'ssa'
-                    )
-                    return {requestOptions: await environment.Mtls({
-                        method: "GET",
-                        responseType: "json",
-                        headers: {Authorization: `Bearer ${await ctx.GetTestContext(RegisterSymbols.Context.RegisterToken).GetValue("token")}`},
-                        url
-                    })}
+                .When(SetValue,async (ctx) => {
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH}).catch(console.error)
                 })
-                .When(SetValue,async (ctx) => 
-                    JSON.parse((await (ctx.GetResult(DoRequest))).body)
-                    ,"SSA")
                 .Then(async ctx => {
-                    let requestResult = await (ctx.GetResult(DoRequest));
+                    let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
 
-                    expect(requestResult.response.status).to.eq(403)
-
+                    if (log.config.url.endsWith("ssa")) {
+                        expect(log.response.status).to.eq(403)
+                    } else {
+                        // token endpoint returns 401
+                        expect(log.response.status).to.eq(400)
+                    }
                 })
 
-            Scenario($ => it.apply(this,$('TS_068')), undefined, 'Get SSA while DR software product is Removed')
+            Scenario($ => it.apply(this,$('TS_069')), undefined, 'Get SSA while DR software product is Removed')
                 .Given('Current token')
                 .Precondition("Software product is Removed",async (ctx) => {
                     let statuses = await ctx.GetTestContext(RegisterSymbols.Context.DRStatuses).GetValue("Statuses")
@@ -326,30 +308,18 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                         throw 'Cannot proceed'
                     }
                 })
-                .PreTask(DoRequest,async (ctx) => {
-                    let url = urljoin(
-                        environment.SystemUnderTest.Register().SecureUri,
-                        'v1/banking/data-recipients/brands',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
-                        'software-products',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
-                        'ssa'
-                    )
-                    return {requestOptions: await environment.Mtls({
-                        method: "GET",
-                        responseType: "json",
-                        headers: {Authorization: `Bearer ${await ctx.GetTestContext(RegisterSymbols.Context.RegisterToken).GetValue("token")}`},
-                        url
-                    })}
+                .When(SetValue,async (ctx) => {
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH}).catch(console.error)
                 })
-                .When(SetValue,async (ctx) => 
-                    JSON.parse((await (ctx.GetResult(DoRequest))).body)
-                    ,"SSA")
                 .Then(async ctx => {
-                    let requestResult = await (ctx.GetResult(DoRequest));
+                    let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
 
-                    expect(requestResult.response.status).to.eq(403)
-
+                    if (log.config.url.endsWith("ssa")) {
+                        expect(log.response.status).to.eq(403)
+                    } else {
+                        // token endpoint returns 401
+                        expect(log.response.status).to.eq(400)
+                    }
                 })
 
 
@@ -359,9 +329,9 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let url = urljoin(
                         environment.SystemUnderTest.Register().SecureUri,
                         'v1/banking/data-recipients/brands',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
+                        (await environment.GetServiceDefinition.Connectivity()).BrandId,
                         'software-products',
-                        (await environment.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
+                        (await environment.OnlySoftwareProductConfig()).ProductId,
                         'ssa'
                     )
                     return {requestOptions: await environment.Mtls({

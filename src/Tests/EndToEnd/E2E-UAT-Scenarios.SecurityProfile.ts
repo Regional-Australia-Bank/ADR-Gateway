@@ -16,6 +16,7 @@ import uuid from "uuid";
 import qs from "qs";
 import { RegisterSymbols } from "./E2E-UAT-Scenarios.CdrRegister";
 import { NO_CACHE_LENGTH } from "../../Common/Connectivity/Neuron";
+import { URL } from "url";
 
 const validator = require("validator")
 
@@ -141,7 +142,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let params = {
                         cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
                         sharingDuration: 86400,
-                        systemId: "test_ui",
+                        systemId: "sandbox",
                         userId: "user-12345",
                         dataholderBrandId: (await TestData()).dataHolder.id
                     }            
@@ -174,7 +175,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     expect(consent.refreshTokenExpiry).to.not.be.undefined;
 
 
-                },120)
+                },240)
                 .Keep(SecurityProfileSymbols.Context.MainAuthorizationFlow)         
 
         })
@@ -208,7 +209,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(NewGatewayConsent, async ctx => ({
                     cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "revoking-user",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
@@ -300,7 +301,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(NewGatewayConsent, async ctx => ({
                     cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "revoking-user2",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
@@ -404,7 +405,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(NewGatewayConsent,async () => ({
                         cdrScopes: ["bank:accounts.basic:read"],
                         sharingDuration: 86400*(365+ 10), // request 1 year + 10 days
-                        systemId: "test_ui",
+                        systemId: "sandbox",
                         userId: "user-12345",
                         dataholderBrandId: (await TestData()).dataHolder.id
                     }))
@@ -427,7 +428,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(NewGatewayConsent,async () => ({
                         cdrScopes: ["bank:accounts.basic:read"],
                         sharingDuration: 0,
-                        systemId: "test_ui",
+                        systemId: "sandbox",
                         userId: "user-12345",
                         dataholderBrandId: (await TestData()).dataHolder.id
                     }))
@@ -448,7 +449,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(NewGatewayConsent,async () => ({
                     cdrScopes: ["openid","bank:accounts.basic:read"],
                     sharingDuration: 0,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }),"working")
@@ -457,7 +458,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     return {
                         cdrScopes: ["openid","bank:accounts.basic:read"],
                         sharingDuration: -10,
-                        systemId: "test_ui",
+                        systemId: "sandbox",
                         userId: "user-12345",
                         dataholderBrandId: (await TestData()).dataHolder.id
                     }
@@ -484,7 +485,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(NewGatewayConsent,async () => ({
                     cdrScopes: ["openid","bank:accounts.basic:read"],
                     sharingDuration: 0,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id,
                     urlFilter: (url:string) => {
@@ -507,7 +508,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(NewGatewayConsent,async () => ({
                     cdrScopes: ["bank:accounts.basic:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id,
                     additionalClaims: {
@@ -531,11 +532,11 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         }    
                     }
                 }))
-                .When(DoRequest,async ctx => (DoRequest.Options({
+                .When(DoRequest,async ctx => (DoRequest.Options(env.Util.TlsAgent({
                     method: "GET",
                     url: `${(await AdrGatewayConfig()).adrGateway.path}/cdr/consents/${(await ctx.GetResult(NewGatewayConsent)).consent!.id}/userInfo`,
                     responseType:"json"
-                })))
+                }))))
                 .Then(async ctx => {
                     let result = await (ctx.GetResult(DoRequest));
                     for (let claim of ["sub","acr","auth_time","name","given_name","family_name","updated_at","refresh_token_expires_at","sharing_expires_at"]) {
@@ -560,7 +561,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(ExistingCurrentGatewayConsent,async () => ({
                     cdrScopes: ["bank:accounts.basic:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
@@ -592,27 +593,27 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(GatewayConsentWithCurrentAccessToken,async () => ({
                     cdrScopes: ["bank:accounts.basic:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
                 .PreTask(NewGatewayConsent,async () => ({
                     cdrScopes: ["bank:accounts.basic:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
-                .PreTask(DoRequest,async ctx => DoRequest.Options({
+                .PreTask(DoRequest,async ctx => DoRequest.Options(env.Util.TlsAgent({
                     method: "GET",
                     url: `${(await AdrGatewayConfig()).adrGateway.path}/cdr/consents/${(await ctx.GetResult(GatewayConsentWithCurrentAccessToken)).consent!.id}/userInfo`,
                     responseType:"json"
-                }),"Consent1")
-                .When(DoRequest,async ctx => DoRequest.Options({
+                })),"Consent1")
+                .When(DoRequest,async ctx => DoRequest.Options(env.Util.TlsAgent({
                     method: "GET",
                     url: `${(await AdrGatewayConfig()).adrGateway.path}/cdr/consents/${(await ctx.GetResult(NewGatewayConsent)).consent!.id}/userInfo`,
                     responseType:"json"
-                }),"Consent2")
+                })),"Consent2")
                 .Then(async ctx => {
                     let result1 = (await ctx.GetResult(DoRequest,"Consent1"));
                     let result2 = (await ctx.GetResult(DoRequest,"Consent2"));
@@ -637,7 +638,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(ExistingCurrentGatewayConsent,async () => ({
                     cdrScopes: ["bank:accounts.basic:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
@@ -706,7 +707,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .Skip()
                 .When()
                 .Then(async ctx => {
-                    expect(() => {throw `Not implemented yet`}).to.not.throw();
+                    expect(() => {throw `Will implement this test later for reference data holder`}).to.not.throw();
                 })
         })
 
@@ -809,7 +810,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         .PreTask(ExistingCurrentGatewayConsent,async () => ({
                             cdrScopes: ["bank:accounts.basic:read"],
                             sharingDuration: 86400,
-                            systemId: "test_ui",
+                            systemId: "sandbox",
                             userId: "user-12345",
                             dataholderBrandId: (await TestData()).dataHolder.id
                         }))
@@ -1028,7 +1029,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(ExistingCurrentGatewayConsent,async () => ({
                     cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "revoking-user",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
@@ -1104,7 +1105,6 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
         describe('Token - ID Token', async () => {
 
-            // TODO, satisfy as part of the main auth test case when WES-19 is solved.
             Scenario($ => it.apply(this,$('TS_023')), undefined, 'ID Token must be signed and encrypted by dataholders and sent it back to the DRs')
                 .Given('Cold start')
                 .Proxy(SecurityProfileSymbols.Context.MainAuthorizationFlow)

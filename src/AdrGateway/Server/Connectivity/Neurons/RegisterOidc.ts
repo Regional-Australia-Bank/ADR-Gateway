@@ -13,7 +13,7 @@ const GetRegisterOIDC = async (cert:ClientCertificateInjector,config:AdrConnecti
     let url = config.RegisterBaseUris.Oidc + "/.well-known/openid-configuration";
 
     let oidcData = new Promise((resolve,reject) => {
-        axios.get(url, cert.inject({responseType: "json", timeout: 10000})).then(res => { // TODO configure timeout value
+        axios.get(url, cert.injectCa({responseType: "json", timeout: 10000})).then(res => { // TODO configure timeout value
             resolve(res.data)
         },err => {
             reject(err)

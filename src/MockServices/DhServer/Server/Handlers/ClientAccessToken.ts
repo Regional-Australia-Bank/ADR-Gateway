@@ -14,6 +14,7 @@ import { ConsentManager, Consent } from "../../Entities/Consent";
 import { TokenIssuer } from "../Helpers/TokenIssuer";
 import { axios } from "../../../../Common/Axios/axios";
 import { GatewayContext } from "../../../../Common/Server/Types";
+import { ClientCertificateInjector } from "../../../../AdrGateway/Services/ClientCertificateInjection";
 
 // TODO, probably a lot of other things to check here
 
@@ -26,6 +27,7 @@ class ClientAccessTokenMiddleware {
         @inject("CdrRegisterKeystoreProvider") private getRegisterKeystore: () => Promise<JSONWebKeySet>,
         @inject("PrivateKeystore") private ownKeystore:() => Promise<JWKS.KeyStore>,
         @inject("DhServerConfig") private config: () => Promise<DhServerConfig>,
+        @inject("ClientCertificateInjector") private mtls: ClientCertificateInjector,
         private consentManager:ConsentManager,
         private tokenIssuer: TokenIssuer,
         @inject("OIDCConfiguration") private oidcConfig: (cfg:DhServerConfig) => OIDCConfiguration
@@ -65,7 +67,7 @@ class ClientAccessTokenMiddleware {
                 if (typeof client == 'undefined') return res.status(400).json({error:"invalid_client"});
     
                 // GET the JWKS for signing
-                let client_jwks = JWKS.asKeyStore(await (await axios.get(client.jwks_uri, {responseType:"json"})).data)
+                let client_jwks = JWKS.asKeyStore(await (await axios.get(client.jwks_uri, this.mtls.injectCa({responseType:"json"}))).data)
     
                 // verify the JWT
                 let payload:object;

@@ -128,7 +128,7 @@ class ConsentConfirmationMiddleware {
             // TODO check that this self heals in the case when an expired Dataholder JWKS is cached. Very low priority.
             let verifiedIdToken: IdTokenValidationParts
             try {
-                verifiedIdToken = await this.pw.ValidIdTokenCode(consentRequest.dataHolderId,params.idToken).GetWithHealing()                
+                verifiedIdToken = await this.pw.ValidIdTokenCode(consentRequest.productKey,consentRequest.dataHolderId,params.idToken).GetWithHealing()                
             } catch (e) {
                 throw new HttpCodeError("Could not verify id token",400,{
                     code: "invalid_id_token",
@@ -167,12 +167,17 @@ class ConsentConfirmationMiddleware {
 
             let updatedConsent = await this.pw.FinaliseConsent(consentRequest,params.authCode).GetWithHealing();
             let missingScopes = updatedConsent.MissingScopes();
+            let isActive = updatedConsent.IsCurrent()
             let scopesFulfilled = (missingScopes.length == 0)
+
+            let success = (isActive && scopesFulfilled);
 
             return res.json({
                 scopesFulfilled: scopesFulfilled,
                 requestedScopes: JSON.parse(updatedConsent.requestedScopesJson),
-                missingScopes: missingScopes
+                missingScopes: missingScopes,
+                isActive: isActive,
+                success
             })
             
         } catch (err) {

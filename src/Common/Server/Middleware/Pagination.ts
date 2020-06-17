@@ -2,9 +2,9 @@ import express from "express";
 import { NextFunction } from "connect";
 import { injectable, inject } from "tsyringe";
 import { query, matchedData } from "express-validator";
-import { IAppConfig } from "../Config";
 import _ from "lodash"
 import { isHttpCodeError, formatErrorPayload } from "../ErrorHandling";
+import { URL } from "url";
 
 interface PaginationOptions {
     baseUrl:string | ((req:express.Request) => string)
@@ -24,7 +24,7 @@ const handle = (req:express.Request,res:express.Response,next: NextFunction) => 
 @injectable()
 class PaginationMiddleware {
     constructor(
-        @inject("IAppConfig") private configFn:() => Promise<{FrontEndUrl:string,FrontEndMtlsUrl:string}>
+        @inject("PaginationConfig") private configFn:() => Promise<{FrontEndUrl:string,FrontEndMtlsUrl:string}>
     ) {}
 
     Paginate = (options:PaginationOptions) => {

@@ -1,6 +1,5 @@
 import "reflect-metadata"
 
-import { MockRegister } from "./server"
 import { ArgumentParser } from "argparse";
 import winston = require("winston");
 import { MockRegisterServerStartup } from "./startup";
@@ -12,25 +11,20 @@ let parser = new ArgumentParser({
   addHelp:true,
   description: 'Start adr-gateway'
 });
-parser.addArgument(
-  [ '-d' ],
-  {
-    help: 'Directory which contains the server environment, including configuration files e.g. local-env',
-    dest: "directory"
-  }
-);
 
 let args = parser.parseArgs();
 
-process.chdir(args.directory)
+let config = GetConfig();
+let configFn = () => Promise.resolve(config)
 
-
-let server = MockRegisterServerStartup.Start(
-  () => Promise.resolve(GetConfig()),
-  (clientId:string) => Promise.resolve({
+let clientProvider = async (clientId:string) => {
+  return Promise.resolve({
     clientId,
-    jwksUri: "http://localhost:8101/jwks"      
-  })).catch(reason => {console.error(reason)
+    jwksUri: config.TestDataRecipientJwksUri
+  })
+}
+
+let server = MockRegisterServerStartup.Start(configFn,clientProvider).catch(reason => {console.error(reason)
 })
 
 

@@ -1,7 +1,7 @@
 import { IncomingMessage } from "http";
 import { readFileSync, ftruncate } from "fs";
 import winston = require("winston");
-import { IClientCertificateVerificationConfig, IAppConfig } from "../Server/Config";
+import { IClientCertificateVerificationConfig } from "../Server/Config";
 import { injectable, singleton, inject } from "tsyringe";
 
 interface IClientCertificateVerifier {

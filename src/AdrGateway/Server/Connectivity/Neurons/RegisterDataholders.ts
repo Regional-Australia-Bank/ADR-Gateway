@@ -1,4 +1,4 @@
-import { AdrConnectivityConfig } from "../../../Config";
+import { AdrConnectivityConfig, SoftwareProductConnectivityConfig } from "../../../Config";
 import { injectable, inject } from "tsyringe";
 import _ from "lodash"
 import { DefaultCacheFactory } from "../Cache/DefaultCacheFactory";
@@ -64,14 +64,14 @@ const GetDataHoldersResponse = async (accessToken:string, nextUrl:string, cert:C
 const GetDataholders = async ([config, registerToken, cert]: [AdrConnectivityConfig, AccessToken, ClientCertificateInjector]): Promise<DataholderRegisterMetadata[]> => {
     let nextUrl = config.RegisterBaseUris.SecureResource + '/v1/banking/data-holders/brands?page-size=20'; // TODO move the page limitation to an integration test and config option
 
-    let dataholders = GetDataHoldersResponse(registerToken.accessToken,nextUrl,cert);
+    let dataholders = await GetDataHoldersResponse(registerToken.accessToken,nextUrl,cert);
 
-    return await dataholders;
+    return dataholders;
 }
 
-const GetSSA = async ([config, registerToken, cert]: [AdrConnectivityConfig, AccessToken, ClientCertificateInjector]): Promise<string> => {
-    let brandId = config.DataRecipientApplication.BrandId;
-    let productId = config.DataRecipientApplication.ProductId;
+const GetSSA = async ([config, productConfig, registerToken, cert]: [AdrConnectivityConfig, SoftwareProductConnectivityConfig, AccessToken, ClientCertificateInjector]): Promise<string> => {
+    let brandId = config.BrandId;
+    let productId = productConfig.ProductId;
     let nextUrl = config.RegisterBaseUris.SecureResource + `/v1/banking/data-recipients/brands/${brandId}/software-products/${productId}/ssa`; // TODO move the page limitation to an integration test and config option
 
     let response = await axios.get(nextUrl, cert.inject({headers: {Authorization: `Bearer ${registerToken.accessToken}`}}))
@@ -104,7 +104,7 @@ export class RegisterGetDataholdersNeuron extends Neuron<[AdrConnectivityConfig,
 }
 
 @injectable()
-export class RegisterGetSSANeuron extends Neuron<[AdrConnectivityConfig, AccessToken], string> {
+export class RegisterGetSSANeuron extends Neuron<[AdrConnectivityConfig, SoftwareProductConnectivityConfig, AccessToken], string> {
     constructor(@inject("ClientCertificateInjector") private cert:ClientCertificateInjector) {
         super()
         this.AddValidator(async (o) => new Validator().isJWT(o))
@@ -117,8 +117,8 @@ export class RegisterGetSSANeuron extends Neuron<[AdrConnectivityConfig, AccessT
         });
         (<any>this).debugId = uuid.v4() // TODO remove
     }
-    evaluator = ([e,a]:[AdrConnectivityConfig, AccessToken]) => {
-        return GetSSA([e,a,this.cert]);
+    evaluator = ([e,p,a]:[AdrConnectivityConfig,SoftwareProductConnectivityConfig, AccessToken]) => {
+        return GetSSA([e,p,a,this.cert]);
     };
     
 }

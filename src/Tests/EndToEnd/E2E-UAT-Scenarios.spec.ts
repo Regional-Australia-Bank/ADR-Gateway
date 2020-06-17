@@ -14,13 +14,17 @@ import fs from "fs"
 import { TestContext } from "./Framework/TestContext";
 const rimraf = require("rimraf")
 
+process.on("unhandledRejection", (error) => {
+    console.error(error); // This prints error with stack included (as for normal errors)
+    throw error; // Following best practices re-throw error and let the process exit with error code
+});
+
 
 chai.use(chaiAsPromised);
 chai.should();
 
 describe('E2E Scenarios', async () => {
-
-    
+   
     for (let environment of GetEnvironments()) {
         let prevDir = process.cwd()
         let envDir;

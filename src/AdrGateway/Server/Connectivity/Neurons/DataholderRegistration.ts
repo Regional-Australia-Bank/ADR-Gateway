@@ -4,13 +4,13 @@ import { DataholderRegisterMetadata } from "./RegisterDataholders";
 import { DataHolderRegistrationManager, DataHolderRegistration } from "../../../Entities/DataHolderRegistration";
 import { Validator, IsUrl, validate } from "class-validator"
 import { AxiosRequestConfig } from "axios";
-import { AdrConnectivityConfig } from "../../../Config";
+import { AdrConnectivityConfig, SoftwareProductConnectivityConfig } from "../../../Config";
 import moment from "moment";
 import uuid from "uuid";
 import { JWKS, JWT, JSONWebKeySet } from "jose";
 import { AccessToken } from "./RegisterToken";
 import _ from "lodash";
-import { DefaultCacheFactory } from "../Cache/DefaultCacheFactory";
+import { DefaultCacheFactory, JWKSSerial } from "../Cache/DefaultCacheFactory";
 import { ClientCertificateInjector } from "../../../Services/ClientCertificateInjection";
 import { header } from "express-validator";
 import { CreateAssertion } from "../Assertions";
@@ -47,8 +47,8 @@ export interface DataholderRegistrationResponse {
     id_token_encrypted_response_enc:string
 }
 
-const NewRegistrationAtDataholder = async (ssa:string,dataholderMeta:DataholderRegisterMetadata,dhOidc:DataholderOidcResponse,config:AdrConnectivityConfig, jwks:JWKS.KeyStore, cert:ClientCertificateInjector):Promise<DataholderRegistrationResponse> => {
-    let registrationRequest = RegistrationRequestObject(config,dhOidc,ssa)
+const NewRegistrationAtDataholder = async (ssa:string,dataholderMeta:DataholderRegisterMetadata,dhOidc:DataholderOidcResponse,config:AdrConnectivityConfig,productConfig:SoftwareProductConnectivityConfig, jwks:JWKS.KeyStore, cert:ClientCertificateInjector):Promise<DataholderRegistrationResponse> => {
+    let registrationRequest = RegistrationRequestObject(config,productConfig,dhOidc,ssa)
     let registrationRequestJwt = JWT.sign(registrationRequest,jwks.get({alg:'PS256',use:'sig'}),{header:{typ:"JWT"}})
 
     let options = cert.inject({method:"POST", url: dhOidc.registration_endpoint, responseType: "json", data: registrationRequestJwt, headers: {"content-type":"application/jwt"}});
@@ -67,8 +67,8 @@ export const CurrentRegistrationAtDataholder = async (client_id:string,access_to
     return response.data;
 }
 
-export const UpdateRegistrationAtDataholder = async (client_id:string, ssa:string,dhOidc:DataholderOidcResponse,config:AdrConnectivityConfig, jwks:JWKS.KeyStore, accessToken:AccessToken, cert:ClientCertificateInjector):Promise<DataholderRegistrationResponse> => {
-    let registrationRequest = RegistrationRequestObject(config,dhOidc,ssa)
+export const UpdateRegistrationAtDataholder = async (client_id:string, ssa:string,dhOidc:DataholderOidcResponse,config:AdrConnectivityConfig,productConfig:SoftwareProductConnectivityConfig, jwks:JWKS.KeyStore, accessToken:AccessToken, cert:ClientCertificateInjector):Promise<DataholderRegistrationResponse> => {
+    let registrationRequest = RegistrationRequestObject(config,productConfig,dhOidc,ssa)
     let registrationRequestJwt = JWT.sign(registrationRequest,jwks.get({alg:'PS256',use:'sig'}))
 
     let response = await axios.request(cert.inject({
@@ -83,10 +83,10 @@ export const UpdateRegistrationAtDataholder = async (client_id:string, ssa:strin
 }
 
 
-export const DhRegistrationMatchesExpectation = (registration:DataholderRegistrationResponse,config:AdrConnectivityConfig, ssa:string):boolean => {
+export const DhRegistrationMatchesExpectation = (registration:DataholderRegistrationResponse,config:AdrConnectivityConfig,productConfig:SoftwareProductConnectivityConfig, ssa:string):boolean => {
     // check if configured vs registered redirect_uris are different
-    let rUrlDifferenceLeft = _.difference(config.DataRecipientApplication.redirect_uris, registration.redirect_uris)
-    let rUrlDifferenceRight = _.difference(registration.redirect_uris,config.DataRecipientApplication.redirect_uris)
+    let rUrlDifferenceLeft = _.difference(productConfig.redirect_uris, registration.redirect_uris)
+    let rUrlDifferenceRight = _.difference(registration.redirect_uris,productConfig.redirect_uris)
     if (rUrlDifferenceLeft.length > 0 || rUrlDifferenceRight.length > 0) return false;
 
     if (config.Crypto?.PreferredAlgorithms) {
@@ -100,17 +100,31 @@ export const DhRegistrationMatchesExpectation = (registration:DataholderRegistra
         if (!matchedPreferredAlgorithms) return false;
     }
 
-    // TODO We should check (instead of the code below), that data holders have the most recent metadata from the register about us
+    let ssaParts:{
+        org_name?: string,
+        scope?: string,
+        client_name?: string
+        client_description?: string
+        client_uri?: string
+        redirect_uris?: string
+        logo_uri?: string
+        tos_uri?: string
+        policy_uri?: string
+        jwks_uri?: string
+        revocation_uri?: string
+    } = JWT.decode(ssa)
 
-    // if (config.DataRecipientApplication.uris.logo_uri != config.logo_uri) return false;
-    // if (config.DataRecipientApplication.uris.tos_uri != config.tos_uri) return false;
-    // if (config.DataRecipientApplication.uris.policy_uri != config.policy_uri) return false;
-    // if (config.DataRecipientApplication.uris.jwks_uri != config.jwks_uri) return false;
-    // if (config.DataRecipientApplication.uris.revocation_uri != config.revocation_uri) return false;
+    const stringPropertieKeys = ['org_name','client_name','client_description','client_uri','logo_uri','tos_uri','policy_uri','jwks_uri','revocation_uri']
 
-    let ssaParts:any = JWT.decode(ssa,{complete:true})
+    // Check that data holders have the most recent metadata from the register about us
 
-    let scopeGap = _.difference(ssaParts.payload.scope.split(" "), registration.scope.split(" "));
+    for (let key of stringPropertieKeys) {
+        if (registration[key] !== ssaParts[key]) {
+            return false;
+        }
+    }
+
+    let scopeGap = _.difference(ssaParts.scope.split(" "), registration.scope.split(" "));
     if (scopeGap.length > 0) return false;
 
     return true;
@@ -139,18 +153,18 @@ const AgreeCrypto = (config:AdrConnectivityConfig,dhOidc:DataholderOidcResponse)
     
 }
 
-const RegistrationRequestObject = (config:AdrConnectivityConfig,dhOidc:DataholderOidcResponse, ssa:string ) => {
+const RegistrationRequestObject = (config:AdrConnectivityConfig,productConfig:SoftwareProductConnectivityConfig,dhOidc:DataholderOidcResponse, ssa:string ) => {
 
     let crypto = AgreeCrypto(config,dhOidc);
 
     let o = {
-        "iss": config.DataRecipientApplication.ProductId,
+        "iss": productConfig.ProductId,
         "iat": moment().utc().unix(),
         "exp": moment().add(30,'s').utc().unix(), //TODO configurable
         "jti": uuid.v4(),
         "aud": dhOidc.issuer, // As specified https://github.com/cdr-register/register/issues/58
         //"redirect_uris":["http://www.invaliduri.com/callback"],
-        "redirect_uris":config.DataRecipientApplication.redirect_uris, // TODO reinstate
+        "redirect_uris":productConfig.redirect_uris, // TODO reinstate
         "token_endpoint_auth_signing_alg":"PS256",
         "token_endpoint_auth_method":"private_key_jwt",
         "grant_types":[
@@ -161,7 +175,7 @@ const RegistrationRequestObject = (config:AdrConnectivityConfig,dhOidc:Dataholde
         ],
         "response_types":["code id_token"],
         "application_type":"web",
-        "id_token_signed_response_alg":"PS256",
+        "id_token_signed_response_alg":config.Crypto?.IDTokenSignedResponseAlg || "PS256",
         "id_token_encrypted_response_alg":crypto.id_token_encrypted_response_alg,
         "id_token_encrypted_response_enc":crypto.id_token_encrypted_response_enc,
         "request_object_signing_alg":"PS256",
@@ -175,7 +189,7 @@ const RegistrationRequestObject = (config:AdrConnectivityConfig,dhOidc:Dataholde
 }
 
 @injectable()
-export class CheckAndUpdateClientRegistrationNeuron extends Neuron<[AdrConnectivityConfig,JWKS.KeyStore,DataholderRegisterMetadata,DataholderOidcResponse,string,DataHolderRegistration,AccessToken],DataHolderRegistration> {
+export class CheckAndUpdateClientRegistrationNeuron extends Neuron<[AdrConnectivityConfig,SoftwareProductConnectivityConfig,JWKS.KeyStore,DataholderRegisterMetadata,DataholderOidcResponse,string,DataHolderRegistration,AccessToken],DataHolderRegistration> {
     public static Emitter:EventEmitter = new EventEmitter();
     public static Events = {
         BeforeGetRegistration: Symbol.for('BeforeGetRegistration'),
@@ -191,6 +205,7 @@ export class CheckAndUpdateClientRegistrationNeuron extends Neuron<[AdrConnectiv
 
     evaluator = async ([
         config,
+        productConfig,
         jwks,
         dhRegisterMeta,
         dhOidc,
@@ -198,7 +213,8 @@ export class CheckAndUpdateClientRegistrationNeuron extends Neuron<[AdrConnectiv
         regPacket,
         accessToken
     ]:[
-        AdrConnectivityConfig, 
+        AdrConnectivityConfig,
+        SoftwareProductConnectivityConfig,
         JWKS.KeyStore,
         DataholderRegisterMetadata,
         DataholderOidcResponse,
@@ -212,8 +228,8 @@ export class CheckAndUpdateClientRegistrationNeuron extends Neuron<[AdrConnectiv
         let registration = await CurrentRegistrationAtDataholder(regPacket.clientId,accessToken.accessToken,dhRegisterMeta,dhOidc,this.cert)
 
         let registrationPacket: DataHolderRegistration
-        if (!DhRegistrationMatchesExpectation(registration,config,ssa)) {
-            let response = await UpdateRegistrationAtDataholder(registration.client_id,ssa,dhOidc,config,jwks,accessToken,this.cert);
+        if (!DhRegistrationMatchesExpectation(registration,config,productConfig,ssa)) {
+            let response = await UpdateRegistrationAtDataholder(registration.client_id,ssa,dhOidc,config,productConfig,jwks,accessToken,this.cert);
             registrationPacket = await this.registrationManager.UpdateRegistration(response,dhRegisterMeta.dataHolderBrandId)
             return registrationPacket;
         } else {
@@ -228,7 +244,7 @@ export const GetDataHolderOidcNeuron = (dataholderBrandId:string, cert:ClientCer
     let url = dhRegisterMeta.endpointDetail.infosecBaseUri + "/.well-known/openid-configuration";
    
     let oidcData = new Promise((resolve,reject) => {
-        axios.get(url, cert.inject({responseType:"json", timeout: 10000})).then(value => { // TODO configure timeout value
+        axios.get(url, cert.injectCa({responseType:"json", timeout: 10000})).then(value => { // TODO configure timeout value
             resolve(value.data)
         },err => {
             reject(err)
@@ -237,18 +253,18 @@ export const GetDataHolderOidcNeuron = (dataholderBrandId:string, cert:ClientCer
 
     return new DataholderOidcResponse(await oidcData);
 })
-.WithCache(DefaultCacheFactory.Generate(`GetDataHolderOidcNeuron:${dataholderBrandId}`))
+.WithCache(DefaultCacheFactory.Generate(`GetDataHolderOidcNeuron.${dataholderBrandId}`))
 .AddValidator(async (oidc:DataholderOidcResponse) => {
     let errors = await validate(oidc)
     if (errors.length > 0) throw errors; // TODO standardize Validate errors
     return true;
 })
 
-export const GetDataHolderJwksNeuron = (dataholderBrandId:string) => Neuron.CreateSimple<DataholderOidcResponse,JWKS.KeyStore>(async (dhOidc:DataholderOidcResponse) => {
+export const GetDataHolderJwksNeuron = (dataholderBrandId:string,cert:ClientCertificateInjector) => Neuron.CreateSimple<DataholderOidcResponse,JWKS.KeyStore>(async (dhOidc:DataholderOidcResponse) => {
     let url = dhOidc.jwks_uri;
 
     let jwksObj = new Promise<JSONWebKeySet>((resolve,reject) => {
-        axios.get(url,{responseType:"json", timeout: 10000}).then(value => { // TODO configure timeout value
+        axios.get(url,cert.injectCa({responseType:"json", timeout: 10000})).then(value => { // TODO configure timeout value
             resolve(value.data)
         },err => {
             reject(err)
@@ -257,7 +273,28 @@ export const GetDataHolderJwksNeuron = (dataholderBrandId:string) => Neuron.Crea
 
     return JWKS.asKeyStore(await jwksObj)
 })
-.WithCache(DefaultCacheFactory.Generate(`GetDataHolderJwksNeuron:${dataholderBrandId}`))
+.WithCache(DefaultCacheFactory.Generate(`GetDataHolderJwksNeuron.${dataholderBrandId}`,JWKSSerial))
+.AddValidator(async (jwks:JWKS.KeyStore) => {
+    jwks.get({alg:'PS256'})
+    return true;
+})
+
+export const GetDataHolderJwksFromRegisterNeuron = (dataholderBrandId:string) => Neuron.CreateSimple<DataholderRegisterMetadata,JWKS.KeyStore>(async (dhmeta:DataholderRegisterMetadata) => {
+    let jwksEndpoints = _.map(_.filter(dhmeta.authDetails, d => d.registerUType == "SIGNED-JWT"),d => d.jwksEndpoint);
+
+    let jwksObjs = await Promise.all(_.map(jwksEndpoints, url => new Promise<JSONWebKeySet>((resolve,reject) => {
+        axios.get(url,{responseType:"json", timeout: 10000}).then(value => { // TODO configure timeout value
+            resolve(value.data)
+        },err => {
+            reject(err)
+        })
+    })))
+
+    let aggregated = {keys:_.flatten(jwksObjs.map(j => j.keys))}
+
+    return JWKS.asKeyStore(aggregated)
+})
+.WithCache(DefaultCacheFactory.Generate(`GetDataHolderJwksFromRegisterNeuron.${dataholderBrandId}`,JWKSSerial))
 .AddValidator(async (jwks:JWKS.KeyStore) => {
     jwks.get({alg:'PS256'})
     return true;
@@ -281,31 +318,31 @@ export class DataHolderRegistrationAccessTokenNeuron extends Neuron<[JWKS.KeySto
 
 
 @injectable()
-export class BootstrapClientRegistrationNeuron extends Neuron<[AdrConnectivityConfig,DataholderRegisterMetadata],DataHolderRegistration|undefined> {
+export class BootstrapClientRegistrationNeuron extends Neuron<[SoftwareProductConnectivityConfig,DataholderRegisterMetadata],DataHolderRegistration|undefined> {
     constructor(private registrationManager: DataHolderRegistrationManager) {
         super()
         // the cache will be disabled for access to the authorize endpoint.
         // TODO cache?
     }
 
-    evaluator = async ([config,dhRegisterMeta]:[AdrConnectivityConfig,DataholderRegisterMetadata]) => {
+    evaluator = async ([productConfig,dhRegisterMeta]:[SoftwareProductConnectivityConfig,DataholderRegisterMetadata]) => {
 
-        return await this.registrationManager.GetActiveRegistrationByIds(config.DataRecipientApplication.ProductId,dhRegisterMeta.dataHolderBrandId);
+        return await this.registrationManager.GetActiveRegistrationByIds(productConfig.ProductId,dhRegisterMeta.dataHolderBrandId);
 
     }
 }
 
 @injectable()
-export class NewClientRegistrationNeuron extends Neuron<[AdrConnectivityConfig,JWKS.KeyStore,DataholderOidcResponse,DataholderRegisterMetadata,string],DataHolderRegistration> {
+export class NewClientRegistrationNeuron extends Neuron<[AdrConnectivityConfig,SoftwareProductConnectivityConfig,JWKS.KeyStore,DataholderOidcResponse,DataholderRegisterMetadata,string],DataHolderRegistration> {
     constructor(private registrationManager: DataHolderRegistrationManager, private cert:ClientCertificateInjector) {
         super()
         // the cache will be disabled for access to the authorize endpoint.
         // TODO cache?
     }
 
-    evaluator = async ([config,jwks,dhOidc,dhRegisterMeta,ssa]:[AdrConnectivityConfig,JWKS.KeyStore,DataholderOidcResponse,DataholderRegisterMetadata,string]) => {
+    evaluator = async ([config,productConfig,jwks,dhOidc,dhRegisterMeta,ssa]:[AdrConnectivityConfig,SoftwareProductConnectivityConfig,JWKS.KeyStore,DataholderOidcResponse,DataholderRegisterMetadata,string]) => {
 
-        let response = await NewRegistrationAtDataholder(ssa,dhRegisterMeta,dhOidc,config,jwks,this.cert)
+        let response = await NewRegistrationAtDataholder(ssa,dhRegisterMeta,dhOidc,config,productConfig,jwks,this.cert)
         let registration = await this.registrationManager.NewRegistration(response,dhRegisterMeta.dataHolderBrandId)
         return registration;
     }

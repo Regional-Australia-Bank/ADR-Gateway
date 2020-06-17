@@ -48,7 +48,7 @@ export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId
     } catch (e) {
         // could not find matching data recipient, so let's forward to actual register
         try {
-            return await pw.SoftwareStatementAssertion().GetWithHealing();
+            return await pw.SoftwareStatementAssertion(dataRecipientProductId).GetWithHealing();
         } catch (e2) {
             throw e;
         }

@@ -4,78 +4,105 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach AdrGateway PM2",
+            "port": 9290
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach MockDhServer PM2",
+            "port": 9291
+        },        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach to a process",
+            "processId": "${command:PickProcess}"
+        },
         {
             "type": "node",
             "request": "launch",
             "name": "Data Holder server",
-            "program": "${workspaceFolder}\\out\\MockServices\\DhServer\\Server\\start.js",
+            "program": "${workspaceFolder}\\dist\\MockServices\\DhServer\\Server\\start.js",
             "args": ["-d",".local-env\\dh-server"],
             "env": {
                 "NODE_TLS_REJECT_UNAUTHORIZED":"0",
             },
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+            "outputCapture": "std"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "HttpsProxy",
+            "program": "${workspaceFolder}\\dist\\HttpsProxy\\\\start.js",
+            "env": {
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+            },
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "outputCapture": "std" 
         },
         {
             "type": "node",
             "request": "launch",
             "name": "ADR Gateway server",
-            "program": "${workspaceFolder}\\out\\AdrGateway\\Server\\start.js",
-            "args": ["-d",".local-env\\adr-gateway"],
+            "program": "${workspaceFolder}\\dist\\AdrGateway\\Server\\start.js",
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
+                "MOCK_TLS_PKI":"1"
             },
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+            "outputCapture": "std" 
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Housekeeper",
-            "program": "${workspaceFolder}\\out\\AdrGateway\\Housekeeper\\start.js",
+            "program": "${workspaceFolder}\\dist\\AdrGateway\\Housekeeper\\start.js",
             "args": ["-d",".local-env\\adr-gateway"],
             "env": {
                 "NODE_TLS_REJECT_UNAUTHORIZED":"0"
             },
-//            "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+            "outputCapture": "std"
         },        
         {
             "type": "node",
             "request": "launch",
             "name": "Mock Register server",
-            "program": "${workspaceFolder}\\out\\MockServices\\Register\\Server\\start.js",
+            "program": "${workspaceFolder}\\dist\\MockServices\\Register\\Server\\start.js",
             "args": ["-d",".local-env\\mock-register"],
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+                "NO_PROXY": "localhost"
             },
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+            "outputCapture": "std"
         },
         {
             "type": "node",
             "request": "launch",
             "name": "ADR Server",
-            "program": "${workspaceFolder}\\out\\AdrServer\\Server\\start.js",
-            "args": ["-d",".local-env\\adr-server"],
+            "program": "${workspaceFolder}\\dist\\AdrServer\\Server\\start.js",
             "env": {
                 "NODE_TLS_REJECT_UNAUTHORIZED":"0",
                 "LOG_LEVEL": "debug"
             },
             "outFiles": [
-                "${workspaceFolder}/out/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" // https://github.com/winstonjs/winston/issues/1544
+            "outputCapture": "std" 
         },
         {
 			"type": "node",
@@ -86,8 +113,7 @@
 			"cwd": "${workspaceRoot}",
             "protocol": "inspector",
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
-                "MOCK_EVIDENCE_OUT":".evidence"
+
             },
             "internalConsoleOptions": "neverOpen",
             "console": "integratedTerminal"

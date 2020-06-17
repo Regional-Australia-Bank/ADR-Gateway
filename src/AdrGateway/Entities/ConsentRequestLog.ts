@@ -1,4 +1,4 @@
-import {Entity, Column, BaseEntity,PrimaryGeneratedColumn, Connection, Not, IsNull} from "typeorm";
+import {Entity, Column, BaseEntity,PrimaryGeneratedColumn, Connection, Not, IsNull, MoreThan} from "typeorm";
 import {inject, injectable} from "tsyringe";
 import "reflect-metadata";
 import winston = require("winston");
@@ -22,6 +22,10 @@ class ConsentRequestLog extends BaseEntity {
     adrSystemUserId!: string;
     @Column()
     dataHolderId!: string;
+    @Column()
+    productKey!: string; // a nickname for use by AdrGateway consumer
+    @Column()
+    softwareProductId!: string; // the id of the product at the register
     @Column()
     requestedScopesJson!: string;
     @Column({nullable: true})
@@ -144,6 +148,12 @@ class ConsentRequestLog extends BaseEntity {
 
     RefreshTokenExpired = ():boolean => {
         if (this.refreshToken){
+
+            // if the refreshTokenExpiry is undefined or equal to zero (this may be ), then the refresh token is not expired
+            if ((this.refreshTokenExpiry || 0) === 0) {
+                return false;
+            }
+
             if (moment().utc().isBefore(moment(this.refreshTokenExpiry).subtract(0,'seconds'))) {
                 return false;
             } else {
@@ -177,8 +187,8 @@ class ConsentRequestLog extends BaseEntity {
 
 }
 
-type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]};
-type FindConsentParams = Partial<Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'id'|'redirectUri'>>;
+type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]};
+type FindConsentParams = Partial<Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'id'|'redirectUri'>>;
 
 @injectable()
 class ConsentRequestLogManager {
@@ -202,6 +212,8 @@ class ConsentRequestLogManager {
         j.nonce = req.nonce
         j.adrSystemId = req.adrSystemId
         j.dataHolderId = req.dataHolderId
+        j.productKey = req.productKey
+        j.softwareProductId = req.softwareProductId
         j.adrSystemUserId = req.adrSystemUserId
         j.requestDate = moment.utc().toDate()
         j.requestedScopesJson = JSON.stringify(req.scopes)
@@ -243,8 +255,13 @@ class ConsentRequestLogManager {
         // TODO queue for deleting consents
     }
 
-    NextRevocationToPropagate = async ():Promise<ConsentRequestLog|undefined> => {
-        let consent = await ((await this.connection)).manager.findOne(ConsentRequestLog,{revokedAt:"DataRecipient", revocationPropagationDate: IsNull()})
+    NextRevocationToPropagate = async (cursor: ConsentRequestLog|undefined):Promise<ConsentRequestLog|undefined> => {
+        let consent = await ((await this.connection)).manager.findOne(ConsentRequestLog,{
+            revokedAt:"DataRecipient",
+            revocationPropagationDate: IsNull(),
+            revocationDate: MoreThan(moment().subtract(7,'days').toDate()),
+            id: MoreThan(cursor?.id || -1)
+        })
         return consent;
     }
 

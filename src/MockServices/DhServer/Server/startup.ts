@@ -12,8 +12,7 @@ export namespace DhServerStartup {
       try {
         await RegisterDependencies(configFn);
       } catch (err) {
-        winston.error(err);
-        throw 'Configuring application failed during RegisterDependencies. Please ensure the environment is correctly set up. Try node util/server-init.js -h';
+        throw (err)
       }
     
       let port = config.Port

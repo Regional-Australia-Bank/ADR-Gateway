@@ -42,7 +42,7 @@ export const DataHolderStatusNeurons = (nf:NeuronFactory) => {
     
     const UpAtDataholder = nf.Simple(async ([config,metadata]: [AdrConnectivityConfig,DataholderRegisterMetadata]):Promise<DataholderUpStatusResponse> => {
     
-        // TODO remove workaround
+        // TODO reactivate status check
         let mockResponse:DataholderUpStatusResponse = <any>{
             data:{status:"OK"}
         }

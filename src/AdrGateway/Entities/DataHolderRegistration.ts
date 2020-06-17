@@ -7,6 +7,11 @@ import uuid = require("uuid");
 import { DataholderRegistrationResponse } from "../Server/Connectivity/Neurons/DataholderRegistration";
 import _ from "lodash"
 
+enum RegistrationStatus {
+    CURRENT = 'CURRENT',
+    DELETED = 'DELETED'
+}
+
 @Entity({name: 'AdrDataHolderRegistration'})
 class DataHolderRegistration extends BaseEntity {
     @PrimaryGeneratedColumn()
@@ -22,7 +27,9 @@ class DataHolderRegistration extends BaseEntity {
     clientId!: string;
 
     @Column({
-        type: "simple-enum"
+        type: "simple-enum",
+        enum: RegistrationStatus,
+        default: RegistrationStatus.CURRENT
     })
     status!: RegistrationStatus;
 
@@ -57,11 +64,6 @@ class DataHolderRegistration extends BaseEntity {
     @Column()
     issuedAt!: Date;
 
-}
-
-enum RegistrationStatus {
-    CURRENT = 'CURRENT',
-    DELETED = 'DELETED'
 }
 
 @injectable()

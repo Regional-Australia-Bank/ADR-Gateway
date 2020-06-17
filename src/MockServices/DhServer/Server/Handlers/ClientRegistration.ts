@@ -89,7 +89,8 @@ class ClientRegistrationMiddleware {
             isJWT:true,
             custom:{
                 options:async(jwt:string) => {
-                    JWT.verify(jwt,JWKS.asKeyStore(await this.getRegisterKeystore()))
+                    let jwks = await this.getRegisterKeystore();
+                    JWT.verify(jwt,JWKS.asKeyStore(jwks))
                 }
             },
         },

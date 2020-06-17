@@ -35,11 +35,11 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
 
     environment.TestServices.adrGateway.connectivity.configFn = async ():Promise<AdrConnectivityConfig> => {
         let origConfig = _.clone(await configFn());
-        let newDataRecipientApplication = _.cloneDeep(origConfig.DataRecipientApplication);
 
         return {
-            AdrClients:  origConfig.AdrClients,
-            DataRecipientApplication: newDataRecipientApplication,
+            BrandId: origConfig.BrandId,
+            LegalEntityId: origConfig.LegalEntityId,
+            SoftwareProductConfigUris: origConfig.SoftwareProductConfigUris,
             RegisterBaseUris: origConfig.RegisterBaseUris,
             Jwks: origConfig.Jwks,
             mtls: origConfig.mtls,
@@ -53,7 +53,8 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
     const dataholder = environment.Config.SystemUnderTest.Dataholder;
     console.log(`Test new client registration with dataholder ${dataholder}`)
 
-    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(dataholder);
+    let softwareProductId = await environment.OnlySoftwareProduct();
+    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(softwareProductId,dataholder);
 
     let interceptor = axios.interceptors.response.use(async res => {
         if (res.config.method == "get" && res.config.url && /register\/[^\/]+$/.test(res.config.url)) {

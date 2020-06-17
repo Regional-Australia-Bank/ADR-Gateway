@@ -1,4 +1,4 @@
-import { MtlsConfig, AdrGatewayConfig } from "../../AdrGateway/Config";
+import { MtlsConfig, AdrGatewayConfig, SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../AdrGateway/Config";
 import { ConnectionOptions, createConnection, Connection, TreeChildren } from "typeorm";
 import { AdrServerConfig } from "../../AdrServer/Server/Config";
 import { GenerateDrJwks, GenerateRegisterJwks, GetJwks } from "../../Common/Init/Jwks";
@@ -12,6 +12,8 @@ import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 import { DhServerConfig } from "../../MockServices/DhServer/Server/Config";
 import { MockRegisterConfig } from "../../MockServices/Register/Server/Config";
 import { PuppeteerConfig } from "./Helpers/TestDhDataholderConsentConfirmer";
+import { MockSoftwareProductConfig } from "../../MockServices/SoftwareProduct/Server/Config";
+import { AdrJwksConfig } from "../../AdrJwks/Config";
 
 const getPort = require('get-port')
 
@@ -20,6 +22,13 @@ var path = require('path');
 
 type EnvironmentParameterized<T> = T | ((env:E2ETestEnvironment) => T)
 export type ServiceDefinitionParameterized<T> = T | ((env:E2ETestEnvironment) => Promise<T>)
+
+export interface TestBoundaryParams {
+    "oldest-time": string // RFC3339
+    "newest-time": string // RFC3339
+    "min-amount": string
+    "max-amount": string
+}
 
 export interface EndToEndTestingConfig {
     Name:string,
@@ -44,7 +53,10 @@ export interface EndToEndTestingConfig {
         MockDhServer?: ServiceDefinitionParameterized<DhServerConfig>,
         MockRegister?: ServiceDefinitionParameterized<MockRegisterConfig>
         AdrDb?: ConnectionOptions | true
-        AdrGateway?: ServiceDefinitionParameterized<AdrGatewayConfig>
+        SoftwareProduct?: ServiceDefinitionParameterized<MockSoftwareProductConfig>
+        AdrJwks?: ServiceDefinitionParameterized<AdrJwksConfig>
+        AdrGateway?: ServiceDefinitionParameterized<Partial<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>>
+        Connectivity?: ServiceDefinitionParameterized<AdrConnectivityConfig>
         AdrServer?: ServiceDefinitionParameterized<AdrServerConfig>
         TestHttpsProxy?: true
     },
@@ -65,7 +77,8 @@ export interface EndToEndTestingConfig {
                 NonConsentedAccountId?: string // TS_245
             }
         },
-        DefaultCustomerId?: string,
+        DefaultUsername?: string
+        Boundaries?: TestBoundaryParams
         MTLS?: {
             invalid?: MtlsConfig
         }

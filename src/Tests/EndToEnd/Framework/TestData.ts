@@ -61,10 +61,10 @@ interface DataholderTestingSpec {
 }
 
 interface ClientCertConfig {
-    key:Buffer,
+    key:Buffer|Buffer[],
     cert:Buffer|Buffer[],
     passphrase:string
-    ca:Buffer,
+    ca:Buffer|Buffer[],
 }
 
 type Unpromisify<T> = T extends Promise<infer U> ? U : T;
@@ -104,7 +104,7 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
             },
         }
         
-        const validCerts = (await env.GetServiceDefinition.AdrGateway()).mtls //await TestPKI.TestConfig()
+        const validCerts = (await env.GetServiceDefinition.Connectivity()).mtls //await TestPKI.TestConfig()
         const invalidCerts = env.Config.TestData?.MTLS?.invalid //await TestPKI.TestConfig()
 
         let clientKeyFiles:{valid:ClientCertConfig,invalid:ClientCertConfig};
@@ -130,7 +130,7 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
             throw e;
         }
 
-        const adrConfig = await env.GetServiceDefinition.AdrGateway();
+        const connectivityConfig = await env.GetServiceDefinition.Connectivity();
         let dataHolderSpec:DataholderTestingSpec;
 
         dataHolderSpec = {
@@ -160,25 +160,27 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
                 consentParams:{
                     cdrScopes: ["bank:accounts.basic:read","common:customer.basic:read"],
                     sharingDuration: 86400,
-                    systemId: "test_ui",
+                    systemId: "sandbox",
                     userId: "user-12345",
                     dataholderBrandId: dataHolderBrandId
                 }
             },
             cdrRegister: {
-                dataRecipientBrandId: adrConfig.DataRecipientApplication.BrandId,
-                oidcEndpoint: adrConfig.RegisterBaseUris.Oidc
+                dataRecipientBrandId: connectivityConfig.BrandId,
+                oidcEndpoint: connectivityConfig.RegisterBaseUris.Oidc
             },
             dataHolder: dataHolderSpec,
             dataRecipient:{
                 clientId: () => {
                     if (clientIdPromise) return clientIdPromise;
                     let dataholder = env.Config.SystemUnderTest.Dataholder;
-                    clientIdPromise = env.TestServices.adrGateway!.connectivity.BootstrapClientRegistration(dataholder).Evaluate().then(reg => reg.clientId)
+                    clientIdPromise = (env.OnlySoftwareProduct()).then(softwareProduct => {
+                        return env.TestServices.adrGateway!.connectivity.BootstrapClientRegistration(softwareProduct,dataholder).Evaluate().then(reg => reg.clientId)
+                    })
                     return clientIdPromise;
                 },
                 jwks: () => env.GetAdrPrivateJwks(),
-                authCallbackUri: async () => Promise.resolve((await env.GetServiceDefinition.AdrGateway()).DataRecipientApplication.redirect_uris[0])
+                authCallbackUri: async () => Promise.resolve((await env.OnlySoftwareProductConfig()).redirect_uris[0])
         
             },
             supportedCiphers: ["DHE-RSA-AES128-GCM-SHA256","ECDHE-RSA-AES128-GCM-SHA256","DHE-RSA-AES256-GCM-SHA384","ECDHE-RSA-AES256-GCM-SHA384"]

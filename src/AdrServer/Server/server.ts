@@ -6,14 +6,12 @@ import winston from "winston";
 import { RevokeMiddleware } from "./Handlers/Revoke";
 import { DefaultPathways } from "../../AdrGateway/Server/Connectivity/Pathways";
 import { ClientBearerJwtVerificationMiddleware } from "../../Common/Server/Middleware/CdsClientBearerJwtVerification";
-import { BearerJwtVerifier } from "../../Common/SecurityProfile/Logic.ClientAuthentication";
-import { JtiLogManager } from "../../Common/Entities/JtiLog";
 import uuid from "uuid"
 import http from "http"
 
 const requestCorrelationMiddleware = (req,res:http.ServerResponse,next) => {
     req.correlationId = uuid.v4()
-    res.setHeader(process.env.CORRELATION_ID_HEADER || "adr-correlation-id",req.correlationId)
+    res.setHeader("adr-server-correlation-id",req.correlationId)
     next()
 }
 
@@ -41,8 +39,8 @@ export class AdrServer {
         } );
                
         app.post( "/revoke",
-            this.clientBearerJwtVerificationMiddleware.handler(async (assumedClientId:string) => {
-                return await this.pw.DataHolderJwks(assumedClientId).GetWithHealing()
+            this.clientBearerJwtVerificationMiddleware.handler((assumedClientId:string) => {
+                return this.pw.DataHolderJwks_ForRevokeNotifyToAdr(assumedClientId)
             }),
             this.revocationMiddleware.handler()
         );

@@ -53,7 +53,6 @@ class JtiLogManager {
                 sub: inserted.sub,
                 id: Not(inserted.id)
             });
-            duplicateEntries.forEach((i)=> {console.log(i)})
 
             if (duplicateEntries.length > 0) {
                 return false;

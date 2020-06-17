@@ -10,5 +10,5 @@ export const SendOAuthError = (res:Response, redirect_uri:string, state:string, 
     
     let fragment = _.map(responseData,(v,k) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&")
     let newUrl = redirect_uri + "#" + fragment;
-    return res.redirect(newUrl)    
+    return res.header('x-redirect-alt-location',newUrl).redirect(newUrl)
 }

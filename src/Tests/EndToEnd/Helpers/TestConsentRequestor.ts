@@ -12,6 +12,7 @@ import { ConsentConfirmer, OAuthHybridFlowResult } from "./ConsentConfirmer";
 import { axios } from "../../../Common/Axios/axios";
 import { NewConsentParams } from "../NewGatewayConsent";
 import { AdrGatewayConfig } from "../../../AdrGateway/Config";
+import { GenerateTestData } from "../Framework/TestData";
 
 
 class TestConsentRequestor {
@@ -77,11 +78,12 @@ class TestConsentRequestor {
         if (!consent.HasCurrentAccessToken()) {
             if (consent.HasCurrentRefreshToken()) {
                 // Call userInfo through AdrGateway which will refresh tokens
-                let userInfoResult = await axios.request({
+
+                let userInfoResult = await axios.request(this.testContext.environment.Util.TlsAgent({
                     method:"GET",
                     url: `${config.adrGateway.path}/cdr/consents/${consent.id}/userInfo`,
                     responseType: "json",
-                });
+                }));
 
                 // return the updated consent
                 return await this.consentManager.GetConsent(consent.id);
@@ -102,11 +104,11 @@ class TestConsentRequestor {
             consent.accessTokenExpiry = moment().utc().subtract(1,'day').toDate();
             await (await this.consentManager.connection).getRepository(ConsentRequestLog).save(consent);
             // Call userInfo through AdrGateway which will refresh tokens
-            let userInfoResult = await axios.request({
+            let userInfoResult = await axios.request(this.testContext.environment.Util.TlsAgent({
                 method:"GET",
                 url: `${config.adrGateway.path}/cdr/consents/${consent.id}/userInfo`,
                 responseType: "json",
-            });
+            }));
 
             // return the updated consent
             return await this.consentManager.GetConsent(consent.id);
@@ -126,9 +128,9 @@ class TestConsentRequestor {
     }):Promise<{redirectUrl:string,consentId:number}> => {
         let config = await this.testContext.AdrGatewayConfig()
 
-        const res = await axios.request({
+        const res = await axios.request(this.testContext.environment.Util.TlsAgent({
             method: "POST",
-            url: `${config.adrGateway.path}/cdr/consents?dataholderBrandId=${params.dataholderBrandId}`,
+            url: `${config.adrGateway.path}/cdr/consents`,
             responseType:"json",
             data: {
                 userId: params.userId,
@@ -136,9 +138,11 @@ class TestConsentRequestor {
                 scopes: params.cdrScopes,
                 sharingDuration: params.sharingDuration,
                 state: `${params.systemId}:${params.userId}`,
-                additionalClaims: params.additionalClaims
+                additionalClaims: params.additionalClaims,
+                softwareProductId: await this.testContext.environment.OnlySoftwareProduct(),
+                dataholderBrandId: params.dataholderBrandId
             },
-        });
+        }));
 
         return <{redirectUrl:string,consentId:number}>res.data;
     }
@@ -214,7 +218,7 @@ class TestConsentRequestor {
 
         });
 
-        consentPromise.finally(async () => {
+        let cleanup = consentPromise.finally(async () => {
             try {
                 await cc.CleanUp();
             } catch (e) {
@@ -222,7 +226,7 @@ class TestConsentRequestor {
             }
         });
    
-        return await consentPromise;
+        return await cleanup;
     }
 }
 

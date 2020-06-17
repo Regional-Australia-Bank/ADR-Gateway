@@ -140,7 +140,7 @@ class AuthorizeMiddleware {
                 // });
                 let newUrl = urljoin((await this.config()).AuthorizeUrl,"consent-flow",requestedConsent.id.toString());
     
-                return res.redirect(newUrl)    
+                return res.header('x-redirect-alt-location',newUrl).redirect(newUrl)
             } catch (e) {
                 return SendOAuthError(res,m.redirect_uri,m.state,"server_error")
             }

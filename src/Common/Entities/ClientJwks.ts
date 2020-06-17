@@ -36,7 +36,7 @@ class ClientJwksManager {
 
     async InsertJwksJson(clientId:string,jwks:string) {
         let connection = await this.connection;
-        console.log(`InsertJwksJson: connection isConnected: ${connection.isConnected}`);
+        //console.log(`InsertJwksJson: connection isConnected: ${connection.isConnected}`);
         let existing = await (connection).manager.find(ClientJwks,{
             clientId: clientId,
         });

@@ -16,7 +16,7 @@ import { ConsentManager } from "../Entities/Consent";
 import bodyParser, { urlencoded } from "body-parser"
 import { OIDCConfiguration, DhServerConfig } from "./Config";
 import { Authorize, AuthorizeMiddleware } from "./Handlers/Authorize";
-import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions } from "../../../Tests/Integration/Common.TestData.Dh.ResourceData";
+import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions } from "../TestData/ResourceData";
 import { HokBoundTokenScopeVerificationFactory } from "./Middleware/OAuth2ScopeAuth";
 import { CdsScope } from "../../../Common/SecurityProfile/Scope";
 import { container } from "../DhDiContainer";
@@ -38,6 +38,7 @@ import { TokenRevocationMiddleware } from "./Handlers/TokenRevocation";
 import { registerDecorator } from "class-validator";
 import { DhGatewayRequest } from "./Types";
 import { isHttpCodeError } from "../../../Common/Server/ErrorHandling";
+import { Neuron } from "../../../Common/Connectivity/Neuron";
 
 @injectable()
 class DhServer {
@@ -109,8 +110,8 @@ class DhServer {
 
         app.post("/admin/register/metadata",
             container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate
-            container.resolve(ClientBearerJwtVerificationMiddleware).handler(async () => {
-                return JWKS.asKeyStore(await this.getRegisterKeystore())
+            container.resolve(ClientBearerJwtVerificationMiddleware).handler(() => {
+                return Neuron.NeuronZero().Extend(Neuron.CreateSimple(async () => JWKS.asKeyStore(await this.getRegisterKeystore())))
             },"cdr-register"), // verify Bearer JWT and check JWT ~ client cert. Returns 401 on conflicting creds, and 403 on wrong permissions.
             container.resolve(CDSVersionComplianceMiddleware).handle,
             async (req, res) => {
@@ -145,7 +146,7 @@ class DhServer {
                 let balances = _.filter(testBalanceList, b => {
                     let matchingAccount = _.find(testAccountDetailList,x => x.accountId === b.accountId);
                     if (typeof matchingAccount === 'undefined') throw 'Cannot find account detail to match balance'
-                    if (req.query["product-category"]) {
+                    if (typeof req.query["product-category"] === 'string') {
                         if (matchingAccount.productCategory !== req.query["product-category"]) return false;
                     }
                     return true
@@ -167,7 +168,7 @@ class DhServer {
                         if (a !== b.accountId) return false
                         let matchingAccount = _.find(testAccountDetailList,x => x.accountId === b.accountId);
                         if (typeof matchingAccount === 'undefined') throw 'Cannot find account detail to match balance'
-                        if (req.query["product-category"]) {
+                        if (typeof req.query["product-category"] === 'string') {
                             if (matchingAccount.productCategory !== req.query["product-category"]) return false;
                         }
                         return true
@@ -234,16 +235,24 @@ class DhServer {
                 let consent = (<any>req as DhGatewayRequest).gatewayContext.consent;
                 let filtered = _.filter(GetTransactions(consent.secretSubjectId,req.params.accountId), t => {
                     if (t.accountId !== req.params['accountId']) return false;
-                    if (req.query["oldest-time"]) {
+                    if (typeof req.query["oldest-time"] === 'string') { // TODO validate that all query parameters appear only once - otherwise this causes weird behaviours
                         if (!t.postingDateTime) return false;
-                        if (moment(t.postingDateTime).isBefore(moment(<any>req.query["oldest-time"]))) return false;
+                        if (moment(t.postingDateTime).isBefore(moment(req.query["oldest-time"]))) return false;
                     } else {
                         if (moment(t.postingDateTime).isBefore(moment().subtract(90,'days'))) return false;
                     }
 
-                    if (req.query["newest-time"]) {
+                    if (typeof req.query["newest-time"] === 'string') {
                         if (!t.postingDateTime) return false;
-                        if (moment(t.postingDateTime).isAfter(moment(<any>req.query["newest-time"]))) return false;
+                        if (moment(t.postingDateTime).isAfter(moment(req.query["newest-time"]))) return false;
+                    }
+
+                    if (typeof req.query["min-amount"] === 'string') {
+                        if (parseFloat(t.amount) < parseFloat(req.query["min-amount"])) return false;
+                    }
+
+                    if (typeof req.query["max-amount"] === 'string') {
+                        if (parseFloat(t.amount) > parseFloat(req.query["max-amount"])) return false;
                     }
 
                     return true;
@@ -292,7 +301,7 @@ class DhServer {
 
         });
 
-        app.get('/consent-flow/:consentId', async (req, res) => {
+        app.get('/authorize/consent-flow/:consentId', async (req, res) => {
             let consentManager = container.resolve(ConsentManager);
             let consent = await consentManager.GetById(parseInt(req.params.consentId))
             if (typeof consent =='undefined') return res.status(404).send();
@@ -324,7 +333,7 @@ class DhServer {
 
         })
 
-        app.post('/consent-flow/:consentId', urlencoded(), async (req, res) => {
+        app.post('/authorize/consent-flow/:consentId', urlencoded(), async (req, res) => {
 
             let consentManager = container.resolve(ConsentManager);
             let consent = await consentManager.GetById(parseInt(req.params.consentId))
@@ -338,10 +347,47 @@ class DhServer {
                     request_id: consent.id,
                     scopes: JSON.parse(req.body.scopes)
                 })
-                return res.redirect(redirect_uri)    
+                return res.header('x-redirect-alt-location',redirect_uri).redirect(redirect_uri)    
             }
 
 
+        })
+
+        app.get('/mock.register.config', async (req,res) => {
+            let config = await this.config()
+
+            return res.json(    {
+                "brandName": "Test Data Holder 1",
+                "industry": "BANKING",
+                "legalEntity": {
+                    "legalEntityId": "legal-entity-id1",
+                    "legalEntityName": "string",
+                    "registrationNumber": "string",
+                    "registrationDate": "2019-10-24",
+                    "registeredCountry": "string",
+                    "abn": "string",
+                    "acn": "string",
+                    "arbn": "string",
+                    "industryCode": "string",
+                    "organisationType": "SOLE_TRADER"
+                },
+                "status": "ACTIVE",
+                "endpointDetail": {
+                    "version": "string",
+                    "publicBaseUri": config.FrontEndUrl,
+                    "resourceBaseUri": config.FrontEndMtlsUrl, // secure
+                    "infosecBaseUri": config.FrontEndUrl,
+                    "extensionBaseUri": "string",
+                    "websiteUri": "string"
+                },
+                "authDetails": [
+                    {
+                        "registerUType": "HYBRIDFLOW-JWKS",
+                        "jwksEndpoint": "string"
+                    }
+                ],
+                "lastUpdated": "2019-10-24T03:51:44Z"
+            })
         })
 
 

@@ -16,6 +16,7 @@ import { AdrGatewayConfig } from "../../Config";
 import { CatchPromiseRejection } from "./ErrorHandling";
 import { DefaultPathways } from "../Connectivity/Pathways";
 import { axios } from "../../../Common/Axios/axios";
+import { URL } from "url";
 
 interface DataAccessRequestParams {
     user: {

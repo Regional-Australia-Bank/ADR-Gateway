@@ -1,8 +1,10 @@
-import {httpsOverHttp} from "tunnel"
+import {httpsOverHttp,httpOverHttp,httpsOverHttps,httpOverHttps,HttpsOverHttpOptions} from "tunnel"
 import axios from "axios"
 import _ from "lodash"
-import {Agent} from "http"
+import {Agent as httpAgent}  from "http"
 import https from "https"
+import URLParse from "url-parse"
+import tls from "tls"
 
 interface MtlsOptions {
     ca?: any,
@@ -11,63 +13,122 @@ interface MtlsOptions {
     passphrase?: any
 }
 
-const tunnels:{config?:MtlsOptions, agent:Agent}[] = []
-const localHttpsAgents:{config?:MtlsOptions, agent:Agent}[] = []
+const tunnels:{config?:MtlsOptions, agents:{http:httpAgent,https:httpAgent}}[] = []
+const localAgents:{config?:MtlsOptions, agents:{https:httpAgent}}[] = []
 
-const createTunnel = (mtls?:MtlsOptions) => {
-    let match = _.find(tunnels,t => t.config?.ca == mtls?.ca && t.config?.key == mtls?.key && t.config?.cert == mtls?.cert && t.config?.passphrase == mtls?.passphrase)
-    if (match) return match.agent;
-
-    let config:any = {
-        key: mtls?.key,
-        cert: mtls?.cert,
-        ca: mtls?.ca,
-        passphrase: mtls?.passphrase
-    }
-
-    if (process.env.PROXY_URI) {
-        let proxy = {
-            host: process.env.PROXY_URI, // TODO from process.env
-            port: parseInt(process.env.PROXY_PORT || "8080"), // TODO from process.env
-            headers: {},
-        };
-        config.proxy = proxy;
-    }
-
-    const tunnel = httpsOverHttp();
-    tunnels.push({config:mtls,agent:tunnel})
-    return tunnel;
+const shallNotProxy = (url:URLParse) => {
+    const noProxyHostExp = process.env.NO_PROXY_HOST_EXP || 'localhost|127.0.0.1';
+    return (RegExp(noProxyHostExp).test(url.hostname)) 
 }
 
-const createLocalAgent = (mtls?:MtlsOptions) => {
-    let match = _.find(localHttpsAgents,t => t.config?.ca == mtls?.ca && t.config?.key == mtls?.key && t.config?.cert == mtls?.cert && t.config?.passphrase == mtls?.passphrase)
-    if (match) return match.agent;
+const getProxyOptions = () => {
+    const proxyAddr = process.env.ADR_REQUEST_PROXY;
+    if (!proxyAddr) return;
+    let proxyUrl = URLParse(proxyAddr);
+    return proxyUrl;
+}
+
+const createTunnelAgents = (proxy:URLParse,mtls?:HttpsOverHttpOptions) => {
+    let match = _.find(tunnels,t => t.config?.ca == mtls?.ca && t.config?.key == mtls?.key && t.config?.cert == mtls?.cert && t.config?.passphrase == mtls)
+    if (match) return match.agents;
+
+    let https: httpAgent;
+    let http: httpAgent;
+
+    if (proxy.protocol === "https") {
+        https = httpsOverHttps(<any>{
+            proxy: {
+                host: proxy.hostname,
+                port: parseInt(proxy.port || "3128"),
+                headers: {},
+            },
+            key: mtls?.key,
+            cert: mtls?.cert,
+            ca: mtls?.ca,        
+        });
+        http = httpOverHttps(<any>{
+            proxy: {
+                host: proxy.hostname,
+                port: parseInt(proxy.port || "3128"),
+                headers: {},
+            },
+            key: mtls?.key,
+            cert: mtls?.cert,
+            ca: mtls?.ca,        
+        });
+    } else {
+        https = httpsOverHttp(<any>{
+            proxy: {
+                host: proxy.hostname,
+                port: parseInt(proxy.port || "3128"),
+                headers: {},
+            },
+            key: mtls?.key,
+            cert: mtls?.cert,
+            ca: mtls?.ca,        
+        });
+        http = httpOverHttp(<any>{
+            proxy: {
+                host: proxy.hostname,
+                port: parseInt(proxy.port || "3128"),
+                headers: {},
+            },
+            key: mtls?.key,
+            cert: mtls?.cert,
+            ca: mtls?.ca,        
+        });
+    }
+
+
+    tunnels.push({config:mtls,agents:{https,http}})
+    return {https,http};
+}
+
+const createLocalHttpsAgent = (mtls?:MtlsOptions) => {
+    let match = _.find(localAgents,t => t.config?.ca == mtls?.ca && t.config?.key == mtls?.key && t.config?.cert == mtls?.cert && t.config?.passphrase == mtls?.passphrase)
+    if (match) return match.agents.https;
 
     const localHttpsAgent = new https.Agent(_.merge({
-        rejectUnauthorized: false // TODO move to config
     },mtls || {}))
     
-    localHttpsAgents.push({config:mtls,agent:localHttpsAgent})
+    localAgents.push({config:mtls,agents:{https:localHttpsAgent}})
     return localHttpsAgent;
 }
 
 
 const axiosClient = (() => {
-    let options = {
+    let defaultOptions = {
         proxy: false,
-        httpsAgent: createTunnel(),
-        rejectUnauthorized: false // TODO make configurable,
+        httpsAgent: createLocalHttpsAgent(),
     };
-    let client = axios.create(<any>options)
+    let client = axios.create(<any>defaultOptions)
     client.interceptors.request.use(config => {
+
         // use the https proxy for non-localhost addresses
         let mtlsConfig = <MtlsOptions>_.pick(config.httpsAgent.options,'ca','cert','key');
-        if (!((!config.url) || /^https:\/\/(localhost|127.0.0.1)/.test(config.url))) {
-            config.httpsAgent = createTunnel(mtlsConfig);    
+
+        if (mtlsConfig.key && mtlsConfig.cert) {
+            // Do not trust tls.rootCertificates
         } else {
-            config.httpsAgent = createLocalAgent(mtlsConfig);
+            // Add tls.rootCertificates to the ca bundle
+            mtlsConfig.ca = _.filter(_.concat(mtlsConfig.ca,tls.rootCertificates))
+            // Update the original agent
+            config.httpsAgent.options.ca = mtlsConfig.ca;
         }
+
+        let url = URLParse(config.url)
+        if (shallNotProxy(url)) return config;
+
+
+        let proxyOptions = getProxyOptions();
+        if (!proxyOptions) return config;
+        
+        // Create a proxy tunnel and return the respective agents
+        let {http,https} = createTunnelAgents(proxyOptions,mtlsConfig);
+        config.httpAgent = http;
+        config.httpsAgent = https;
         return config;
+
     })
     return client;
 })()

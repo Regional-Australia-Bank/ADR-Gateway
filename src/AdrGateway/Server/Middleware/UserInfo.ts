@@ -14,6 +14,7 @@ import { DefaultPathways } from "../Connectivity/Pathways";
 import { DataHolderRegistration } from "../../Entities/DataHolderRegistration";
 import { DataholderOidcResponse } from "../Connectivity/Neurons/DataholderRegistration";
 import { axios } from "../../../Common/Axios/axios";
+import { URL } from "url";
 
 interface UserInfoRequestParams {
     consentId: number

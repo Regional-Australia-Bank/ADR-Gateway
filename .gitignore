@@ -1,10 +1,10 @@
 node_modules
 .local-env
-out
+dist
 log.txt
 package-lock.json
 tmp
 mochawesome-report
 *.zip
 .evidence
-*.log
+FileWriter.log

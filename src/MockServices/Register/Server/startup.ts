@@ -14,14 +14,14 @@ export namespace MockRegisterServerStartup {
     export async function Start(configFn:() => Promise<MockRegisterConfig>,clientProvider:(clientId:string) => Promise<Client>) {
         const config = await configFn()
 
-        let jwks = GetJwks(config)
+        let jwks = config.Jwks
 
         let port = config.Port;
 
-        let mtlsConfig = (await configFn()).mtls;
+        let mtlsConfig = (await configFn()).LiveRegisterProxy.mtls;
 
         let cert:ClientCertificateInjector;
-        if (mtlsConfig) {
+        if (mtlsConfig?.cert) {
             cert = new DefaultClientCertificateInjector(mtlsConfig)
         } else {
             cert = new DevClientCertificateInjector()
@@ -29,20 +29,9 @@ export namespace MockRegisterServerStartup {
 
         const pathwaysConfigFn = async () => {
             const config = await configFn();
-            let adrConnectivityConfig:AdrConnectivityConfig = {
-                Jwks: config.TestAdr.Jwks,
-                mtls: config.mtls,
-                RegisterBaseUris: {
-                    Oidc: "https://api.int.cdr.gov.au/idp",
-                    Resource: "https://api.int.cdr.gov.au/cdr-register",
-                    SecureResource: "https://secure.api.int.cdr.gov.au/cdr-register"
-                },
-                AdrClients: <any>undefined,
-                DataRecipientApplication: <any>{
-                    BrandId: config.TestAdr.BrandId,
-                    ProductId: config.TestAdr.ProductId
-                }
-            };
+
+            // A stub configuration to enable the Mock Register to connect to a live register
+            let adrConnectivityConfig:AdrConnectivityConfig = config.LiveRegisterProxy
             return adrConnectivityConfig
         }
         let logger = <winston.Logger>winston.createLogger({

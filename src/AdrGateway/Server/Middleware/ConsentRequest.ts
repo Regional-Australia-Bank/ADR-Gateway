@@ -36,6 +36,8 @@ const bodySchema:Schema = {
         }
     },
     additionalClaims: { },
+    dataholderBrandId: { isString: { errorMessage: "dataholderBrandId must be a string" }, isLength: {options: {min: 5}, errorMessage: "dataholderBrandId must be at least length 5"} },
+    productKey: { isString: { errorMessage: "productKey must be a string" }, isLength: {options: {min: 1}, errorMessage: "productKey must be at least length 1"} },
     userId: { isString: { errorMessage: "userId must be a string" }, isLength: {options: {min: 5}, errorMessage: "userId must be at least length 5"} },
     systemId: { isString: { errorMessage: "systemId must be a string" }, isLength: {options: {min: 1}, errorMessage: "systemId must be at least length 1"} },
     state: { isString: { errorMessage: "state must be a string" }, isLength: {options: {min: 5}, errorMessage: "state must be at least length 5"} },
@@ -44,7 +46,6 @@ const bodySchema:Schema = {
 };
 
 const querySchema:Schema = {
-    dataholderBrandId: { isString: { errorMessage: "dataholderBrandId must be a string" }, isLength: {options: {min: 5}, errorMessage: "dataholderBrandId must be at least length 5"} },
 };
 
 
@@ -104,7 +105,7 @@ class ConsentRequestMiddleware {
     }
 
     RequestConsent = async (p: ConsentRequestParams) =>{
-        this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId}`);
+        this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.productKey}`);
         let requestor = this.pathways.GetAuthorizationRequest(p);
         return (await requestor.Evaluate())
 

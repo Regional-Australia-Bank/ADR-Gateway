@@ -1,6 +1,7 @@
 import winston = require("winston");
+import * as Transport from 'winston-transport';
 import { container } from "../AdrGwContainer";
-import { AdrGatewayConfig } from "../Config";
+import { AdrGatewayConfig, AdrConnectivityConfig } from "../Config";
 import * as fs from "fs"
 import { JWKS } from "jose";
 import { Connection, createConnection, EntitySchema, BaseEntity } from "typeorm";
@@ -13,26 +14,35 @@ import { SelfHealingDataHolderMetadataProvider } from "../Services/DataholderMet
 export const EntityDefaults = {
     type: "sqlite",
     database: ":memory:",
-    entityPrefix: process.env.ENTITY_PREFIX || "adr_",
+    entityPrefix: "adr_",
     synchronize: true,
     entities: [ConsentRequestLog, DataHolderRegistration]
 };
 
-async function RegisterDependencies(configFn:() => Promise<AdrGatewayConfig>, db?: Promise<Connection>): Promise<void> {
+async function RegisterDependencies(configFn:() => Promise<AdrConnectivityConfig>, db?: Promise<Connection>): Promise<void> {
     let config = await configFn();
+
+    const level = process.env.LOG_LEVEL || "warning";
+
+    const transports:Transport[] = [
+        new winston.transports.Console({
+            handleExceptions: true,
+            level
+        }),
+    ];
+    if (process.env.LOG_FILE) {
+        transports.push(new winston.transports.File({ filename: process.env.LOG_FILE, level }))
+    }
+
     const logger = winston.createLogger({
-        transports: [
-            new winston.transports.Console({
-                handleExceptions: true
-            }),
-            new winston.transports.File({ filename: process.env.LOG_FILE || "log.txt", level: process.env.LOG_LEVEL || "warning" })
-        ],
+        transports,
         exitOnError: false,
         format: winston.format.combine(
             winston.format.timestamp(),
-            winston.format.prettyPrint()
+            winston.format.json()
         )
     });
+
 
     let connection = db || (() => {
         let options = _.merge(EntityDefaults, config.Database);
@@ -51,7 +61,7 @@ async function RegisterDependencies(configFn:() => Promise<AdrGatewayConfig>, db
     container.register("DataHolderMetadataProvider", { useClass: SelfHealingDataHolderMetadataProvider })
 
     // TODO replace the DevClientCertificate injector headers with actual certificate made with node-forge
-    if (config.mtls) {
+    if (config.mtls?.ca) {
         container.register("ClientCertificateInjector", {
             useValue: new DefaultClientCertificateInjector(
                 config.mtls

@@ -4,6 +4,7 @@ import * as _ from "lodash";
 import { In, Any } from "typeorm";
 import { promises } from "dns";
 import { EventEmitter } from "typeorm/platform/PlatformTools";
+import {inspect} from "util"
 
 type ExtractOutput<T> = T extends AbstractNeuron<any,any> ? T['output']:never;
 type ExtractTupleOfNeuronOutputs<T> = { [K in keyof T]: ExtractOutput<T[K]> }
@@ -17,6 +18,15 @@ interface InputOutputMap {
     output:any
 }
 type NeuronwiseIoCollection = {neuron:AbstractNeuron<any,any>,ioMap:InputOutputMap[]}[]
+
+const sanitizeError = (err:any) => {
+    if (err.isAxiosError) {
+        let sanitized = inspect(_.pick(err,'config','request','response','data'));
+        return sanitized;
+    } else {
+        return err;
+    }
+}
 
 export const NO_CACHE_LENGTH = 10000000;
 
@@ -836,8 +846,8 @@ export class CompoundNeuron<Input,Output> extends AbstractNeuron<Input,Output> {
             this.logger.debug("CompoundNeuron: Evaluated",{cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, output})
             return output;
         },error => {
-            this.logger.error("CompoundNeuron: Evaluation failed",{cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, error})
-            return Promise.reject(error);
+            this.logger.error("CompoundNeuron: Evaluation failed",{cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, error: sanitizeError(error)})
+            return Promise.reject(`Evaluation failed for ${this.pathwayName} (id: ${this.id})`);
         });
 
         return await result;
@@ -870,7 +880,7 @@ export class CompoundNeuron<Input,Output> extends AbstractNeuron<Input,Output> {
                     // console.log(JSON.stringify(e)) // TODO remove console reference
                 } else {
                     this.logger.error("CompoundNeuron: Unexpected error",{neuronId:this.id,name: this.pathwayName, cacheIgnoranceLength})
-                    throw e;
+                    // We will not throw e, but allow healing to continue
                 }
             }
         }

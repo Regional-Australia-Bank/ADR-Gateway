@@ -4,12 +4,23 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "npm run build",
+            "label": "Build",
             "type": "shell",
-            "command": "npm run build",
+            "command": "npm run build-clean",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Docker build",
+            "type": "shell",
+            "command": "npm run docker-build",
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
-        }    ]
+        }
+    ]
 }

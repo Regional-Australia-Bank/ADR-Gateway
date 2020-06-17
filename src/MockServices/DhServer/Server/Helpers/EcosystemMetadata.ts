@@ -1,9 +1,11 @@
 import { Dictionary } from "tsyringe/dist/typings/types";
 import { JWK, JWKS } from "jose";
 import * as _ from "lodash"
-import { injectable } from "tsyringe";
+import { injectable, inject } from "tsyringe";
 import { ClientRegistrationManager } from "../../Entities/ClientRegistration";
 import { axios } from "../../../../Common/Axios/axios";
+import { DhServerConfig } from "../Config";
+import { ClientCertificateInjector } from "../../../../AdrGateway/Services/ClientCertificateInjection";
 
 interface EcosystemMetadata {
     getDataRecipient(clientId: string):Promise<DataRecipient>;
@@ -24,10 +26,9 @@ interface DataRecipient {
 class DefaultEcosystemMetadata implements EcosystemMetadata {
 
     constructor(
-        private clientRegistrationManager: ClientRegistrationManager
-    ) {
-
-    }
+        private clientRegistrationManager: ClientRegistrationManager,
+        @inject("ClientCertificateInjector") private mtls: ClientCertificateInjector,
+    ) { }
 
   
     getDataRecipient = async (clientId: string):Promise<DataRecipient> => {
@@ -41,7 +42,7 @@ class DefaultEcosystemMetadata implements EcosystemMetadata {
                 clientId: clientReg.clientId,
                 jwks: clientReg.jwks_uri,
                 redirectUris: clientReg.redirectUris(),
-            })
+            },this.mtls)
         }
     }
 
@@ -49,7 +50,7 @@ class DefaultEcosystemMetadata implements EcosystemMetadata {
 
 class DefaultDataRecipient implements DataRecipient {
     getJwks = async (): Promise<JWKS.KeyStore> => {
-        let jwks = await (await axios.get(this.jwks,{responseType:"json"})).data;
+        let jwks = await (await axios.get(this.jwks,this.mtls.injectCa({responseType:"json"}))).data;
         return JWKS.asKeyStore(jwks);
     }
     getSignatureVerificationKey = async (): Promise<JWK.Key> => {
@@ -65,7 +66,7 @@ class DefaultDataRecipient implements DataRecipient {
     jwks: string;
     redirectUris: string[];
 
-    constructor(options: Pick<DataRecipient,'clientId'|'jwks'|'redirectUris'|'audUri'>) {
+    constructor(options: Pick<DataRecipient,'clientId'|'jwks'|'redirectUris'|'audUri'>, private mtls: ClientCertificateInjector) {
         this.clientId = options.clientId,
         this.jwks = options.jwks
         this.redirectUris = options.redirectUris

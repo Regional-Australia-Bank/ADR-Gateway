@@ -38,6 +38,6 @@ export class AccessToken {
 export class RegisterTokenNeuron extends Neuron<[AdrConnectivityConfig,JWKS.KeyStore,RegisterOidcResponse,SoftwareProductStatus],AccessToken> {
     constructor(private cert:ClientCertificateInjector){super()}
 
-    evaluator = ([e,j,r,s]:[AdrConnectivityConfig,JWKS.KeyStore,RegisterOidcResponse,SoftwareProductStatus]) => GetAccessToken(this.cert,j,r.token_endpoint,e.DataRecipientApplication.BrandId)
+    evaluator = ([e,j,r,s]:[AdrConnectivityConfig,JWKS.KeyStore,RegisterOidcResponse,SoftwareProductStatus]) => GetAccessToken(this.cert,j,r.token_endpoint,e.BrandId)
 
 }

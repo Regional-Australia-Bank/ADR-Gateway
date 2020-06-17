@@ -2,7 +2,7 @@ import _ from "lodash"
 
 const OriginalDataRecipients = [
     {
-        "legalEntityId": "test-data-recipient",
+        "legalEntityId": "test-legal-entity-id",
         "legalEntityName": "Test Data Recipient 1",
         "industry": "BANKING",
         "dataRecipientBrands": [
@@ -19,15 +19,15 @@ const OriginalDataRecipients = [
                         "status": "ACTIVE",
                         "ssaParticulars": {
                             "client_description": "A mock software product for testing SSA",
-                            "client_uri": "https://www.mockcompany.com.au",
+                            "client_uri": "https://example.com",
                             "redirect_uris": [
-                                "https://www.mockcompany.com.au/redirects/redirect1",
-                                "https://www.mockcompany.com.au/redirects/redirect2"
+                                "https://example.com",
+                                "https://example.com/redirect2"
                             ],
-                            "tos_uri": "https://www.mockcompany.com.au/tos.html",
-                            "policy_uri": "https://www.mockcompany.com.au/policy.html",
-                            "jwks_uri": "https://localhost:9101/jwks",
-                            "revocation_uri": "https://www.mockcompany.com.au/revocation",
+                            "tos_uri": "https://example.com/tos.html",
+                            "policy_uri": "https://example.com/policy.html",
+                            "jwks_uri": "https://example.com/jwks",
+                            "revocation_uri": "https://example.com/revocation",
                             "scope": "bank:accounts.basic:read bank:accounts.detail:read bank:transactions:read bank:payees:read bank:regular_payments:read common:customer.basic:read common:customer.detail:read cdr:registration"
                         }
                     }
@@ -44,15 +44,18 @@ const OriginalDataRecipients = [
 
 export let DataRecipients = _.cloneDeep(OriginalDataRecipients)
 
-
-export const SetMockDrStatus = (
-    legalEntity: "ACTIVE" | "SUSPENDED" | "SURRENDERED" | "REVOKED",
-    brand: "ACTIVE" | "REMOVED" | "INACTIVE",
-    product: "ACTIVE" | "REMOVED" | "INACTIVE"
-) => {
-    let drs = _.cloneDeep(OriginalDataRecipients)
-    drs[0].status = legalEntity;
-    drs[0].dataRecipientBrands[0].status = brand,
-    drs[0].dataRecipientBrands[0].softwareProducts[0].status = product
-    DataRecipients = drs
+export const TestDataRecipientApplication = {
+    BrandId: DataRecipients[0].dataRecipientBrands[0].dataRecipientBrandId,
+    LegalEntityId: DataRecipients[0].legalEntityId,
+    ProductId: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].softwareProductId,
+    redirect_uris: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.redirect_uris,
+    standardsVersion: 1,
+    standardsVersionMinimum: 1,
+    uris: {
+        jwks_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.jwks_uri,
+        logo_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].logoUri,
+        policy_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.policy_uri,
+        revocation_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.revocation_uri,
+        tos_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.tos_uri
+    }
 }

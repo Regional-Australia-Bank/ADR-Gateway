@@ -1,6 +1,6 @@
 import forge from "node-forge"
 import _ from "lodash"
-import { attrArrayMap, createCertificate } from "./PKI.util";
+import { attrArrayMap, createCertificate, prng } from "./PKI.util";
 import uuid from "uuid";
 
 let PKI = forge.pki
@@ -76,7 +76,7 @@ class CertificateAuthority {
     ca_cert_pem:string;
 
     constructor () {
-        this.ca_keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
+        this.ca_keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001, prng:prng("CaPair")});
         this.ca_attrs = attrArrayMap({
             commonName: "Mock Register CA",
             countryName: "Australia",
@@ -104,7 +104,7 @@ class CertificateAuthority {
 
 
     ServerPair = async ():Promise<KeyAndCert> => {
-        let server_keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
+        let server_keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001/*, prng:prng("ServerPair")*/});
 
         let server_attrs = attrArrayMap({
             commonName: "localhost",
@@ -123,6 +123,10 @@ class CertificateAuthority {
           altNames: [{
             type: 2,
             value: 'localhost'
+          },
+          {
+            type: 2,
+            value: process.env.MOCK_INFRA_ALT_NAME || 'mock-infra'
           }]
         });
 
@@ -138,7 +142,7 @@ class CertificateAuthority {
     }
 
     ClientPair = async ():Promise<KeyAndCert> => {
-        let client_keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
+        let client_keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001 /*, prng:prng("ClientPair")*/});
 
         let server_attrs = attrArrayMap({
             commonName: "localhost",

@@ -77,7 +77,7 @@ export class ConsentNewAccessTokenNeuron extends Neuron<[JWKS.KeyStore,Dataholde
     
         // id_token can only be relied upon to be supplied if grant_type == 'authorization_code'
         if (this.params.grant_type == 'authorization_code' || typeof responseObject.id_token == 'string') {
-            newClaims = await this.pw.ValidIdTokenCode(registration.dataholderBrandId,responseObject.id_token).GetWithHealing() // Move to Pathways.ts
+            newClaims = await this.pw.ValidIdTokenCode(registration.softwareProductId,registration.dataholderBrandId,responseObject.id_token).GetWithHealing() // Move to Pathways.ts
         } else {
             // otherwise, we need to get claims from user_info endpoint
             newClaims = await this.pw.ConsentUserInfo(this.consent).GetWithHealing() // Move to Pathways.ts

@@ -13,6 +13,7 @@ const oidc_fapi_hash = (input: string):string => {
 }
 
 export const CertsFromFilesOrStrings = <T extends string|string[]>(s:T):(T extends string?Buffer:Buffer[]) => {
+    if (typeof s === 'undefined') return undefined;
     let a: string[];
     if (!Array.isArray(s)) {
         a = [<any>s]

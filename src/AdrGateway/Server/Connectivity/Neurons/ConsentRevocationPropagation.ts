@@ -43,7 +43,7 @@ export class ConsentRevocationPropagationNeuron extends Neuron<[JWKS.KeyStore,Da
                 "token":this.consent.refreshToken,
                 "client_id":registration.clientId,
                 "client_assertion_type":"urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                "client_assertion": CreateAssertion(registration.clientId,dhoidc.token_endpoint,drJwks),
+                "client_assertion": CreateAssertion(registration.clientId,dhoidc.revocation_endpoint,drJwks),
             })
         }
     

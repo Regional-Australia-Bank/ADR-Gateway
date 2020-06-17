@@ -15,7 +15,6 @@ interface ConsentResult extends TestActionResult {
     consent?: ConsentRequestLog;
 }
 
-
 export interface NewConsentParams {
     dataholderBrandId: string
     cdrScopes: string[],

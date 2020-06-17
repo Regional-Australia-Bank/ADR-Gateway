@@ -13,12 +13,13 @@ import { CompoundNeuron } from "../../Common/Connectivity/Neuron";
 import { exec } from "child_process";
 import { JWT } from "jose";
 import urljoin from "url-join";
-import { AdrConnectivityConfig } from "../../AdrGateway/Config";
+import { AdrConnectivityConfig, SoftwareProductConnectivityConfig } from "../../AdrGateway/Config";
 import { AttachExecutionListener } from "./Helpers/NeuronExecutionListener";
 import { axios } from "../../Common/Axios/axios";
 import moment from "moment";
 import { SwitchIdTokenAlgs } from "./Helpers/SwitchIdTokenAlgs";
 import { RegisterGetSSANeuron } from "../../AdrGateway/Server/Connectivity/Neurons/RegisterDataholders";
+import { SoftwareProductConfig } from "../../AdrGateway/Server/Connectivity/Neurons/SoftwareProductConfig";
 
 const NO_CACHE_LENGTH = 10000000;
 
@@ -174,7 +175,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 if (typeof regManager == 'undefined') throw 'Registration manager is undefined';
                 let adrConfig = (await environment.GetServiceDefinition.AdrGateway());
                 let dataholderId = environment.Config.SystemUnderTest.Dataholder;
-                let reg = await regManager.GetActiveRegistrationByIds(adrConfig.DataRecipientApplication.ProductId,dataholderId)
+                let reg = await regManager.GetActiveRegistrationByIds((await ctx.environment.OnlySoftwareProductConfig()).ProductId,dataholderId)
                 return reg;
             },"Registration")
             .Then(async ctx => {
@@ -192,7 +193,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             })
             .When(SetValue,async (ctx) => {
                 let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration");
-                let at = await environment.TestServices.adrGateway?.connectivity.DhRegAccessToken(reg.dataholderBrandId).Evaluate()
+                let at = await environment.TestServices.adrGateway?.connectivity.DhRegAccessToken(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
                 return at;
             },"Token")
             .Then(async ctx => {
@@ -210,7 +211,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             })
             .When(SetValue,async (ctx) => {
                 let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration");
-                let updatedReg = await environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(reg.dataholderBrandId).Evaluate()
+                let updatedReg = await environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
                 return updatedReg;
             },"UpdatedRegistration")
             .Then(async ctx => {
@@ -231,20 +232,15 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
 
                 // add a new redirectUrl
-                let configFn = environment.TestServices.adrGateway.connectivity.configFn;
+                let evaluator = SoftwareProductConfig.prototype.evaluator;
 
-                environment.TestServices.adrGateway.connectivity.configFn = async ():Promise<AdrConnectivityConfig> => {
-                    let origConfig = _.clone(await configFn());
-                    let newDataRecipientApplication = _.cloneDeep(origConfig.DataRecipientApplication);
-                    newDataRecipientApplication.redirect_uris.push(urljoin(newDataRecipientApplication.redirect_uris[0],"unregistered-path"));
+                let softwareProductConfigFn = environment.GetServiceDefinition.SoftwareProduct;
 
-                    return {
-                        AdrClients:  origConfig.AdrClients,
-                        DataRecipientApplication: newDataRecipientApplication,
-                        RegisterBaseUris: origConfig.RegisterBaseUris,
-                        Jwks: origConfig.Jwks,
-                        mtls: origConfig.mtls
-                    }
+                environment.GetServiceDefinition.SoftwareProduct = async () => {
+                    let orig = await softwareProductConfigFn();
+                    orig = _.cloneDeep(orig);
+                    orig.redirect_uris.push(urljoin(orig.redirect_uris[0],"unregistered-path"));
+                    return orig;
                 }
 
                 // Create a new registration using the Neuron Pathways
@@ -252,15 +248,15 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 console.log(`Test new client registration with dataholder ${dataholder}`)
 
                 // Expect the NewClientRegistrationNeuron to be evaluated
-
-                let pathway = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration(dataholder);
+                let productId = (await ctx.environment.OnlySoftwareProduct());
+                let pathway = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration(productId,dataholder);
 
                 try {
                     await pathway.Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH});
                 } catch (e) {
                 } finally {
-                    // reinstate the original configFn
-                    environment.TestServices.adrGateway.connectivity.configFn = configFn
+                    // reinstate the original evaluator
+                    environment.GetServiceDefinition.SoftwareProduct = softwareProductConfigFn
                 }
 
             },"NewRegistrationExecution")
@@ -296,7 +292,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
                 // Expect the NewClientRegistrationNeuron to be evaluated
                
-                let pathway = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration(dataholder);
+                let pathway = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration((await ctx.environment.OnlySoftwareProduct()),dataholder);
                 let execution = AttachExecutionListener(pathway, NewClientRegistrationNeuron);
 
                 try {
@@ -374,7 +370,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
                 console.log(`Test new client registration with dataholder ${dataholder}`)
 
-                let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(dataholder);
+                let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 await pathway.Evaluate()
                 let execution = AttachExecutionListener(pathway, CheckAndUpdateClientRegistrationNeuron);
 
@@ -450,7 +446,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 })
 
                 try {
-                    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(dataholder);
+                    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 
                     await pathway.Evaluate()
                 } catch (err) {
@@ -496,7 +492,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 })
 
                 try {
-                    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(dataholder);
+                    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 
                     await pathway.Evaluate()
                 } catch (err) {
@@ -516,6 +512,67 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
             },300)
             
+        Scenario($ => it.apply(this,$('TS_094')), undefined, 'DH rejects registration request for invalid client metadata.')
+            .Given('the value of one of the client metadata fields is invalid')
+            .Precondition("Client ID determined",async (ctx) => {
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                if (typeof reg == 'undefined') {
+                    throw 'Cannot proceed'
+                }
+            })
+            .When(SetValue,async (ctx) => {
+
+                let configFn = environment.TestServices.adrGateway.connectivity.configFn;
+
+                try {
+                    environment.TestServices.adrGateway.connectivity.configFn = async ():Promise<AdrConnectivityConfig> => {
+                        let origConfig = _.clone(await configFn());
+                
+                        return {
+                            BrandId: origConfig.BrandId,
+                            LegalEntityId: origConfig.LegalEntityId,
+                            SoftwareProductConfigUris: origConfig.SoftwareProductConfigUris,
+                            DefaultClaims: origConfig.DefaultClaims,
+                            Database: origConfig.Database,                            
+                            RegisterBaseUris: origConfig.RegisterBaseUris,
+                            Jwks: origConfig.Jwks,
+                            mtls: origConfig.mtls,
+                            Crypto: {
+                                IDTokenSignedResponseAlg: "RS256"
+                            }
+                        }
+                    }
+    
+                    let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                    if (!reg) throw 'Asserting that reg is not undefined'
+                    let dataholder = environment.Config.SystemUnderTest.Dataholder;
+                    let pw = environment.TestServices.adrGateway?.connectivity;
+                    if (!pw) throw 'Asserting that pw is not undefined'
+                    
+                    let productKey = await ctx.environment.OnlySoftwareProduct();
+                    let productConfig = await ctx.environment.OnlySoftwareProductConfig();
+                    let dhOidc = await pw.DataHolderOidc(dataholder).Evaluate();
+                    let jwks = await pw.DataRecipientJwks().Evaluate();
+                    let config = await pw.AdrConnectivityConfig().Evaluate();
+                    let accessToken = await pw.DhRegAccessToken(productKey,dataholder).Evaluate();
+                    let ssa = await pw.SoftwareStatementAssertion(productKey).Evaluate();
+    
+                    await UpdateRegistrationAtDataholder(reg?.clientId,ssa,dhOidc,config,productConfig,jwks,accessToken,pw.cert).catch(err => {
+                        
+                    });
+    
+                } finally {
+                    environment.TestServices.adrGateway.connectivity.configFn = configFn
+                }
+                return;
+            },"UpdateExecution")
+            .Then(async ctx => {
+                await ctx.GetValue("UpdateExecution");
+                let registrationHttpRequest = ctx.GetOnlyHttpRequest("PUT",/register\/[^\/]+$/);
+
+                expect([401,400]).to.include(registrationHttpRequest.response?.status);
+
+            },300)
         Scenario($ => it.apply(this,$('TS_095')), undefined, 'DR sends an expired SSA.')
             .Given('Existing client ID')
             .Precondition("Client ID determined and SSA is expired",async (ctx) => {
@@ -530,7 +587,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     old_ssa = await environment.GetPersistedValue("Old SSA")
                 } catch (e) {
                     console.log("Getting an SSA")
-                    let ssa = await environment.TestServices.adrGateway?.connectivity.SoftwareStatementAssertion().Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH})
+                    let ssa = await environment.TestServices.adrGateway?.connectivity.SoftwareStatementAssertion(await ctx.environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH})
                     if (!ssa) throw 'Failed to get an SSA'
                     await environment.PersistValue("Old SSA",ssa);
                     console.log(`Received SSA: ${ssa}`);
@@ -558,11 +615,14 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 let dhOidc = await pw.DataHolderOidc(dataholder).Evaluate();
                 let jwks = await pw.DataRecipientJwks().Evaluate();
                 let config = await pw.AdrConnectivityConfig().Evaluate();
-                let accessToken = await pw.DhRegAccessToken(dataholder).Evaluate();
+                let productKey = await ctx.environment.OnlySoftwareProduct();
+                let productConfig = await ctx.environment.OnlySoftwareProductConfig();
+
+                let accessToken = await pw.DhRegAccessToken(productKey,dataholder).Evaluate();
                 console.log(`Expired SSA: ${old_ssa}`);
 
                 try {
-                    await UpdateRegistrationAtDataholder(reg?.clientId,old_ssa,dhOidc,config,jwks,accessToken,pw.cert);
+                    await UpdateRegistrationAtDataholder(reg?.clientId,old_ssa,dhOidc,config,productConfig,jwks,accessToken,pw.cert);
                 } catch {
                 }
 

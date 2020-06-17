@@ -45,7 +45,7 @@ export interface PuppeteerConfig {
 }
 
 interface ConsentConfirmationOptions{
-    username?:string,
+    username:string,
     checkboxSelections?: string[]
 }
 
@@ -54,7 +54,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
 
     public Confirm = async (params: {redirectUrl: string, consentId: number, context: TestContext}) => {
         let tries:number = 0;
-        for (let tries = 1; tries <= 3; tries++) {
+        for (let tries = 1; tries <= 1; tries++) {
             try {
                 return await this.Execute(params);
             } catch (err) {
@@ -66,7 +66,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
 
     private Execute = async (params: {redirectUrl: string, consentId: number, context: TestContext}, consentOptions?:ConsentConfirmationOptions) => {
         
-        const AUTH_FLOW_COMPLETED_SELECTOR = 'window.__adrE2ETestSuite__authFlowCompleted'
+        const AUTH_FLOW_COMPLETED_SELECTOR = 'window.__adr__authFlowCompleted'
 
         let preOtpOut:any = undefined;
 
@@ -118,7 +118,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
             if (typeof consentOptions == 'undefined')
             {
                 options = {
-                    username: params.context.environment.Config.TestData?.DefaultCustomerId
+                    username: params.context.environment.Config.TestData?.DefaultUsername || "no-username"
                 }
             } else {
                 options = _.clone(consentOptions);
@@ -144,13 +144,11 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
 
                 let authFilled = authIdForm.then(PreOtpReceive).then(async () => {
                     // type the username
-                    if (options.username) {
-                        const username = (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.auth.id})`,{timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
-                        if (username) await username.type(options.username);
-        
-                        const authButton =  (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.auth.id_button})`,{timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
-                        if (authButton) await authButton.click();    
-                    }
+                    const username = (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.auth.id})`,{timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
+                    if (username) await username.type(options.username);
+    
+                    const authButton =  (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.auth.id_button})`,{timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
+                    if (authButton) await authButton.click();
                 }).then(OtpReceive).then((received) => {
                     otp = received
                 })
@@ -220,29 +218,30 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                             throw 'hash is not a string'
                         }
                     } catch (e) {
-                        console.log('Hmmm AUTH_FLOW_COMPLETED_SELECTOR')
+                        console.log('AUTH_FLOW_COMPLETED_SELECTOR')
                         reject(e)
                     }
                 })
 
-                let unredirectableErrorResult:Promise<{unredirectable:true}> = new Promise(async (resolve,reject) => {
-                    try {
-                        if (selectors.unredirectableMatch?.waitSelectors && selectors.unredirectableMatch.waitSelectors.length > 0) {
-                            const unredirectableMatch = await Promise.all(_.map(selectors.unredirectableMatch?.waitSelectors,sel => page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${sel})`,{timeout:MAX_CONSENT_FLOW_DURATION-10})))
-                            resolve({unredirectable:true})    
-                        } else {
-                            reject('No unredirectableMatch.waitSelectors')
-                        }
-                    } catch(e) {
-                        reject(e)
-                    }
+                if (!(selectors.unredirectableMatch?.waitSelectors && selectors.unredirectableMatch.waitSelectors.length > 0)) {
+                    throw 'No unredirectableMatch.waitSelectors'
+                }
+                let unredirectableErrorResult:Promise<{unredirectable:true}> = new Promise((resolve,reject) => {
+                    const unredirectableMatch = Promise.all(_.map(selectors.unredirectableMatch?.waitSelectors,sel => page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${sel})`,{timeout:MAX_CONSENT_FLOW_DURATION-10})))
+                    unredirectableMatch.then(() => {resolve({unredirectable:true})}).catch(reject)
                 })
 
                 waitPromises = [authFilled, otpFilled, accountsSelected, consentConfirmed, oauthFlowResult,unredirectableErrorResult]
-                let softUnredirecable:Promise<{unredirectable:true}> = new Promise(resolve => unredirectableErrorResult.then(resolve))
-                return await Promise.race([
-                    oauthFlowResult,softUnredirecable
-                ]);
+
+                let race = new Promise((resolve) => {
+                    oauthFlowResult.then(resolve);
+                    unredirectableErrorResult.then(resolve).catch(err => {
+                        // occasionally the unredirectableErrorResult waiter may throw an error because document.body is null sometime during tear-down. Just ignore it.
+                        console.error(err);
+                    });
+                })
+
+                return await race;
 
             }).then(async (result:string|{unredirectable:true}) => {
                 if (typeof result === 'string') {
@@ -253,7 +252,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                         state:string
                         code?:string
                         id_token?:string
-                    } = qs.parse(qs_encoded);
+                    } = <any>qs.parse(qs_encoded);
     
                     // return the OAuthResponse directly if there is an oAuth error
                     if (!(typeof parts.code == 'string' && typeof parts.id_token == 'string'))
@@ -268,12 +267,12 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                     // otherwise, finalise the consent on the client side
                     let url = urljoin(params.context.environment.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",params.consentId.toString())
     
-                    let response = await axios.request({
+                    let response = await axios.request(params.context.environment.Util.TlsAgent({
                         method:"patch",
                         url,
                         data: parts,
                         responseType: "json"
-                    })
+                    }))
     
                     // if scope was not finalised properly, throw an error
                     if (!response.data.scopesFulfilled) {

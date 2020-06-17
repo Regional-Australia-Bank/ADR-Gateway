@@ -18,8 +18,7 @@ class OidcMetadataResolver {
     ) {}
 
     getEndpoints = async (dataholder:DataholderOidcMetadata): Promise<OIDCResponse> => {
-        let options = this.clientCertificateInjector.inject({method:"GET",url:dataholder.oidcEndpoint,responseType:"json"});
-        return await (await axios.request(options)).data;
+        return await (await axios.request(this.clientCertificateInjector.injectCa({method:"GET",url:dataholder.oidcEndpoint,responseType:"json"}))).data;
     }
 
     getIssuerIdentifier = async (dataholder:DataholderOidcMetadata) => {

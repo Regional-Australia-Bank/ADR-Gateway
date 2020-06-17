@@ -1,10 +1,12 @@
 import { EndToEndTestingConfig } from "../Environments";
 import { GenerateDrJwks, GenerateRegisterJwks, GenerateDhJwks } from "../../../Common/Init/Jwks";
 import { E2ETestEnvironment } from "../Framework/E2ETestEnvironment";
-import { DataRecipients } from "../../../MockServices/Register/MockData/DataRecipients";
+import { DataRecipients, TestDataRecipientApplication } from "../../../MockServices/Register/MockData/DataRecipients";
 import { DefaultOIDCConfiguration } from "../../../MockServices/DhServer/Server/Config";
 import _ from "lodash"
 import { TestPKI } from "./PKI";
+import { AdrConnectivityConfig } from "../../../AdrGateway/Config";
+import { MockSoftwareProductConfig } from "../../../MockServices/SoftwareProduct/Server/Config";
 
 const getPort = require('get-port')
 
@@ -20,6 +22,26 @@ const DoOnce = <T>(fn:() => T) => {
 }
 
 TestPKI.TestConfig()
+
+const TestAdrConnectivityConfig = async (env:E2ETestEnvironment):Promise<AdrConnectivityConfig> => ({
+    Jwks: `http://localhost:${env.TestServices.adrJwks.port}/private.jwks`,
+    LegalEntityId: TestDataRecipientApplication.LegalEntityId,
+    BrandId: TestDataRecipientApplication.BrandId,
+    RegisterBaseUris: {
+        Oidc: env.SystemUnderTest.Register().DiscoveryUri,
+        Resource: env.SystemUnderTest.Register().PublicUri,
+        SecureResource: env.SystemUnderTest.Register().SecureUri
+    },
+    SoftwareProductConfigUris: {
+        sandbox: `http://localhost:${env.TestServices.softwareProduct.port}/software.product.config`
+    },
+    mtls: {
+        key: (await TestPKI.TestConfig()).client.key,
+        cert: (await TestPKI.TestConfig()).client.certChain,
+        ca: (await TestPKI.TestConfig()).caCert
+    }
+
+})
 
 export class InternalTestConfig {
     static Configure = () => {
@@ -84,18 +106,23 @@ export class InternalTestConfig {
             },
             TestServiceDefinitions: { // Service Definition paramaterized by 
                 // AdrGateway: true,
-                AdrServer: async (env) => ({
-                    Endpoints:{
-                        Revocation:"https://localhost:9102/revoke"
-                    },
-                    Jwks: GenerateDrJwks(),
-                    Port: await getPort()
-                }),
+                AdrServer: async (env) => (_.merge({
+                    Port: await getPort(),
+                    SecurityProfile: {
+                        JoseApplicationBaseUrl: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}`,
+                        AudienceRewriteRules: {'/revoke':'/revoke'}
+                    }
+                },await TestAdrConnectivityConfig(env))),
                 MockDhServer: async (env) => ({
                     FrontEndUrl:  `https://localhost:${env.TestServices.httpsProxy?.mockDhServer?.port}/`,
                     FrontEndMtlsUrl:  `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/`,
-                    AuthorizeUrl:  `https://localhost:${env.TestServices.httpsProxy?.mockDhServer?.port}/`,
-                    Jwks: DoOnce(GenerateDhJwks),
+                    AuthorizeUrl:  `https://localhost:${env.TestServices.httpsProxy?.mockDhServer?.port}/authorize`,
+                    Jwks: DoOnce(GenerateDhJwks).toJWKS(true),
+                    mtls: {
+                        key: (await TestPKI.TestConfig()).client.key,
+                        cert: (await TestPKI.TestConfig()).client.certChain,
+                        ca: (await TestPKI.TestConfig()).caCert
+                    },
                     RegisterJwksUri: `http://localhost:${env.TestServices.mockRegister?.port}/oidc/jwks`,
                     Port: await getPort(),
                     SecurityProfile: {
@@ -104,9 +131,9 @@ export class InternalTestConfig {
                                 ThumbprintHeader: "x-cdrgw-cert-thumbprint"
                             },
                         },
-                        JoseApplicationBaseUrl: "https://register.mocking",
+                        JoseApplicationBaseUrl: "https://cdr-dr.regaustbank.io",
                         AudienceRewriteRules: {
-                            "/revoke":"/revoke"
+                            "/revoke":"/affordability/security/revoke"
                         }
                     },
                     oidcConfiguration: {
@@ -120,56 +147,57 @@ export class InternalTestConfig {
                     }
                 }),
                 MockRegister: async (env) => ({
-                    Jwks: GenerateRegisterJwks(),
-                    MockDhBaseUri: `https://localhost:${env.TestServices.httpsProxy?.mockDhServer?.port}/`,
-                    MockDhBaseMtlsUri: `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/`,
                     Port: await getPort(),
+                    Jwks: GenerateRegisterJwks().toJWKS(true),
                     FrontEndUrl: `https://localhost:${env.TestServices.httpsProxy?.mockRegister?.port}/`,
                     FrontEndMtlsUrl: `https://localhost:${env.TestServices.httpsProxy?.mockRegister?.port}/`,
-                    TestAdr: {
-                        Jwks: (await env.GetServiceDefinition.AdrGateway()).Jwks,
-                        BrandId: (await env.GetServiceDefinition.AdrGateway()).DataRecipientApplication.BrandId,
-                        ProductId: (await env.GetServiceDefinition.AdrGateway()).DataRecipientApplication.ProductId,
+                    TestDataHolders: {
+                        "test-data-holder-1":`https://localhost:${env.TestServices.httpsProxy?.mockDhServer?.port}/mock.register.config`
+                    },
+                    TestDataRecipientJwksUri: `http://localhost:${env.TestServices.adrServer?.port}/`,
+                    LiveRegisterProxy: {
+                        Jwks: (await env.GetServiceDefinition.Connectivity()).Jwks,
+                        BrandId: undefined,
+                        LegalEntityId: undefined,
+                        SoftwareProductConfigUris: {
+                            sandbox: `http://localhost:${env.TestServices.softwareProduct.port}/software.product.config`
+                        },
+                        RegisterBaseUris: {
+                            Oidc: "https://api.int.cdr.gov.au/idp",
+                            Resource: "https://api.int.cdr.gov.au/cdr-register",
+                            SecureResource: "https://secure.api.int.cdr.gov.au/cdr-register",
+                        }
                     }
                 }),
-                AdrGateway: async (env) => ({
-                    Jwks: await GenerateDrJwks(),
-                    Port: await getPort(),
-                    RegisterBaseUris: {
-                        Oidc: env.SystemUnderTest.Register().DiscoveryUri,
-                        Resource: env.SystemUnderTest.Register().PublicUri,
-                        SecureResource: env.SystemUnderTest.Register().SecureUri
-                    },
-                    DataRecipientApplication: {
-                        BrandId: DataRecipients[0].dataRecipientBrands[0].dataRecipientBrandId,
-                        LegalEntityId: DataRecipients[0].legalEntityId,
-                        ProductId: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].softwareProductId,
-                        redirect_uris: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.redirect_uris,
+                SoftwareProduct: async (env) => {
+                    let softwareProductConfig:MockSoftwareProductConfig = {
+                        Port: await getPort(),
+                        ProductId: TestDataRecipientApplication.ProductId,
+                        redirect_uris: ["https://example.com","https://example.com/redirect2"],
                         standardsVersion: 1,
                         standardsVersionMinimum: 1,
                         uris: {
-                            jwks_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.jwks_uri,
-                            logo_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].logoUri,
-                            policy_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.policy_uri,
-                            revocation_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.revocation_uri,
-                            tos_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.tos_uri
+                            jwks_uri: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}/jwks`,
+                            logo_uri: `http://example.com`,
+                            policy_uri: `http://example.com`,
+                            revocation_uri: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}/revoke`,
+                            tos_uri: `http://example.com`
                         }
-                    },
-                    AdrClients: [{
-                        authCallbackUri:env.SystemUnderTest.AdrGateway().FrontEndUrls.JWKSEndpoint,
-                        systemId:"test_ui"
-                    }],
-                    BackEndBaseUri: env.SystemUnderTest.AdrGateway().BackendUrl,
-                    mtls: {
-                        key: (await TestPKI.TestConfig()).client.key,
-                        cert: (await TestPKI.TestConfig()).client.certChain,
-                        ca: (await TestPKI.TestConfig()).caCert
                     }
+                    return softwareProductConfig;
+                },
+                AdrJwks: async (env) => {
+                    return {
+                        Port: await getPort(),
+                        Jwks: GenerateDrJwks().toJWKS(true),
+                    }
+                },
+                AdrGateway: async (env) => ({
+                    Port: await getPort(),
+                    BackEndBaseUri: env.SystemUnderTest.AdrGateway().BackendUrl,
                 }),
+                Connectivity: async (env) => (await TestAdrConnectivityConfig(env)),
                 TestHttpsProxy:true,
-                // TestHttpsProxy: () => ({
-
-                // }),
                 AdrDb: true
             }
         }

@@ -17,6 +17,12 @@ import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathway
 import { MockRegisterConfig } from "./Config";
 import { axios } from "../../../Common/Axios/axios";
 import moment from "moment";
+import { PathwayFactory } from "../../../Common/Connectivity/PathwayFactory";
+import { Neuron } from "../../../Common/Connectivity/Neuron";
+import { SoftwareProductConfig } from "../../../AdrGateway/Server/Connectivity/Neurons/SoftwareProductConfig";
+import { SoftwareProductConnectivityConfig } from "../../../AdrGateway/Config";
+import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
+import urljoin from "url-join";
 
 export interface Client {
     clientId: string
@@ -34,15 +40,34 @@ export class MockRegister {
     
     async init(): Promise<any> {
         const app = express();
-        const issuerUrl = 'https://cdr-register.mocking';
+        const issuerUrl = 'https://cdr-register.uat.regaustbank.io';
 
         const { Provider } = require('oidc-provider');
         
-        let jwks = GetJwks((await this.configFn()))
-        const JWKSet = jwks.toJWKS(true)
-        const oidcSpec = GenerateOidcSpec(<any>JWKSet);
+        let config = (await this.configFn());
+        let jwks = config.Jwks
+        const oidcSpec = GenerateOidcSpec(<any>jwks);
+
+        let certs = await TestPKI.TestConfig();
+        (<any>oidcSpec).httpOptions = (options) => {
+            options.followRedirect = false;
+            options.headers['User-Agent'] = 'oidc-provider/${VERSION} (${ISSUER_IDENTIFIER})';
+            options.retry = 0;
+            options.throwHttpErrors = false;
+            options.timeout = 2500;
+            options.ca = certs.caCert
+            return options;
+        }
         const oidc = new Provider(issuerUrl, oidcSpec);
         const originalFind:((client:string) => Promise<Client>) = oidc.Client.find;
+
+        // replace the SoftwareProductConfig
+
+        this.pw.SoftwareProductConfig = PathwayFactory.GenerateOnce((softwareProductId:string) => 
+            Neuron.NeuronZero().Extend(Neuron.CreateSimple(async ():Promise<SoftwareProductConnectivityConfig> => {
+                return <any>{ProductId:softwareProductId}
+            }))
+        )
 
         // replace the placeholder client with that given by the provider
         oidc.Client.find = async (id:string):Promise<Client|undefined> => {
@@ -55,7 +80,7 @@ export class MockRegister {
         }
 
         oidc.proxy = true;
-        const OAuthScope = ScopeMiddleware(() => Promise.resolve(jwks),() => Promise.resolve({issuer:issuerUrl}));
+        const OAuthScope = ScopeMiddleware(() => Promise.resolve(JWKS.asKeyStore(jwks)),() => Promise.resolve({issuer:issuerUrl}));
 
         const dataRecipients = DataRecipients
               
@@ -70,13 +95,16 @@ export class MockRegister {
 
         // override oidc-provider jwks
         app.get('/oidc/jwks',async (req,res) => {
-            let publicRegisterJwks:JSONWebKeySet
-            try {
-                publicRegisterJwks = await (await axios.get("https://api.int.cdr.gov.au/cdr-register/v1/jwks",{responseType:"json"})).data;
-            } catch {
-                publicRegisterJwks = {keys:[]}
+            let publicRegisterJwks:JSONWebKeySet = {keys:[]}
+
+            if (config.LiveRegisterProxy.BrandId) {
+                try {
+                    publicRegisterJwks = await (await axios.get(urljoin(config.LiveRegisterProxy.RegisterBaseUris.Resource,"v1/jwks"),{responseType:"json"})).data;
+                } catch {
+                }    
             }
-            let mockRegisterJwks = jwks.toJWKS();
+
+            let mockRegisterJwks = jwks;
 
             return res.status(200).json({keys:_.concat(mockRegisterJwks.keys,publicRegisterJwks.keys)})
         })
@@ -88,10 +116,10 @@ export class MockRegister {
         app.get('/v1/banking/data-holders/brands',
             OAuthScope("cdr:register:realm","cdr-register:bank:read"),
             // MockDataArray(async () => DataHolders((await this.configFn()).MockDhBaseUri)),
-            MockDataArray(async (req:express.Request) => _.filter(await DataHolders((await this.configFn()).MockDhBaseUri,(await this.configFn()).MockDhBaseMtlsUri), (t:any) => {
-                if (req.query["updated-since"]) {
+            MockDataArray(async (req:express.Request) => _.filter(await DataHolders((await this.configFn()),this.pw), (t:any) => {
+                if (typeof req.query["updated-since"] === 'string') {
                     if (!t.lastUpdated) return true;
-                    if (moment(t.lastUpdated).isSameOrAfter(moment(<any>req.query["updated-since"]))) return true;
+                    if (moment(t.lastUpdated).isSameOrAfter(moment(req.query["updated-since"]))) return true;
                     return false;
                 }
                 return true;
@@ -123,7 +151,7 @@ export class MockRegister {
                 if (!ah) return res.status(401).send();
                 let bearer = ah[1];
                 try {
-                    JWT.verify(bearer,jwks);
+                    JWT.verify(bearer,JWKS.asKeyStore(jwks));
                 } catch (e) {
                     console.error(e)
                     return res.status(401).send();
@@ -135,7 +163,7 @@ export class MockRegister {
                 } = <any>matchedData(req);
 
                 try {
-                    const ssa = await GetSSA(m.dataRecipientBrandId,m.softwareProductId,dataRecipients,jwks.get({use:'sig',alg:'PS256'}),this.pw,this.clientProvider);
+                    const ssa = await GetSSA(m.dataRecipientBrandId,m.softwareProductId,dataRecipients,JWKS.asKeyStore(jwks).get({use:'sig',alg:'PS256'}),this.pw,this.clientProvider);
                     res.status(200).contentType('application/jwt').send(ssa);
                 } catch (err) { 
                     if (typeof err.statusCode == 'number') {

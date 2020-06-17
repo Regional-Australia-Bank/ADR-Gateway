@@ -4,7 +4,7 @@ import winston = require("winston");
 import express from "express";
 import { JWKS } from "jose";
 import { AdrServerConfig } from "../../AdrServer/Server/Config";
-import { ConsentRequestLogManager } from "../Entities/ConsentRequestLog";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../Entities/ConsentRequestLog";
 import { DefaultPathways } from "../Server/Connectivity/Pathways";
 import moment from "moment"
 import _ from "lodash";
@@ -40,7 +40,7 @@ export class AdrHousekeeper {
                     amount,
                     unit
                 },
-                date: moment().toISOString()
+                // date: moment().toISOString()
             })
             try {
                 await fn.apply(this);
@@ -52,7 +52,7 @@ export class AdrHousekeeper {
                         amount,
                         unit
                     },
-                    date: moment().toISOString(),
+                    // date: moment().toISOString(),
                     error: e
                 })
             }
@@ -68,9 +68,9 @@ export class AdrHousekeeper {
                     amount,
                     unit
                 },
-                date: moment().toISOString(),
+                // date: moment().toISOString(),
                 waitMilliseconds,
-                nextStart
+                nextStart: nextStart.toISOString()
             })
             await new Promise(resolve => setTimeout(resolve,waitMilliseconds))
         }
@@ -80,36 +80,67 @@ export class AdrHousekeeper {
     PropagateConsents = async () => {
         let brokenDataholders:string[] = []
 
+        let consentCursor:ConsentRequestLog|undefined = undefined;
+
         while (true) {
-            let consent = await this.consentManager.NextRevocationToPropagate()
+            let consent = await this.consentManager.NextRevocationToPropagate(consentCursor)
             if (!consent) break;
-            this.pw.logger.debug({message:"PropagateConsents: Consent revocation to propagate", meta: consent, date: moment().toISOString()})
+            consentCursor = consent;
+            this.logger.debug({message:"PropagateConsents: Consent revocation to propagate", meta: consent, date: moment().toISOString()})
 
             if (_.find(brokenDataholders,dh => dh ==consent.dataHolderId)) {
                 // if there has been an error revoking consent at this data holder in this run, ignore this one
-                this.pw.logger.info({message:"PropagateConsents: DH marked as broken. Skipping.", meta: consent, date: moment().toISOString()})
+                this.logger.warn({message:"PropagateConsents: DH marked as broken. Skipping.", meta: consent, date: moment().toISOString()})
                 continue;
             }
            
             try {
                 await this.pw.PropagateRevokeConsent(consent).GetWithHealing()
+                this.logger.debug({message:"PropagateConsents: Revoked consent", meta: consent, date: moment().toISOString()})
             } catch(e) {
                 brokenDataholders.push(consent.dataHolderId)
-                this.pw.logger.error({message:"PropagateConsents: Could not propagate consent revocation", meta: consent, date: moment().toISOString()})
+                this.logger.error({message:"PropagateConsents: Could not propagate consent revocation", meta: consent, date: moment().toISOString()})
             }
             consent
         }
-        this.pw.logger.info({message:"PropagateConsents: No consents to propagate.", date: moment().toISOString()})
+        this.logger.debug({message:"PropagateConsents: No more consents to propagate.", date: moment().toISOString()})
     }
 
     UpdateDataholderMeta = async () => {
         // Get the new brand metadata with the cache ignored during execution. This will internally update the cache.
         await this.pw.DataHolderBrands().Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
-        this.pw.logger.info({message:"UpdateDataholderMeta: Success.", date: moment().toISOString()})
+        this.logger.info({message:"UpdateDataholderMeta: Success.", date: moment().toISOString()})
     }
 
+    DynamicClientRegistration = async () => {
+        // Get the new brand metadata with the cache ignored during execution. This will internally update the cache.
+
+        let brands = await this.pw.DataHolderBrands().Evaluate()
+
+        let config = await this.pw.AdrConnectivityConfig().Evaluate()
+
+        let softwareProductIds = Object.keys(config.SoftwareProductConfigUris)
+
+        for (let softwareProductId of softwareProductIds) {
+            for (let brand of brands) {
+                try {
+                    this.pw.CheckAndUpdateClientRegistration(softwareProductId,brand.dataHolderBrandId).Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
+                    this.logger.info({message:`ClientRegistration: Success. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
+                } catch (error) {
+                    this.logger.error({error, message:`ClientRegistration: Error. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
+                }
+            }    
+        }
+
+        await this.pw.DataHolderBrands().Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
+    }
+
+
     init(): any {
-        this.OnInterval("PropagateConsents",this.PropagateConsents,1,'minutes')
-        this.OnInterval("UpdateDataholderMeta",this.UpdateDataholderMeta,30,'minutes')
+        setTimeout(() => {
+            this.OnInterval("PropagateConsents",this.PropagateConsents,parseInt(process.env.HOUSE_KEEPER_INTERVAL_CONSENT_PROPAGATION || "5"),'minutes')
+            this.OnInterval("UpdateDataholderMeta",this.UpdateDataholderMeta,parseInt(process.env.HOUSE_KEEPER_INTERVAL_UPDATE_DH_META || "360"),'minutes')
+            this.OnInterval("DynamicClientRegistration",this.DynamicClientRegistration,parseInt(process.env.HOUSE_KEEPER_INTERVAL_DCR || "360"),'minutes')    
+        },parseInt(process.env.HOUSE_KEEPER_STARTUP_DELAY || "60000"))
     }
 }
