@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "46c02f99-9b0d-4bfe-adb3-966ee384529c",
-		"name": "ADR-Gateway PM2 sandbox",
+		"_postman_id": "a3af2e9e-2d3a-407c-b0ff-ec119972e414",
+		"name": "ADR-Gateway sandbox",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -19,6 +19,25 @@
 					"port": "8402",
 					"path": [
 						"private.jwks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "JWKS from frontend server",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8102/jwks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8102",
+					"path": [
+						"jwks"
 					]
 				}
 			},
@@ -45,31 +64,12 @@
 			"response": []
 		},
 		{
-			"name": "JWKS from frontend server",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8102/jwks",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8102",
-					"path": [
-						"jwks"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "New Consent at specified Data Holder",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
-						"id": "fd4e2bb3-9774-48f0-96de-a0d224aa447d",
+						"id": "bae2c7d5-85d7-4ae7-b771-7b11ea1f1ed4",
 						"exec": [
 							"pm.test(\"Consent request code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -109,7 +109,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"userId\": \"user1\",\n\t\"dataholderBrandId\":\"test-data-holder-1\",\n\t\"softwareProductId\":\"sandbox\",\n\t\"systemId\": \"sandbox\",\n\t\"scopes\": [\"bank:accounts.basic:read\",\"bank:accounts.detail:read\",\"bank:transactions:read\"],\n\t\"sharingDuration\": 86400,\n\t\"state\": \"string\"\n}",
+					"raw": "{\n\t\"userId\": \"user1\",\n\t\"dataholderBrandId\":\"test-data-holder-1\",\n\t\"productKey\":\"sandbox\",\n\t\"systemId\": \"sandbox\",\n\t\"scopes\": [\"bank:accounts.basic:read\",\"bank:accounts.detail:read\",\"bank:transactions:read\"],\n\t\"sharingDuration\": 86400,\n\t\"state\": \"string\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -137,7 +137,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "80a373f8-f5a5-4134-b1b6-9ba1b956878a",
+						"id": "e832b8dc-1616-4f7f-ac78-a79651681378",
 						"exec": [
 							"pm.test(\"Consent finalised at ADR gateway with 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -175,7 +175,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"code\": \"liQ-A6Q2_5gKZi2j20SiR8NDXrw6aDb32Z3FlXwY4Fn\",\n\t\"id_token\": \"eyJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwiY3R5IjoiSldUIiwia2lkIjoicXJKbmphT29KOE0ybmgtbHFIWTFOc0ZGWDZfUGFqLVM4R2ZTSUdsc0o4NCIsImFsZyI6IlJTQS1PQUVQLTI1NiJ9.v4n6hdz_e_BzEs_cb_7xXK7x79u-0u8TseEzz1GQEK7YzxrhgAQqC9iA5Co_rf2ecIFe0gonwNfDLzd5oBhBxFIOQYUzPgjnZaYU_bg795GrLrsuRvSUmqcfCwPlT3tXn_dYDWcS4lKR8Wl73YlUCf49xQD0y9vE1uynaK5wfscTVsP2xbaBXySd7Qlocr-VjRIWjVdaDjfjeFb4XslNA-_QnqTCJbLyo5CKfmy5PwjZwW0VmlXzncdfwVpMLb-zwmZFS06ctuTNAWbqfimWCgLr25JO07h05I2upaC-K0TagYQ7TNogEZyAa01Zd33kUSIS40W_z4Klq9xgwAKi4g.xtArZw0l3gWdYNSN4GEbKA.aeAnaZc-_BXlThWj-StrwIqnqmqJZFhCBuwQQrU8K_76kWBqDmU2c8p_ys155URGBIhRWp7RJBnpo1VdhFQgRBqzx_x2lidMtJ0a42LL7_gX8EagFdP5m-eWKRuiM8svkm6Zpz2PKo9jTfYtABXLUisQqRgcLUsAH9kkbA3OPypjvTyVX6dCCb-YtMyfDp2M4xBvHZRFk6rG3LgLrFYMQr9azGc0isC1KwguxKEO_9xCeFos2vd9Gr7uhcc3vWB9JF6OGoGZ4fSOv8NyDxe5nrXBZNbnvgmsLwR1Zsc_FTJ-kMv-8BD-CHUgWqILVaf0jUwgP6gASXVBfndGIbrARAPuASPClsmtGEzyRdAFk0MlTrVdYEJXm8RlgJ8dJIP2Fxs84mWizcYxsZRgsw41ft0Wm2qF8R6AC12BRb0koUG1tZO5vkTipb0o4hgTEqMvwXt_4N-4XaReUevg9TrwFy149ysp5N-gtpnNAJiLeRwBUcEOgUEtxcmZtc15SnXJ1OBJ8lvQDhfwdyoqyU2XQwidJq2NkM6WyCj6fdxpWsAxsEs0UyVGKqeWZq6KjN4hl7SSPTichgAPrnm56JFQegUNPd-C3Rg_4V529sXAzAgIaxJp_RZzZ6yHlc4QFm4efQLv_Z-ckQryhp7Rd1uEagroSQffy5aFYuanVqca_5wt1yY_qmo0nmP97gOhnPQF-J0qaT-BksmWWzvCetR7-L3sz0JDJquokk8gi0FAZ0Tt7tnabwA9hsshx6Gs7J0v2_a6_VVUlsYpTULrclff2bZAfE_Yw_a8X2thBZIvONxR3y0jo7sHP623zyyV6XoCnAQDhMujL4vRXClyz7Fxgkhs8mJ0ZaUGT_5m8VhNKBNURWV_iWiuLfterGxIZuJx_tffz3HXvAnHihMiY6Eke-3SJw1OvtNSBucUWn6Tbij4zxHuXQFFB54xKt7d-xom7V9xe8nsIlX-3zAhM6sRYJ1f3gTItioTQrf4Gl4qLxcRub9O5SG6vUoVpyQ75_ulQKArXpOZo8N6Sq1y2XeaMurGd0a47iUAyk9pznCRkIVEzv1AcWdSPGrDF894A1ouz4LA47MPSjRr2uQ_lLG5yZaB8WWKNEb5pt6eTwDGJIsobAzc_wnhtxjj4_6E5HUrdcRcaJBkFK8xpqxRH8rfrathwxAx7pUaag7V2gjTjUMfFuUc9Lprfr7ViQYOec4hjM3PShKbLOVZB3Bu0PUg1-K3jjvP_D1iacGpQXRk8bY8HSKiahH1dTIqV0MiEdqv.xOhtuqTP6k64o5djn7pW0uuC5mPe-BG0KTTsQptKM6g\",\n\t\"state\": \"string\"\n}"
+					"raw": "{\n\t\"code\": \"...\",\n\t\"id_token\": \"...\",\n\t\"state\": \"string\"\n}"
 				},
 				"url": {
 					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}",
@@ -199,7 +199,7 @@
 				{
 					"listen": "test",
 					"script": {
-						"id": "70b9d270-cadb-4209-a2f2-7da03932294d",
+						"id": "070ad80d-52f8-4752-94f7-27508bcbf3ba",
 						"exec": [
 							"pm.test(\"Consent finalised at ADR gateway with 200\", function () {",
 							"    pm.response.to.have.status(200);",
@@ -237,7 +237,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "https://example.com/#code=yUcSlfhvrvT9sJLNTD8tcmuzV-miarwQF5moScvwWvC&id_token=eyJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwiY3R5IjoiSldUIiwia2lkIjoiY21oa09PUGN0cXBldDFMNWVPUmt1SWZsc3laMDBqcDRVTXpCZldCNlpkYyIsImFsZyI6IlJTQS1PQUVQLTI1NiJ9.oGv83E5rv8q05vBMU1mniOl2hom95NPYnYFvabdgxCpgMTowsB-DC71-fbxML5NfY-4oS2FX2_3kff01V7lm4ihFvQ8zty_ig1izKWyk0yeJp4RkX9915-7mbna1N2CLhNzK7YO3WviM3CK8TSE9zwv2nZhEduQ604hIva58JBGo6VuMAgCKoZnrZ3RiugYhCOPbh339Kqd5Nd2lEUR7I43m9aUNOVZ6UsSkFwgZcwf50sfYewGaf3tqJcDzEOPq-HGDY2tQ25E0KDlE2ASTEkaTZ5jOIxOxX1rY3GD-0bo3SH2ZD9GhlrVp_JyHEhvqxhsSAy85WnkqZML4KcCDtg.q9ubq-gzrP5HIaWPvsPXpg.H5eHG4HXbh9iUkO-VhZ2NHNh1YiluTw_N7H-8_4CUlHAMzq9UziTy9pSNv6hAXS89S5SIP5rjXKRIQ4ehB04sHRSXxsRsBk9Y5XnR30Og1WpTTyEO0CDRubFgaKi6i17TRWENZuchJvjNn_r0WVVi1d2yFoeYWXhco8hIQJv49mgaFiP33LW_szEXiusapXJcxuQ8npT02X8GN79qwDapc5lDvIbgfp6uZRTjOaxz6_5LZAoEA-eVJa-O9Mk-jg3bxf7tFgRTaMxDAoBvGaTyVfz0R4qrM3_ETCXZPTaHfLkSvNPyEF9zueOGamjuaS7mocz6qMY4GCl9tvauXWbN5ACq4Ffs4wrZcyzcaG239aZoh55eN4MJJfY-fDcqMn3N0gxRDafgnlYEH-IO0Q7OTes-UkwiEgbZvOCseqJ7kC5MXb0VDJrdCTYhqUX08bSXFE3OtK2t-_a2iTWnowyhDLwkIZCsjSYQ_zHsPwl4vlFKBhigzWIgnxifgpHCxkBSmPtsrn7KYaWwg3iuUvvDtqTBYp4m6FcrbUrghqJG8XEJWi__kp2OeenbabRLh_qIVupFYZ0iUG5XqnMemzobEMEwpu_i0y-n_Ye4gzUxPoTQPCjVAw7IaCjndNOQJ96cYdIAC1XtahFJ96mhA2XlwE2ZswmQ7QqZXn8yHVUyWANo_t99fM0yeJ5B7ME378xCcbemuSIPXCDyvZNSA4MNIh13MZxZrXomPkrHROyl2SZmu4eWJM3Gx-SPxv_zzsjZ1hkRKpchKmQ4v3mVqFAGB73RFohgcr-o1WhLCfTFltEGY4Rf-c_iNQ3pQCKDL1rLQu8sNheMYwC34OnFNgaB3TItDh3g5l8cZTFtA1gR9ouyTbPDWGZOiTkF6GO8JBa0vfnnF8W1fT4lhu48ABYcDBM1mNY7Pl8GTHBQ8h6tneO1yYYP4scvuFve42EbRAhLDQbKh8s9Im4ROZq1pnDH8wd2IRZqvt56AGCmYA3GPXqNZW33O7u-dJ9Zt_zenhrMXK0bG7gs-IlxdSrCIze0-bMXXkpgohiKt8t3cIpN2OFf1b3Qngcnn51NNSG5RnETwxtmTcaW2BN2kwsW0JmM41tp2cc2hpaB3vd0FaEIQwH4FZFpAKENwZk2apv_i84sqFuckXp78oZ8DiLlHaLjHEaepbNeTajKy472InKf1M1pTKf1hV5eER-5kHQa9v7Ajm7OahkzTkultzfDzYf1bZ4MNxB7THk9K1rphZAkK2ovosrLdzaRK-ALeZ6xumu.Ouby7SyxLREWwEiMoPeMAe38WdiW55ig-UUhfdGfl0o&state=string",
+					"raw": "https://example.com/#code=...&id_token=...&state=string",
 					"options": {
 						"raw": {
 							"language": "text"
@@ -313,13 +313,48 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get Transactions",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-adrgw-present",
+						"value": "false",
+						"type": "text"
+					},
+					{
+						"key": "x-adrgw-last-Authenticated",
+						"value": "2019-11-13T23:35:29.548+00:00",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}/accounts/account-1/transactions",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents",
+						"{{gatewayConsentId}}",
+						"accounts",
+						"account-1",
+						"transactions"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
 		{
 			"listen": "prerequest",
 			"script": {
-				"id": "114984bb-4844-4c85-878b-c53d0e068a21",
+				"id": "22ff9316-ebe7-4c8a-9c63-1bd8a5b882ff",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -329,7 +364,7 @@
 		{
 			"listen": "test",
 			"script": {
-				"id": "5a01913e-7a83-4b53-9af7-225ec743eb1e",
+				"id": "c0d9d4b9-c5a8-4966-af43-d454feb62b98",
 				"type": "text/javascript",
 				"exec": [
 					""
@@ -339,7 +374,7 @@
 	],
 	"variable": [
 		{
-			"id": "de465d16-93c6-4691-9eb5-7a47ed10f704",
+			"id": "6140dffa-f927-4e78-9940-0fff9124719e",
 			"key": "gatewayConsentId",
 			"value": "",
 			"type": "string"
