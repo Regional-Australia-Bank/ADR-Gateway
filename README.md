@@ -12,7 +12,10 @@ npm run start:docker
 
 ## PM2
 
+You must have Node 14.
+
 ```
+npm i -g pm2
 npm i 
 npm run start
 ```
@@ -20,6 +23,8 @@ npm run start
 ## Exploring with postman
 
 Import [the Postman collection](./examples/deployment/adr-gateway-sandbox.postman_collection.json) into Postman.
+
+Here you can see how the OAuth consent flow works. You can also make calls to all data holder endpoints with mock responses (requests for Accounts and Transactions are provided)
 
 # Components
 
