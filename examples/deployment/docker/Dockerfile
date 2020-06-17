@@ -1,13 +1,15 @@
-FROM alpine:latest
+FROM node:14 AS typescript-build
 
-# Install node
-RUN apk add 'nodejs>14'
-RUN apk add npm
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-# Install the production dependencies
-COPY dist /dist
+COPY /build.sh build.sh
+COPY .work /adr-gateway
 
-# TODO: Fix: For some reason I still can't get sqlite3 to install using package.json.
-# TODO: Ensure puppeteer is not installed - this is not needed in production!
-RUN cd /dist && npm install --only=prod
-RUN npm install --only=prod pg mysql sqlite3
+RUN chmod +x build.sh && ./build.sh
+
+FROM node:14-alpine
+
+COPY --from=typescript-build /adr-gateway/dist /adr-gateway
+WORKDIR /adr-gateway
+RUN npm i --only prod
+RUN npm i --only prod pg

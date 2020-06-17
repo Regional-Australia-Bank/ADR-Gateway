@@ -3,8 +3,6 @@ import { injectable, inject, singleton } from "tsyringe"
 import { ITestData, GenerateTestData } from "./TestData";
 import path from "path"
 
-require('request-to-curl'); // for req.toCurl()
-
 // import { container } from "../UatTestContainer"
 import uuid = require("uuid");
 import { Dictionary } from "../../../Common/Server/Types";

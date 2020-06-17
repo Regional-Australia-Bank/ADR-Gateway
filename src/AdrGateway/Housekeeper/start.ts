@@ -1,22 +1,13 @@
 import "reflect-metadata"
 
 import { RegisterDependencies } from "../Server/Dependencies";
-import { ArgumentParser } from "argparse";
 import winston = require("winston");
 import { container } from "../AdrGwContainer";
 import { AdrHousekeeper } from "./worker";
 import fs from 'fs'
-import { AdrGatewayConfig, GetHousekeeperConfig } from "../Config";
+import { GetHousekeeperConfig } from "../Config";
 
-let parser = new ArgumentParser({
-  version: '0.0.1',
-  addHelp:true,
-  description: 'Start adr-gateway-housekeeper'
-});
-
-let args = parser.parseArgs();
-
-async function doStartup (args:any) {
+async function doStartup () {
 
   try {
     await RegisterDependencies(GetHousekeeperConfig); // TODO remove the any cheat
@@ -29,7 +20,7 @@ async function doStartup (args:any) {
 }
 
 
-doStartup(args)
+doStartup()
 .then(() => {})
 .catch(reason => {console.error(reason)});
 

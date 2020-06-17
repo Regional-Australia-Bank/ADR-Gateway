@@ -1,8 +1,8 @@
 version: "3.3"
 services:
     adr-jwks:
-        build: .
-        command: node /dist/AdrJwks/start.js
+        image: adr-gateway
+        command: node ./AdrJwks/start.js
         expose:
             - "8402"
         ports: 
@@ -10,17 +10,17 @@ services:
         env_file:
             - sandbox.env
     software-product:
-        build: .
-        command: node /dist/MockServices/SoftwareProduct/Server/start.js
+        image: adr-gateway
+        command: node ./MockServices/SoftwareProduct/Server/start.js
         expose:
             - "8401"
         ports: 
-            - "8401"
+            - "8401:8401"
         env_file:
             - sandbox.env
     adr-backend:
-        build: .
-        command: node /dist/AdrGateway/Server/start.js
+        image: adr-gateway
+        command: node ./AdrGateway/Server/start.js
         expose:
             - "8101"
         ports: 
@@ -28,40 +28,41 @@ services:
         env_file:
             - sandbox.env
     adr-frontend:
-        build: .
-        command: node /dist/AdrServer/Server/start.js
+        image: adr-gateway
+        command: node ./AdrServer/Server/start.js
         expose:
             - "8102"
         ports: 
-            - "8102"
+            - "8102:8102"
         env_file:
             - sandbox.env
     adr-housekeeper:
-        build: .
-        command: node /dist/AdrGateway/Housekeeper/start.js
+        image: adr-gateway
+        command: node ./AdrGateway/Housekeeper/start.js
         env_file:
             - sandbox.env
     mock-register:
-        build: .
-        command: node /dist/MockServices/Register/Server/start.js
+        image: adr-gateway
+        command: node ./MockServices/Register/Server/start.js
         expose:
             - "8301"
         ports: 
-            - "8301"
+            - "8301:8301"
         env_file:
             - sandbox.env
     mock-dh:
-        build: .
-        command: node /dist/MockServices/DhServer/Server/start.js
+        image: adr-gateway
+        command: node ./MockServices/DhServer/Server/start.js
         expose:
             - "8201"
         ports: 
-            - "8201"
+            - "8201:8201"
         env_file:
             - sandbox.env
     mock-infra:
-        build: .
-        command: node /dist/HttpsProxy/start.js
+        image: adr-gateway
+        command: node ./HttpsProxy/start.js
+        restart: on-failure
         expose:
             - "9101"
             - "9102"
@@ -80,13 +81,13 @@ services:
             - sandbox.env
 
     db:
-        image: mariadb
+        image: postgres
         restart: always
         environment:
-            MYSQL_ROOT_PASSWORD: example
-            MYSQL_DATABASE: adr-sandbox
+            POSTGRES_PASSWORD: example
+            POSTGRES_DB: adr-sandbox
         ports:
-            - 3306:3306
+            - 5432:5432
 
     # log in with user "postgres" and password "example"
     adminer:

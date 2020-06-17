@@ -3,19 +3,18 @@ ADR-Gateway is a set of microservices that enables a Data Recipient to interact 
 
 # Quick starts
 
+## Docker
+
+```
+npm run build:docker
+npm run start:docker
+```
+
 ## PM2
 
 ```
 npm i 
 npm run start
-```
-
-## Docker
-
-```
-npm i
-npm run docker-build
-npm run start-docker
 ```
 
 ## Exploring with postman
