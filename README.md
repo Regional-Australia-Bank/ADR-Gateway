@@ -19,7 +19,7 @@ npm run start
 
 ## Exploring with postman
 
-Import examples/pm2/adr-gateway-sandbox.pm2.postman_collection.json into Postman. (Note that this will also work with the docker-compose example).
+Import [the Postman collection](./examples/deployment/adr-gateway-sandbox.postman_collection.json) into Postman.
 
 # Components
 
