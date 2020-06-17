@@ -1,0 +1,384 @@
+{
+	"info": {
+		"_postman_id": "a3af2e9e-2d3a-407c-b0ff-ec119972e414",
+		"name": "ADR-Gateway sandbox",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Common JWKS (includes private keys)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8402/private.jwks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8402",
+					"path": [
+						"private.jwks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "JWKS from frontend server",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8102/jwks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8102",
+					"path": [
+						"jwks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "List data holders",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:9101/cdr/data-holders",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"data-holders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Consent at specified Data Holder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "bae2c7d5-85d7-4ae7-b771-7b11ea1f1ed4",
+						"exec": [
+							"pm.test(\"Consent request code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"gatewayConsentId\", pm.response.json().consentId);",
+							"",
+							"pm.environment.set(\"gatewayConsentId\", pm.response.json().consentId);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "gateway-password",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "gateway-user",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"userId\": \"user1\",\n\t\"dataholderBrandId\":\"test-data-holder-1\",\n\t\"productKey\":\"sandbox\",\n\t\"systemId\": \"sandbox\",\n\t\"scopes\": [\"bank:accounts.basic:read\",\"bank:accounts.detail:read\",\"bank:transactions:read\"],\n\t\"sharingDuration\": 86400,\n\t\"state\": \"string\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Finalise consent (structured)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e832b8dc-1616-4f7f-ac78-a79651681378",
+						"exec": [
+							"pm.test(\"Consent finalised at ADR gateway with 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.json().scopesFulfilled).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "x-cdrgw-cert-thumbprint",
+						"type": "text",
+						"value": "adr-THUMBPRINT"
+					},
+					{
+						"key": "x-cdrgw-cert-clientid",
+						"type": "text",
+						"value": "verified-client-id-example"
+					},
+					{
+						"key": "x-v",
+						"type": "text",
+						"value": "1"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"code\": \"...\",\n\t\"id_token\": \"...\",\n\t\"state\": \"string\"\n}"
+				},
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents",
+						"{{gatewayConsentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Finalise consent (unstructured)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "070ad80d-52f8-4752-94f7-27508bcbf3ba",
+						"exec": [
+							"pm.test(\"Consent finalised at ADR gateway with 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.json().scopesFulfilled).to.eql(true);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "x-cdrgw-cert-thumbprint",
+						"type": "text",
+						"value": "adr-THUMBPRINT"
+					},
+					{
+						"key": "x-cdrgw-cert-clientid",
+						"type": "text",
+						"value": "verified-client-id-example"
+					},
+					{
+						"key": "x-v",
+						"type": "text",
+						"value": "1"
+					},
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "https://example.com/#code=...&id_token=...&state=string",
+					"options": {
+						"raw": {
+							"language": "text"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents",
+						"{{gatewayConsentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Consent details",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents",
+						"{{gatewayConsentId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Accounts for Consent",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-adrgw-present",
+						"value": "false",
+						"type": "text"
+					},
+					{
+						"key": "x-adrgw-last-Authenticated",
+						"value": "2019-11-13T23:35:29.548+00:00",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}/accounts",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents",
+						"{{gatewayConsentId}}",
+						"accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Transactions",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "x-adrgw-present",
+						"value": "false",
+						"type": "text"
+					},
+					{
+						"key": "x-adrgw-last-Authenticated",
+						"value": "2019-11-13T23:35:29.548+00:00",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "https://localhost:9101/cdr/consents/{{gatewayConsentId}}/accounts/account-1/transactions",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "9101",
+					"path": [
+						"cdr",
+						"consents",
+						"{{gatewayConsentId}}",
+						"accounts",
+						"account-1",
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "22ff9316-ebe7-4c8a-9c63-1bd8a5b882ff",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "c0d9d4b9-c5a8-4966-af43-d454feb62b98",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "6140dffa-f927-4e78-9940-0fff9124719e",
+			"key": "gatewayConsentId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

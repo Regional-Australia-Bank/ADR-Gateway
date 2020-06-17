@@ -1,0 +1,97 @@
+version: "3.3"
+services:
+    adr-jwks:
+        image: adr-gateway
+        command: node ./AdrJwks/start.js
+        expose:
+            - "8402"
+        ports: 
+            - 8402:8402
+        env_file:
+            - sandbox.env
+    software-product:
+        image: adr-gateway
+        command: node ./MockServices/SoftwareProduct/Server/start.js
+        expose:
+            - "8401"
+        ports: 
+            - "8401:8401"
+        env_file:
+            - sandbox.env
+    adr-backend:
+        image: adr-gateway
+        command: node ./AdrGateway/Server/start.js
+        expose:
+            - "8101"
+        ports: 
+            - 8101:8101
+        env_file:
+            - sandbox.env
+    adr-frontend:
+        image: adr-gateway
+        command: node ./AdrServer/Server/start.js
+        expose:
+            - "8102"
+        ports: 
+            - "8102:8102"
+        env_file:
+            - sandbox.env
+    adr-housekeeper:
+        image: adr-gateway
+        command: node ./AdrGateway/Housekeeper/start.js
+        env_file:
+            - sandbox.env
+    mock-register:
+        image: adr-gateway
+        command: node ./MockServices/Register/Server/start.js
+        expose:
+            - "8301"
+        ports: 
+            - "8301:8301"
+        env_file:
+            - sandbox.env
+    mock-dh:
+        image: adr-gateway
+        command: node ./MockServices/DhServer/Server/start.js
+        expose:
+            - "8201"
+        ports: 
+            - "8201:8201"
+        env_file:
+            - sandbox.env
+    mock-infra:
+        image: adr-gateway
+        command: node ./HttpsProxy/start.js
+        restart: on-failure
+        expose:
+            - "9101"
+            - "9102"
+            - "9201"
+            - "9301"
+            - "10201"
+            - "10202"
+        ports: 
+            - 9101:9101
+            - 9102:9102
+            - 9201:9201
+            - 9301:9301
+            - 10201:10201
+            - 10202:10201
+        env_file:
+            - sandbox.env
+
+    db:
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_PASSWORD: example
+            POSTGRES_DB: adr-sandbox
+        ports:
+            - 5432:5432
+
+    # log in with user "postgres" and password "example"
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 8080:8080
