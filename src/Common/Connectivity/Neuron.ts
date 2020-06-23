@@ -746,8 +746,6 @@ export class CompoundNeuron<Input,Output> extends AbstractNeuron<Input,Output> {
 
                         if (typeof r.branchEvaluator === 'undefined') throw 'Right hand side is not defined'
                         let evaluationPromise = await r.branchEvaluator(input,maxLengthToRight).catch((err:any) => {
-                            // TODO log error with winston and replace console.log
-                            console.error(err);
                             throw err;
                         })
                         return evaluationPromise;

@@ -124,7 +124,7 @@ export class AdrHousekeeper {
         for (let softwareProductId of softwareProductIds) {
             for (let brand of brands) {
                 try {
-                    this.pw.CheckAndUpdateClientRegistration(softwareProductId,brand.dataHolderBrandId).Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
+                    await this.pw.CheckAndUpdateClientRegistration(softwareProductId,brand.dataHolderBrandId).Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
                     this.logger.info({message:`ClientRegistration: Success. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
                 } catch (error) {
                     this.logger.error({error, message:`ClientRegistration: Error. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
