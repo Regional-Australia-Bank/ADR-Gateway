@@ -224,7 +224,7 @@ export class DefaultPathways {
             this.DataRecipientJwks(),
             this.DataHolderOidc(consent.dataHolderId),
             this.CheckAndUpdateClientRegistration_WORKAROUND(consent.productKey,consent.dataHolderId),
-            Neuron.Value(consent).Do(this.ConsentNewRefreshToken(consent)).When(c => !c.HasCurrentAccessToken()).Else(Neuron.Value(consent))
+            Neuron.Value(consent).Do(this.ConsentNewRefreshToken(consent)).When(c => c.HasCurrentRefreshToken() && !c.HasCurrentAccessToken()).Else(Neuron.Value(consent))
             .AssertNotUndefined()
         )
         .Extend(this.nf.Simple((([a,b,c,consent]:[any,any,any,ConsentRequestLog]) => consent)))
