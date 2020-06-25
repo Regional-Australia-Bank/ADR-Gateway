@@ -37,8 +37,8 @@ export class NeuronFactory {
 
     Input = this.Passthru
 
-    GenerateOnce = <FN extends (...args: any[]) => AbstractNeuron<Input, any>,Input extends any>(fn: FN, tag?:string): FN => {
-        return <any>PathwayFactory.GenerateOnce((...innerArgs:any[]) => fn.apply(undefined,innerArgs).Logger(this.logger),tag)
+    GenerateOnce = <FN extends (...args: any[]) => AbstractNeuron<Input, any>,Input extends any>(fn: FN): FN => {
+        return <any>PathwayFactory.GenerateOnce((...innerArgs:any[]) => fn.apply(undefined,innerArgs).Logger(this.logger))
     }
 
     Parameterize = <FN extends (...args: any[]) => AbstractNeuron<Input, any>,Input extends any>(fn: FN): FN => {

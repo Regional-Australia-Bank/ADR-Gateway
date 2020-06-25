@@ -22,6 +22,7 @@ import { ConsumerDataAccessCredentialsNeuron } from "./Neurons/ConsumerDataAcces
 import { ConsentNewAccessTokenNeuron, ValidateConsentNeuron } from "./Neurons/ConsentAccessToken"
 import winston from "winston"
 import { SoftwareProductConfig, SoftwareProductConfigs } from "./Neurons/SoftwareProductConfig"
+import { PathwayGeneratorSymbol, NameCompoundNeurons } from "../../../Common/Connectivity/PathwayFactory"
 
 let DataHolderStatus:ReturnType<typeof DataHolderStatusNeurons>
 
@@ -41,6 +42,10 @@ export class DefaultPathways {
         // instanceCount++;
         // if (instanceCount > 1) throw 'DefaultPathways is being constructed a second time'
         DataHolderStatus = DataHolderStatusNeurons(nf)
+
+        NameCompoundNeurons(this);
+        NameCompoundNeurons(DataHolderStatus);
+
     }
 
     // TODO Allow to config client certificates optionally (warning when not supplied)

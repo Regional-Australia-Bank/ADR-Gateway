@@ -1,12 +1,25 @@
 import _ from "lodash";
-import { Neuron, AbstractNeuron } from "./Neuron";
+import { Neuron, AbstractNeuron, CompoundNeuron } from "./Neuron";
+
+export const PathwayGeneratorSymbol = Symbol()
+
+export const NameCompoundNeurons = (root:object,prefix:string = "") => {
+    for (let [k,generator] of Object.entries(root)) {
+        if (generator && generator[PathwayGeneratorSymbol]) {
+            (<any>generator).Named(k)
+        }
+    }    
+}
+
 export class PathwayFactory {
-    static GenerateOnce = <FN extends (...args: any[]) => AbstractNeuron<Input, any>,Input extends any>(fn: FN, tag?:string): FN => {
+    static GenerateOnce = <FN extends (...args: any[]) => AbstractNeuron<Input, any>,Input extends any>(fn: FN): FN => {
+        let compoundName:string;
+
         let paramMap: {
             args: any[];
             value: AbstractNeuron<Input, any>;
         }[] = [];
-        let onceWrapper = (tag:string|undefined,...onceArgs: any[]) => {
+        let onceWrapper = (...onceArgs: any[]) => {
             let values = paramMap.filter(m => _.isEqual(m.args, onceArgs));
             if (values.length > 1)
                 throw 'Did not expect more than one matching paramMap';
@@ -15,18 +28,31 @@ export class PathwayFactory {
             }
             else {
                 let value: AbstractNeuron<Input, any> | undefined = fn.apply(undefined,onceArgs);
+                if (value instanceof CompoundNeuron) {
+                    value.Named(compoundName)
+                }
                 paramMap.push({ args:onceArgs, value });
                 return value;
             }
         };
-        return <FN>onceWrapper.bind(undefined,tag);
+        let resultFn = <FN>onceWrapper.bind(undefined);
+        (<any>resultFn).Named = name => compoundName = name;
+        (<any>resultFn)[PathwayGeneratorSymbol] = true
+        return resultFn;
     };
 
     static Parameterize = <FN extends (...args: any[]) => AbstractNeuron<Input, any>,Input extends any>(fn: FN): FN => {
+        let compoundName:string;
         let onceWrapper = (...onceArgs: any[]) => {
             let value: AbstractNeuron<Input, any> | undefined = fn.apply(undefined,onceArgs);
+            if (value instanceof CompoundNeuron) {
+                value.Named(compoundName)
+            }
             return value;
         };
-        return <FN>onceWrapper.bind(undefined);
+        let resultFn = <FN>onceWrapper.bind(undefined);
+        (<any>resultFn).Named = name => compoundName = name;
+        (<any>resultFn)[PathwayGeneratorSymbol] = true
+        return resultFn;
     };
 }
