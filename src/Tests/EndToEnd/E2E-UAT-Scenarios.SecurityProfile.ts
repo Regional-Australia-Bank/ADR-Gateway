@@ -340,8 +340,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(DoRequest,async ctx => {
                     ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
 
-                    // wait 30 seconds for the token to be revoked.
-                    await new Promise(resolve => setTimeout(resolve,30000))
+                    // wait 1 seconds for the token to be revoked.
+                    await new Promise(resolve => setTimeout(resolve,1000))
 
                     let options = DoRequest.Options({
                         method: "GET",

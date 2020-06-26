@@ -12,6 +12,7 @@ import { Tests as ApiTests } from "./E2E-UAT-Scenarios.Apis";
 import { MakeAndEnter, ExecuteTestCleanup } from "./Framework/FileWriter";
 import fs from "fs"
 import { TestContext } from "./Framework/TestContext";
+import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 const rimraf = require("rimraf")
 
 process.on("unhandledRejection", (error) => {
@@ -19,78 +20,92 @@ process.on("unhandledRejection", (error) => {
     throw error; // Following best practices re-throw error and let the process exit with error code
 });
 
-
 chai.use(chaiAsPromised);
 chai.should();
 
+
+const GenerateTests = (environment:E2ETestEnvironment) => {
+    let prevDir = process.cwd()
+    let envDir;
+
+    describe(environment.Name, async () => {
+
+        before(async function() {
+            this.timeout(10000);
+            if (environment.Name != 'Mock test environment') {
+                envDir = TestConfigBase()
+                process.chdir(envDir);
+            }
+            console.log(`Starting environment: ${environment.Name}`)
+
+            if (environment.Config.EvidenceDir) {
+                try {
+                    MakeAndEnter(environment.Config.EvidenceDir)
+                    if (fs.existsSync(".work")) {
+                        console.log('The path exists.');
+                        let deletedPromise = new Promise((resolve,reject) => rimraf('.work', (err?:any) => {
+                            if (err) {
+                                reject(err)
+                            } else {
+                                resolve()
+                            }
+                        }))
+                        await deletedPromise;
+                    }
+                    MakeAndEnter(".work")
+
+                } finally {
+                    process.chdir(envDir || prevDir)
+                }
+            }
+
+            try {
+                return await environment.Start();
+            } catch (e) {
+                console.error(e)
+            }
+        })
+
+        CdrRegisterTests(environment);
+
+        DynamicClientRegistrationTests(environment);
+
+        SecurityProfileTests(environment);
+    
+        ApiTests(environment);
+
+        // require("./Up").Tests(environment)
+
+        after(async function() {
+            this.timeout(10000)
+            console.log(`Stopping environment: ${environment.Name}`)
+            try {
+                await ExecuteTestCleanup(environment);
+            } finally {
+                await environment.Stop();
+            }
+            if (environment.Name != 'Mock test environment') {
+                process.chdir(prevDir);
+            }
+        })
+
+    })    
+}
+
+
+
 describe('E2E Scenarios', async () => {
    
-    for (let environment of GetEnvironments()) {
-        let prevDir = process.cwd()
-        let envDir;
+    let {liveTestEnvironments, mockEvironment} = GetEnvironments();
 
-        describe(environment.Name, async () => {
+        GenerateTests(mockEvironment)
 
-            before(async function() {
-                this.timeout(10000);
-                if (environment.Name != 'Mock test environment') {
-                    envDir = TestConfigBase()
-                    process.chdir(envDir);
-                }
-                console.log(`Starting environment: ${environment.Name}`)
+        if (!process.env.TEST_SUITE_HEADLESS) {
+            describe("Live environments", async () => {
+            for (let environment of liveTestEnvironments) {
+                GenerateTests(environment)  
+            }    
+        })    
+    }
 
-                if (environment.Config.EvidenceDir) {
-                    try {
-                        MakeAndEnter(environment.Config.EvidenceDir)
-                        if (fs.existsSync(".work")) {
-                            console.log('The path exists.');
-                            let deletedPromise = new Promise((resolve,reject) => rimraf('.work', (err?:any) => {
-                                if (err) {
-                                    reject(err)
-                                } else {
-                                    resolve()
-                                }
-                            }))
-                            await deletedPromise;
-                        }
-                        MakeAndEnter(".work")
-
-                    } finally {
-                        process.chdir(envDir || prevDir)
-                    }
-                }
-
-                try {
-                    return await environment.Start();
-                } catch (e) {
-                    console.error(e)
-                }
-            })
-
-            CdrRegisterTests(environment);
-
-            DynamicClientRegistrationTests(environment);
-
-            SecurityProfileTests(environment);
-        
-            ApiTests(environment);
-
-            // require("./Up").Tests(environment)
-
-            after(async function() {
-                this.timeout(10000)
-                console.log(`Stopping environment: ${environment.Name}`)
-                try {
-                    await ExecuteTestCleanup(environment);
-                } finally {
-                    await environment.Stop();
-                }
-                if (environment.Name != 'Mock test environment') {
-                    process.chdir(prevDir);
-                }
-            })
-
-        })
-    
-    }    
 })

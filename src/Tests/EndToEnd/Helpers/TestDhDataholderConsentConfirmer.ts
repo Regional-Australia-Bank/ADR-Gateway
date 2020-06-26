@@ -96,7 +96,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
             }
         };
 
-        this.browser = await puppeteer.launch({headless:false,ignoreHTTPSErrors:true});
+        this.browser = await puppeteer.launch({headless:!!process.env.TEST_SUITE_HEADLESS,ignoreHTTPSErrors:true});
         const page = await this.browser.newPage();
 
         

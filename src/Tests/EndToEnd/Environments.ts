@@ -117,11 +117,11 @@ export const InTestConfigBase = async (fn:(() => Promise<any>)) => {
     return out;
 }
 
-export const GetEnvironments = ():E2ETestEnvironment[] => {
+export const GetEnvironments = ():{liveTestEnvironments:E2ETestEnvironment[], mockEvironment: E2ETestEnvironment} => {
 
-    let environments:E2ETestEnvironment[] = []
+    let liveTestEnvironments:E2ETestEnvironment[] = []
 
-    const devEvironment = new E2ETestEnvironment(InternalTestConfig.Configure())
+    const mockEvironment = new E2ETestEnvironment(InternalTestConfig.Configure())
 
     const currentDir = process.cwd()
 
@@ -132,7 +132,7 @@ export const GetEnvironments = ():E2ETestEnvironment[] => {
         console.log(`Looking for test environments in ${testConfigBase}`);
         
         try {
-            environments = _.map(<EndToEndTestingConfig[]><any>JSON.parse(fs.readFileSync(path.join(testConfigBase,"e2e.test.environments.json"),'utf8')),env => {
+            liveTestEnvironments = _.map(<EndToEndTestingConfig[]><any>JSON.parse(fs.readFileSync(path.join(testConfigBase,"e2e.test.environments.json"),'utf8')),env => {
                 return new E2ETestEnvironment(env)
             });
         } catch {
@@ -143,11 +143,7 @@ export const GetEnvironments = ():E2ETestEnvironment[] => {
         console.log(`Could not change directory to ${testConfigBase}`)
     }
 
-
-
     process.chdir(currentDir)
 
-    environments.unshift(devEvironment)
-
-    return environments
+    return {liveTestEnvironments, mockEvironment}
 }
