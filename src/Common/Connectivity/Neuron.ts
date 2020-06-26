@@ -843,9 +843,10 @@ export class CompoundNeuron<Input,Output> extends AbstractNeuron<Input,Output> {
         let result = pathwayEvaluationPromise.then(output => {
             this.logger.debug("CompoundNeuron: Evaluated",{cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, output})
             return output;
-        },error => {
-            this.logger.error("CompoundNeuron: Evaluation failed",{cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, error: sanitizeError(error)})
-            return Promise.reject(`Evaluation failed for ${this.pathwayName} (id: ${this.id})`);
+        },err => {
+            let innerError = sanitizeError(err)
+            this.logger.debug("CompoundNeuron: Evaluation failed",{cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, innerError})            
+            return Promise.reject({message:`Evaluation failed for ${this.pathwayName} (id: ${this.id})`,cacheIgnoranceLength,neuronId:this.id,name: this.pathwayName, innerError});
         });
 
         return await result;

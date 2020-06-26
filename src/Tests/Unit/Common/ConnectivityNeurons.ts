@@ -710,7 +710,7 @@ export const Tests = (() => {
                 
             })
 
-            it('Consistent in healing scenario', async () => {
+            it.skip('Consistent in healing scenario', async () => {
                 // Spy on the calls to Evaluate to ensure that cacheIgnoranceLength starts at zero and ends at the max length of the encapsulated pathway
                 throw "Test case needs rewriting. See notes."
                 const brokenCache = {
@@ -881,7 +881,7 @@ export const Tests = (() => {
         
                 let r2 = a2.Evaluate();
                 let error = await r2.catch((err) => err)
-                expect(error.error).to.equal('Number is not 3')
+                expect(error.innerError.error).to.equal('Number is not 3')
         
             })
         
@@ -907,7 +907,7 @@ export const Tests = (() => {
         
                 let r2 = a2.Evaluate();
                 let error = await r2.catch((err) => err)
-                expect(error.error).to.equal('Validation failed without throwing')
+                expect(error.innerError.error).to.equal('Validation failed without throwing')
         
             })
 

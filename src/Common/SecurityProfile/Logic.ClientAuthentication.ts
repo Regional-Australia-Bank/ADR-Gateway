@@ -40,6 +40,12 @@ class BearerJwtVerifier {
         let assumedClientId = payload?.sub
         if (typeof assumedClientId !== 'string') throw new Error("JWT sub claim is not a string");
 
+        if (typeof acceptableClientId === 'string') {
+            if (assumedClientId !== acceptableClientId) {
+                throw 'clientId from sub claim does not match the acceptable'
+            }
+        }
+
 
         let verified = <JWT.completeResult|undefined>undefined;
         // get the key the verifies the signature

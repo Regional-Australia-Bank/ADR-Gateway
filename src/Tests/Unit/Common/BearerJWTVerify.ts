@@ -61,7 +61,7 @@ export const Tests = (() => {
 
 
   async function BearerJwtVerify(audience: string, assumedClientId:string|undefined, authHeaderValue:string|undefined) {
-    await verifier.verifyClientId(audience,assumedClientId,authHeaderValue, (clientId:string) => {
+    await verifier.verifyClientId(assumedClientId,authHeaderValue,audience,(clientId:string) => {
       return <any>pw.DataHolderJwks(<any>clientId)
     })
   }
@@ -115,7 +115,7 @@ export const Tests = (() => {
       payloadWrongIss.iss = "wrong-iss"
 
       const payloadWrongSub = ConformingData().payload();
-      payloadWrongSub.sub = "wrong-sub"
+      payloadWrongSub.sub = "client1"
 
       return Promise.all(
         [
@@ -128,7 +128,7 @@ export const Tests = (() => {
             <string>payloadWrongSub.aud,
             "cdr-register",
             "Bearer " + GetSignedJWT(payloadWrongSub, ConformingData().jwks())
-          ).should.be.rejectedWith('unexpected "sub" claim value')
+          ).should.be.rejectedWith('clientId from sub claim does not match the acceptable')
         ]
       )
 
@@ -201,7 +201,7 @@ export const Tests = (() => {
 
         const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("\"sub\" claim is missing")
+        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("JWT sub claim is not a string")
       });
       it('Rejects if aud is not supplied', () => {
         let payload = ConformingData().payload();
@@ -279,9 +279,9 @@ export const Tests = (() => {
               ConformingData().payload("client2"),
               ConformingData().jwks("client2")
             )
-          ), "no matching key found in the KeyStore")
+          ), "clientId from sub claim does not match the acceptable")
 
-        return Promise.all([client1ResultFulfilled, client2ResultFulfilled, sneakyResultRejected]).should.be.fulfilled;
+        return Promise.all([client1ResultFulfilled, client2ResultFulfilled, sneakyResultRejected]);
 
       });
       /**
@@ -348,7 +348,7 @@ export const Tests = (() => {
             "http://localhost:3000/revoke",
             "client1",
             "Bearer " + tamperedToken
-          ), "alg not whitelisted")
+          ), "no matching key found in the KeyStore")
       });
 
     })
