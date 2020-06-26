@@ -234,7 +234,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                 waitPromises = [authFilled, otpFilled, accountsSelected, consentConfirmed, oauthFlowResult,unredirectableErrorResult]
 
                 let race = new Promise((resolve) => {
-                    oauthFlowResult.then(resolve);
+                    oauthFlowResult.then(resolve,() => console.error); // us console.error to prevent unhandled promise rejection
                     unredirectableErrorResult.then(resolve).catch(err => {
                         // occasionally the unredirectableErrorResult waiter may throw an error because document.body is null sometime during tear-down. Just ignore it.
                         console.error(err);

@@ -134,6 +134,7 @@ class TestConsentRequestor {
             responseType:"json",
             data: {
                 userId: params.userId,
+                productKey: "sandbox",
                 systemId: params.systemId,
                 scopes: params.cdrScopes,
                 sharingDuration: params.sharingDuration,
@@ -199,7 +200,7 @@ class TestConsentRequestor {
     
             let oAuthResultPromise = cc.Confirm(authparams);
             oAuthResultPromise.then(async (res) => {
-                if (!res?.hash?.error) {
+                if (!res?.hash?.error && !res.unredirectableError) {
                     let consent:ConsentRequestLog = await this.consentManager.GetConsent(adrConsentId); 
                     return {
                         oAuthResult: res,
@@ -226,7 +227,8 @@ class TestConsentRequestor {
             }
         });
    
-        return await cleanup;
+        let cleanupResult = await cleanup;
+        return cleanupResult;
     }
 }
 

@@ -497,7 +497,9 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 }))
                 .Then(async ctx => {
                     let res = await ctx.GetResult(NewGatewayConsent)
-                    expect(res.oAuthResult.unredirectableError).to.be.true
+                    if (res.oAuthResult.unredirectableError !== true) {
+                        throw 'Expected unredirectableError === true'
+                    }
                 },120)   
         })        
 
