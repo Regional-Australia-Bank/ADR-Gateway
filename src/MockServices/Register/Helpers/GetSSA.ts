@@ -4,8 +4,9 @@ import moment from "moment";
 import { JWT, JWK } from "jose";
 import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { Client } from "../Server/server";
+import { MockRegisterConfig } from "../Server/Config";
 
-export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId:string, dataRecipients:any[], signingKey: JWK.Key, pw:DefaultPathways, clientProvider:(id:string) => Promise<Client>):Promise<string> => {
+export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId:string, dataRecipients:any[], signingKey: JWK.Key, pw:DefaultPathways, clientProvider:(id:string) => Promise<Client>, configFn: () => Promise<MockRegisterConfig>):Promise<string> => {
     
     try {
         const dataRecipientBrands = _.filter(_.flatten(_.map(dataRecipients,dr=>dr.dataRecipientBrands)),brand => brand.dataRecipientBrandId == dataRecipientBrandId);    
@@ -48,7 +49,13 @@ export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId
     } catch (e) {
         // could not find matching data recipient, so let's forward to actual register
         try {
-            return await pw.SoftwareStatementAssertion(dataRecipientProductId).GetWithHealing();
+            let config = await configFn();
+            if (config.LiveRegisterProxy.BrandId) {
+                return await pw.SoftwareStatementAssertion(dataRecipientProductId).GetWithHealing();
+            } else {
+                throw "No Live Register configured"
+            }
+
         } catch (e2) {
             throw e;
         }

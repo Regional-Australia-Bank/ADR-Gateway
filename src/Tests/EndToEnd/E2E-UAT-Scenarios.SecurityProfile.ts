@@ -657,7 +657,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 },120)
         })
 
-        describe('Transaction Security - MTLS', async () => {
+        describe.skip('Transaction Security - MTLS', async () => {
 
             Scenario($ => it.apply(this,$('TS_037')), undefined, 'MTLS connectivity should be established successfully.')
                 .Given('Cold start')
@@ -910,7 +910,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     return DoRequest.Options({
                         method: "GET",
                         responseType:"json",
-                        url: oidcConfig.jwks_uri
+                        url: oidcConfig.jwks_uri,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca
                     })
                 })
                 .Then(async ctx => {
@@ -927,7 +928,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     return DoRequest.Options({
                         method: "GET",
                         responseType:"json",
-                        url: ctx.environment.SystemUnderTest.AdrGateway().FrontEndUrls.JWKSEndpoint
+                        url: ctx.environment.SystemUnderTest.AdrGateway().FrontEndUrls.JWKSEndpoint,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca
                     })
                 })
                 .Then(async ctx => {
@@ -946,7 +948,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     return DoRequest.Options({
                         method: "GET",
                         responseType:"json",
-                        url: jwks_uri
+                        url: jwks_uri,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca
                     })
                 })
                 .Then(async ctx => {

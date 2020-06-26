@@ -163,7 +163,7 @@ export class MockRegister {
                 } = <any>matchedData(req);
 
                 try {
-                    const ssa = await GetSSA(m.dataRecipientBrandId,m.softwareProductId,dataRecipients,JWKS.asKeyStore(jwks).get({use:'sig',alg:'PS256'}),this.pw,this.clientProvider);
+                    const ssa = await GetSSA(m.dataRecipientBrandId,m.softwareProductId,dataRecipients,JWKS.asKeyStore(jwks).get({use:'sig',alg:'PS256'}),this.pw,this.clientProvider,this.configFn);
                     res.status(200).contentType('application/jwt').send(ssa);
                 } catch (err) { 
                     if (typeof err.statusCode == 'number') {
