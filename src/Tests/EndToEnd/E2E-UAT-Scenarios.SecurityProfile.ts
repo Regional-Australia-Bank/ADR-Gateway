@@ -542,7 +542,11 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .Then(async ctx => {
                     let result = await (ctx.GetResult(DoRequest));
                     for (let claim of ["sub","acr","auth_time","name","given_name","family_name","updated_at","refresh_token_expires_at","sharing_expires_at"]) {
-                        expect(result.body[claim]).to.not.be.null.and.not.be.undefined.and.not.be.empty;
+                        let value = result.body[claim];
+                        expect(value).to.not.be.null.and.not.be.undefined;
+                        if (typeof value == 'string') {
+                            expect(value).to.not.be.empty; 
+                        }
                     }
                     expect(["urn:cds.au:cdr:2"]).to.include(result.body.acr);
                     expect(moment(result.body.auth_time*1000).isBefore(moment().subtract(5,'seconds'))).to.eql(true,"Auth time is too late")
@@ -994,7 +998,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     const consent = (await authCtx.GetResult(RefreshAccessTokenForConsent,"updatedConsent")).consent;
                     if (typeof consent == 'undefined') throw 'Consent is undefined'
 
-                    consent.reload();
+                    await consent.reload();
 
                     const newExpiry = moment(consent.accessTokenExpiry).utc();
                     const issuedTime = (await (authCtx.GetResult(SetValue,"currentTimeUtc"))).value
@@ -1028,7 +1032,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
             Scenario($ => it.apply(this,$('TS_031')), undefined, 'An Access Token refresh should be successful.')
                 .Given('Existing Auth')
-                .PreTask(ExistingCurrentGatewayConsent,async () => ({
+                .PreTask(NewGatewayConsent,async () => ({
                     cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
                     sharingDuration: 86400,
                     systemId: "sandbox",
@@ -1039,10 +1043,10 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     return moment().utc();
                 },"currentTimeUtc")
                 .PreTask(SetValue,async ctx => {
-                    return (await (ctx.GetResult(ExistingCurrentGatewayConsent))).consent!.accessToken;
+                    return (await (ctx.GetResult(NewGatewayConsent))).consent!.accessToken;
                 },"previousAccessToken")
                 .When(RefreshAccessTokenForConsent,async ctx => {
-                    return (await (ctx.GetResult(ExistingCurrentGatewayConsent))).consent!;
+                    return (await (ctx.GetResult(NewGatewayConsent))).consent!;
                 },"updatedConsent")
                 .Then(async ctx => {
                     const previousAccessToken = (await ctx.GetResult(SetValue,"previousAccessToken")).value;

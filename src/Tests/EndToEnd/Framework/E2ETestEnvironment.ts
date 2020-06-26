@@ -212,9 +212,9 @@ export class E2ETestEnvironment {
         // Start AdrDb
         if (serviceDefinitions.AdrDb) {
             if (serviceDefinitions.AdrDb === true) {
-                this.TestServices.adrDbConn = createConnection(<any>EntityDefaults)
+                this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>EntityDefaults))
             } else {
-                this.TestServices.adrDbConn = createConnection(<any>_.merge(EntityDefaults, serviceDefinitions.AdrDb))
+                this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>_.merge(EntityDefaults, serviceDefinitions.AdrDb)))
             }
         }
 

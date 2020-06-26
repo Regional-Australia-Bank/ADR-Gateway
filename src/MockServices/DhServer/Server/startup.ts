@@ -6,7 +6,7 @@ import { Connection } from "typeorm";
 import winston = require("winston");
 
 export namespace DhServerStartup {
-    export async function Start (configFn:() => Promise<DhServerConfig>,db?:Promise<Connection>) {
+    export async function Start (configFn:() => Promise<DhServerConfig>) {
       const config = await configFn()
 
       try {

@@ -1,4 +1,4 @@
-import {Not,Entity, Column, BaseEntity,PrimaryGeneratedColumn, createConnection, Connection, MoreThanOrEqual} from "typeorm";
+import {Not,Entity, Column, BaseEntity,PrimaryGeneratedColumn, Connection, MoreThanOrEqual} from "typeorm";
 import {singleton, inject, injectable} from "tsyringe";
 import "reflect-metadata";
 import moment = require("moment");
@@ -128,33 +128,6 @@ class Consent extends BaseEntity {
         return consent;
     }
 
-
-    // TODO support refresh_token_expires_at and sharing_expires_at in ID Token
-    regenerateTokens = async (clientCertThumbprint: string, accessTokenLifetimeSeconds: number, refreshTokenLifetimeDays: number) => {
-        //regenerate tokens:
-        this.accessToken = entropy256bit.string();
-        if (this.sharingDurationSeconds > 0 ) {
-            this.refreshToken = entropy256bit.string();
-            let sharingEndTime = moment(this.consentConfirmedDate).add(this.sharingDurationSeconds,'seconds');
-            let fromNow28DaysForward = moment.utc().add(refreshTokenLifetimeDays,"days");
-            // let the token last the earlier of (1) 28 days from now, (2) the end time of the sharing agreement.
-            if (fromNow28DaysForward.isAfter(sharingEndTime)) {
-                this.refreshTokenExpires = sharingEndTime.toDate();
-            } else {
-                this.refreshTokenExpires = fromNow28DaysForward.toDate();
-            }
-        }
-        this.accessTokenExpires = moment.utc().add(accessTokenLifetimeSeconds,"seconds").toDate();
-
-        //invalidate authCode
-        this.authCode = undefined;
-        this.authCodeStatus = AuthCodeStatus.CONSUMED;
-        this.clientCertThumbprint = clientCertThumbprint;
-        //this.accessTokenExpires = 
-
-        return await this.save();
-    }
-
 }
 
 type ConsentRequestInitial = Pick<Consent,'state'|'drAppClientId'|'sharingDurationSeconds'|'nonce'|'redirect_uri'> & {scopes:string[]};
@@ -169,6 +142,32 @@ class ConsentManager {
         @inject("TokenIssuerConfig") private issuer:IssuerSpec
         ) {
 
+    }
+
+    // TODO support refresh_token_expires_at and sharing_expires_at in ID Token
+    RegenerateTokens = async (consent: Consent, clientCertThumbprint: string, accessTokenLifetimeSeconds: number, refreshTokenLifetimeDays: number) => {
+        //regenerate tokens:
+        consent.accessToken = entropy256bit.string();
+        if (consent.sharingDurationSeconds > 0 ) {
+            consent.refreshToken = entropy256bit.string();
+            let sharingEndTime = moment(consent.consentConfirmedDate).add(consent.sharingDurationSeconds,'seconds');
+            let fromNow28DaysForward = moment.utc().add(refreshTokenLifetimeDays,"days");
+            // let the token last the earlier of (1) 28 days from now, (2) the end time of the sharing agreement.
+            if (fromNow28DaysForward.isAfter(sharingEndTime)) {
+                consent.refreshTokenExpires = sharingEndTime.toDate();
+            } else {
+                consent.refreshTokenExpires = fromNow28DaysForward.toDate();
+            }
+        }
+        consent.accessTokenExpires = moment.utc().add(accessTokenLifetimeSeconds,"seconds").toDate();
+
+        //invalidate authCode
+        consent.authCode = undefined;
+        consent.authCodeStatus = AuthCodeStatus.CONSUMED;
+        consent.clientCertThumbprint = clientCertThumbprint;
+        //this.accessTokenExpires = 
+
+        return await (await this.connection).getRepository(Consent).save(consent);
     }
 
     revokeRefreshToken = async (token:string,drAppClientId:string):Promise<void> => {
@@ -187,7 +186,7 @@ class ConsentManager {
             consent.refreshToken = undefined;
             consent.tokenRevocationStatus = TokenRevocationStatus.REVOKED;
             consent.tokenRevocationDate = moment.utc().toDate()
-            let revoked = await consent.save()
+            let revoked = await resolvedConnection.manager.save(consent);
             this.logger.info({"Revoked consent": revoked});
         }
         return;
@@ -208,7 +207,7 @@ class ConsentManager {
         for (let consent of matchingConsents) {
             consent.accessToken = null;
             consent.accessTokenExpires = null;
-            let revoked = await consent.save()
+            let revoked = await resolvedConnection.manager.save(consent);
             this.logger.info({"Revoked access token": revoked});
         }
         return;
@@ -256,7 +255,7 @@ class ConsentManager {
         // TODO confirm validity period for auth token
         consent.authCodeExpires = moment.utc().add(this.issuer.authTokenExpirySeconds,'seconds').toDate();
         consent.consentConfirmedDate = moment.utc().toDate();
-        return await consent.save();
+        return await resolvedConnection.getRepository(Consent).save(consent);
     }
 
     getConsentRequestState = async (id: number) => {
@@ -280,7 +279,7 @@ class ConsentManager {
             throw 'Consent.AssertValidAndCurrent error'
         }
 
-        return await consent.regenerateTokens(clientCertThumbprint,this.issuer.accessTokenExpirySeconds,this.issuer.refreshTokenExpiryDays);;
+        return await this.RegenerateTokens(consent,clientCertThumbprint,this.issuer.accessTokenExpirySeconds,this.issuer.refreshTokenExpiryDays);;
         // TODO error handling as per 3.1.3.4 https://openid.net/specs/openid-connect-core-1_0.html
     }
 
@@ -304,7 +303,7 @@ class ConsentManager {
         } catch {
             throw 'Consent.AssertValidAndCurrent error'
         }
-        return await consent.regenerateTokens(clientCertThumbprint,this.issuer.accessTokenExpirySeconds,this.issuer.refreshTokenExpiryDays);;
+        return await this.RegenerateTokens(consent,clientCertThumbprint,this.issuer.accessTokenExpirySeconds,this.issuer.refreshTokenExpiryDays);;
 
         // TODO error handling as per 3.1.3.4 https://openid.net/specs/openid-connect-core-1_0.html
         // TODO error handling as per 3.1.3.4 https://openid.net/specs/openid-connect-core-1_0.html

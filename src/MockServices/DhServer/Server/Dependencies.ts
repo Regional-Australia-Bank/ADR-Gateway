@@ -83,7 +83,7 @@ async function RegisterDependencies(configFn: () => Promise<DhServerConfig>, db?
   container.register("CdrRegisterKeystoreProvider", { useValue: GetRegisterJWKS.bind(undefined,configFn,injector) })
 
   let connection = db || (() => {
-    let options = _.merge(EntityDefaults, config.Database);
+    let options = _.merge(EntityDefaults, config.Database, {name: "DhServerDbConnection"});
     return createConnection(options)
 
   })()

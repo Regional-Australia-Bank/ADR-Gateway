@@ -21,7 +21,7 @@ class TestConsentRequestor {
     constructor(
         private testContext:TestContext
     ){
-        this.consentManager = testContext.environment.ConsentRequestLogManager()
+        this.consentManager = testContext.environment.TestServices.adrGateway?.connectivity.consentManager
     }
 
     GetMatchingCurrentConsent = async (params: {
@@ -102,7 +102,9 @@ class TestConsentRequestor {
         if (consent.HasCurrentRefreshToken()) {
             // Hack to force a refresh on accessing the user info endpoint
             consent.accessTokenExpiry = moment().utc().subtract(1,'day').toDate();
-            await (await this.consentManager.connection).getRepository(ConsentRequestLog).save(consent);
+            await consent.save();
+            // let connection = (await this.consentManager.connection);
+            // await connection.manager.save(consent);
             // Call userInfo through AdrGateway which will refresh tokens
             let userInfoResult = await axios.request(this.testContext.environment.Util.TlsAgent({
                 method:"GET",

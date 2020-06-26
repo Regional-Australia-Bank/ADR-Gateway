@@ -57,7 +57,7 @@ async function RegisterDependencies(configFn:() => Promise<AdrServerConfig>,db?:
         database: ":memory:",
         entityPrefix: "adr_",
         synchronize: true,
-        entities: [JtiLog, ClientJwks, MetadataUpdateLog, ConsentRequestLog]
+        entities: [JtiLog, ConsentRequestLog]
       },config.Database);
       return createConnection(options)
 

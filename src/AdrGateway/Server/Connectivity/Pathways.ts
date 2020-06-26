@@ -36,7 +36,7 @@ export class DefaultPathways {
         @inject("ClientCertificateInjector") public cert:ClientCertificateInjector,
         @inject("Logger") public logger:winston.Logger,
         public dataholderRegistrationManager: DataHolderRegistrationManager,
-        private consentManager:ConsentRequestLogManager,
+        public consentManager:ConsentRequestLogManager,
         private nf:NeuronFactory
     ) {
         // instanceCount++;

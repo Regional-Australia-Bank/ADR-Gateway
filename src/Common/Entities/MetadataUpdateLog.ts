@@ -1,4 +1,4 @@
-import {Not,Entity, Column, BaseEntity,PrimaryGeneratedColumn, createConnection, Connection} from "typeorm";
+import {Not,Entity, Column, BaseEntity,PrimaryGeneratedColumn, Connection} from "typeorm";
 import {singleton, inject, injectable} from "tsyringe";
 import "reflect-metadata";
 import moment = require("moment");
