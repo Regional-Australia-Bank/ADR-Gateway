@@ -13,7 +13,6 @@ import { ClientCertificateInjector } from "../../Services/ClientCertificateInjec
 import { IncomingMessage } from "http";
 import { Dictionary } from "../../../Common/Server/Types";
 import { AdrGatewayConfig } from "../../Config";
-import { CatchPromiseRejection } from "./ErrorHandling";
 import { DefaultPathways } from "../Connectivity/Pathways";
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
@@ -148,7 +147,8 @@ class ConsumerDataAccessMiddleware {
             [
                 param('consentId').isInt({min:1}).bail(),
                 validationErrorMiddleware,
-                CatchPromiseRejection(Responder)
+                // Responder
+                Responder
             ])
     }
     

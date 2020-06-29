@@ -17,7 +17,6 @@ import cors from "cors";
 import { UserInfoProxyMiddleware } from "./Middleware/UserInfo";
 import { DefaultPathways } from "./Connectivity/Pathways";
 import { ConsentDetailsMiddleware } from "./Middleware/ConsentDetails";
-import { CatchPromiseRejection } from "./Middleware/ErrorHandling";
 import URLParse from "url-parse";
 import qs from "qs";
 
@@ -121,7 +120,7 @@ class AdrGateway {
                 }
                 next()
             },
-            CatchPromiseRejection(this.consentConfirmationMiddleware.handle)
+            this.consentConfirmationMiddleware.handle
         );
 
         app.options( "/cdr/consents/:consentId",

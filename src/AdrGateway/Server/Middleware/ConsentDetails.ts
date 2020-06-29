@@ -12,7 +12,6 @@ import { AdrGatewayConfig } from "../../Config";
 import uuid from "uuid";
 import { getAuthPostGetRequestUrl } from "../Helpers/HybridAuthJWS";
 import { JWKS } from "jose";
-import { CatchPromiseRejection } from "./ErrorHandling";
 import { SerializeConsentDetails } from "./ConsentListing";
 
 const querySchema:Schema = {
@@ -58,7 +57,7 @@ export class ConsentDetailsMiddleware {
         return _.concat(
             [
                 param('consentId').exists().toInt(),
-                CatchPromiseRejection(Responder)
+                Responder
             ])
     }
 

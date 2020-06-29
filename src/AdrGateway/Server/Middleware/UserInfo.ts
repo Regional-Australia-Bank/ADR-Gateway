@@ -9,7 +9,6 @@ import { DataHolderMetadataProvider, DataholderMetadata, Dataholder, DataholderO
 import * as _ from "lodash";
 import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
 import { AdrGatewayConfig } from "../../Config";
-import { CatchPromiseRejection } from "./ErrorHandling";
 import { DefaultPathways } from "../Connectivity/Pathways";
 import { DataHolderRegistration } from "../../Entities/DataHolderRegistration";
 import { DataholderOidcResponse } from "../Connectivity/Neurons/DataholderRegistration";
@@ -102,7 +101,7 @@ class UserInfoProxyMiddleware {
             [
                 param('consentId').isInt({min:1}).bail(),
                 validationErrorMiddleware,
-                CatchPromiseRejection(Responder)
+                Responder
             ])
     }
 

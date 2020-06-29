@@ -99,6 +99,7 @@ const createLocalHttpsAgent = (mtls?:MtlsOptions) => {
 const axiosClient = (() => {
     let defaultOptions = {
         proxy: false,
+        timeout: parseInt(process.env.REQUEST_TIMEOUT || "0"),
         httpsAgent: createLocalHttpsAgent(),
     };
     let client = axios.create(<any>defaultOptions)

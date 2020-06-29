@@ -12,7 +12,6 @@ import { AdrGatewayConfig } from "../../Config";
 import uuid from "uuid";
 import { getAuthPostGetRequestUrl } from "../Helpers/HybridAuthJWS";
 import { JWKS } from "jose";
-import { CatchPromiseRejection } from "./ErrorHandling";
 
 const querySchema:Schema = {
     userId: { isString: { errorMessage: "userId must be a string" }, isLength: {options: {min: 5}, errorMessage: "userId must be at least length 5"} },
@@ -142,7 +141,7 @@ class ConsentListingMiddleware {
             [
                 query(),
                 validationErrorMiddleware,
-                CatchPromiseRejection(Responder)
+                Responder
             ])
     }
 

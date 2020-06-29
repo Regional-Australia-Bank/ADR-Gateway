@@ -8,7 +8,6 @@ import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/Cons
 import { validationResult, matchedData, param } from "express-validator";
 import * as _ from "lodash";
 import { AdrGatewayConfig } from "../../Config";
-import { CatchPromiseRejection } from "./ErrorHandling";
 import { DefaultPathways } from "../Connectivity/Pathways";
 
 
@@ -77,7 +76,7 @@ class ConsentDeletionMiddleware {
             [
                 param('consentId').isInt({min:0}),
                 validationErrorMiddleware,
-                CatchPromiseRejection(Responder)
+                Responder
             ])
     }
 

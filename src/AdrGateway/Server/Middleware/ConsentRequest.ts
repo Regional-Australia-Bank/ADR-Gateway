@@ -12,7 +12,6 @@ import { AdrGatewayConfig } from "../../Config";
 import uuid from "uuid";
 import { getAuthPostGetRequestUrl } from "../Helpers/HybridAuthJWS";
 import { JWKS } from "jose";
-import { CatchPromiseRejection } from "./ErrorHandling";
 import { ConsentRequestParams } from "../Connectivity/Neurons/AuthorizationRequest";
 import { DefaultPathways } from "../Connectivity/Pathways";
 import { NoneFoundError } from "../Connectivity/Errors";
@@ -99,8 +98,7 @@ class ConsentRequestMiddleware {
             [
                 query(),
                 validationErrorMiddleware,
-                CatchPromiseRejection(Responder)
-
+                Responder
             ])
     }
 
