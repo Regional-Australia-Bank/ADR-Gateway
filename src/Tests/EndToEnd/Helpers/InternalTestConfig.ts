@@ -173,15 +173,15 @@ export class InternalTestConfig {
                     let softwareProductConfig:MockSoftwareProductConfig = {
                         Port: await getPort(),
                         ProductId: TestDataRecipientApplication.ProductId,
-                        redirect_uris: ["https://example.com","https://example.com/redirect2"],
+                        redirect_uris: ["https://regaustbank.io","https://regaustbank.io/redirect2"],
                         standardsVersion: 1,
                         standardsVersionMinimum: 1,
                         uris: {
                             jwks_uri: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}/jwks`,
-                            logo_uri: `http://example.com`,
-                            policy_uri: `http://example.com`,
+                            logo_uri: `http://regaustbank.io`,
+                            policy_uri: `http://regaustbank.io`,
                             revocation_uri: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}/revoke`,
-                            tos_uri: `http://example.com`
+                            tos_uri: `http://regaustbank.io`
                         }
                     }
                     return softwareProductConfig;

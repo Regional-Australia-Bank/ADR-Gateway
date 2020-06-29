@@ -44,7 +44,7 @@
     "start": "npm run build && npm run start:pm2",
     "start:docker": "docker-compose -f ./examples/deployment/docker/docker-compose.yml up --build",
     "build:docker": "npm run copy-proj && docker build --build-arg HTTP_PROXY --build-arg HTTPS_PROXY examples/deployment/docker -t adr-gateway",
-    "test": "cross-env TEST_SUITE_HEADLESS=1 mocha dist/Tests/**/*spec.js && echo Test Success",
+    "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 mocha dist/Tests/**/*spec.js && echo Test Success",
     "copy-proj": "npx rimraf examples/deployment/docker/.work && npx cpx src/** examples/deployment/docker/.work && npx cpx {package,tsconfig}.json examples/deployment/docker/.work/"
   },
   "devDependencies": {

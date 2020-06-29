@@ -19,15 +19,15 @@ const OriginalDataRecipients = [
                         "status": "ACTIVE",
                         "ssaParticulars": {
                             "client_description": "A mock software product for testing SSA",
-                            "client_uri": "https://example.com",
+                            "client_uri": "https://regaustbank.io",
                             "redirect_uris": [
-                                "https://example.com",
-                                "https://example.com/redirect2"
+                                "https://regaustbank.io",
+                                "https://regaustbank.io/redirect2"
                             ],
-                            "tos_uri": "https://example.com/tos.html",
-                            "policy_uri": "https://example.com/policy.html",
-                            "jwks_uri": "https://example.com/jwks",
-                            "revocation_uri": "https://example.com/revocation",
+                            "tos_uri": "https://regaustbank.io/tos.html",
+                            "policy_uri": "https://regaustbank.io/policy.html",
+                            "jwks_uri": "https://regaustbank.io/jwks",
+                            "revocation_uri": "https://regaustbank.io/revocation",
                             "scope": "bank:accounts.basic:read bank:accounts.detail:read bank:transactions:read bank:payees:read bank:regular_payments:read common:customer.basic:read common:customer.detail:read cdr:registration"
                         }
                     }

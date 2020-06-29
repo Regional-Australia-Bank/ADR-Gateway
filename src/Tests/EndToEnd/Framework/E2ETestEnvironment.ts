@@ -312,28 +312,47 @@ export class E2ETestEnvironment {
             })
         }
 
-        let adrServerClosed = PromiseToClose(this.TestServices.adrServer)
-        let mockRegisterClosed = PromiseToClose(this.TestServices.mockRegister)
-        let mockDhServerClosed = PromiseToClose(this.TestServices.mockDhServer)
-        let adrGatewayClosed = PromiseToClose(this.TestServices.adrGateway)
         let httpsAdrGatewayClosed = PromiseToClose(this.TestServices.httpsProxy?.adrGateway)
         let httpsAdrServerClosed = PromiseToClose(this.TestServices.httpsProxy?.adrServer)
         let httpsMockDhServerClosed = PromiseToClose(this.TestServices.httpsProxy?.mockDhServer)
         let httpsMockDhServerMTLSClosed = PromiseToClose(this.TestServices.httpsProxy?.mockDhServerMTLS)
         let httpsMockRegisterClosed = PromiseToClose(this.TestServices.httpsProxy?.mockRegister)
+
+        let adrServerClosed = PromiseToClose(this.TestServices.adrServer)
+        let mockRegisterClosed = PromiseToClose(this.TestServices.mockRegister)
+        let mockDhServerClosed = PromiseToClose(this.TestServices.mockDhServer)
+        let adrGatewayClosed = PromiseToClose(this.TestServices.adrGateway)
         let mockSoftwareProductClosed = PromiseToClose(this.TestServices.softwareProduct)
         let adrJwksClosed = PromiseToClose(this.TestServices.adrJwks)
 
         let dbClosed = new Promise((resolve,reject) => {
             if (typeof this.TestServices.adrDbConn != 'undefined') {
-                this.TestServices.adrDbConn.then(conn => conn.close().then(resolve,reject))
+                this.TestServices.adrDbConn.then(conn => conn.close().then(() => {
+                    console.log("Closed temporary database")
+                    resolve()
+                },(err) => {
+                    console.log("Error closing temporary database")
+                    reject(err)
+                }))
             } else {
                 return Promise.resolve()
             }
         })
 
+        await adrGatewayClosed;
+        await adrServerClosed;
+        await mockSoftwareProductClosed;
+        await adrJwksClosed;
+        await mockDhServerClosed;
+        await mockRegisterClosed;
 
-        await Promise.all([mockSoftwareProductClosed,adrJwksClosed,adrServerClosed,mockRegisterClosed,mockDhServerClosed,adrGatewayClosed,httpsAdrGatewayClosed,httpsAdrServerClosed,httpsMockRegisterClosed,httpsMockDhServerClosed,httpsMockDhServerMTLSClosed,dbClosed]);
+        await httpsAdrGatewayClosed;
+        await httpsAdrServerClosed;
+        await httpsMockDhServerClosed;
+        await httpsMockDhServerMTLSClosed;
+        await httpsMockRegisterClosed;
+
+        await dbClosed;
 
         return;
 

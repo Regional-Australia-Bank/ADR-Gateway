@@ -96,8 +96,12 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
             }
         };
 
-        this.browser = await puppeteer.launch({headless:!!process.env.TEST_SUITE_HEADLESS,ignoreHTTPSErrors:true});
-        const page = await this.browser.newPage();
+        this.browser = await puppeteer.launch({
+            headless: !!process.env.TEST_SUITE_HEADLESS,
+            ignoreHTTPSErrors:true,
+            args: ["--single-process"]
+        });
+        const [page] = await this.browser.pages();
 
         
         // record har file
@@ -309,9 +313,9 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
             await page.evaluate(`${AUTH_FLOW_COMPLETED_SELECTOR} = true`)
             await Promise.all(_.map(waitPromises, p => p.then(console.log,console.log))) // Assuming that if we don't wait for them all, some waitSelectors may hang
             if (har?.stop) {
-                await har.stop();
+                await har.stop().catch(console.error);
             }
-            await this.browser.close();
+            await page.close().catch().then(() => this.browser.close())
         }
 
         // return {

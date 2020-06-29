@@ -83,6 +83,7 @@ const GenerateTests = (environment:E2ETestEnvironment) => {
                 await ExecuteTestCleanup(environment);
             } finally {
                 await environment.Stop();
+                console.log(`Stopped environment: ${environment.Name}`)
             }
             if (environment.Name != 'Mock test environment') {
                 process.chdir(prevDir);
@@ -100,7 +101,7 @@ describe('E2E Scenarios', async () => {
 
         GenerateTests(mockEvironment)
 
-        if (!process.env.TEST_SUITE_HEADLESS) {
+        if (!process.env.TEST_SUITE_MOCK_ONLY) {
             describe("Live environments", async () => {
             for (let environment of liveTestEnvironments) {
                 GenerateTests(environment)  

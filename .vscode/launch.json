@@ -138,7 +138,8 @@
 			"cwd": "${workspaceRoot}",
             "protocol": "inspector",
             "env": {
-                "TEST_SUITE_HEADLESS":"1"
+                "TEST_SUITE_HEADLESS":"1",
+                "TEST_SUITE_MOCK_ONLY":"1"
             },
             "internalConsoleOptions": "neverOpen",
             "console": "integratedTerminal"

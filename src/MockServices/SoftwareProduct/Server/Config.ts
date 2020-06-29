@@ -40,7 +40,7 @@ export const GetConfig = (configFile?:string):MockSoftwareProductConfig => {
         AuthCallbackUrl: {
             doc: 'Url for the OAuth2 Authorize response',
             format: "url",
-            default: "https://example.com/",
+            default: "https://regaustbank.io/",
             env: 'ADR_AUTH_CALLBACK'
         }
     })

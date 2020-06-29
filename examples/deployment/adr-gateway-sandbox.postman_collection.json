@@ -237,7 +237,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "https://example.com/#code=...&id_token=...&state=string",
+					"raw": "https://regaustbank.io/#code=...&id_token=...&state=string",
 					"options": {
 						"raw": {
 							"language": "text"
