@@ -201,7 +201,9 @@ interface TestCleanup {
 const testCleanupQueue:TestCleanup[] = [];
 
 export const QueueTestCleanup = (c:TestCleanup) => {
+    if (c._evidenceFilename) {
     testCleanupQueue.push(c)
+}
 }
 
 export const ExecuteTestCleanup = async (env:E2ETestEnvironment) => {
