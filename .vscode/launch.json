@@ -128,6 +128,20 @@
 			"protocol": "inspector",
             "internalConsoleOptions": "neverOpen",
             "console": "integratedTerminal"
+        },
+        {
+			"type": "node",
+			"request": "launch",
+			"name": "Mocha Headless",
+            "args": ["--colors","dist/Tests/**/*spec.js"],
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+			"cwd": "${workspaceRoot}",
+            "protocol": "inspector",
+            "env": {
+                "TEST_SUITE_HEADLESS":"1"
+            },
+            "internalConsoleOptions": "neverOpen",
+            "console": "integratedTerminal"
         }
     ]
 }
