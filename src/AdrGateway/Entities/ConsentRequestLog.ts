@@ -260,6 +260,7 @@ class ConsentRequestLogManager {
             revokedAt:"DataRecipient",
             revocationPropagationDate: IsNull(),
             revocationDate: MoreThan(moment().subtract(7,'days').toDate()),
+            refreshToken: Not(IsNull()),
             id: MoreThan(cursor?.id || -1)
         })
         return consent;
