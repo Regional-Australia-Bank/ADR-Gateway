@@ -1,6 +1,6 @@
 {
   "name": "adr-gateway",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A gateway ready to interact with the Australian Consumer Data Right ecosystem. Allows Accredited Data Recipients to quickly deploy their software products and participate in the CDR without needing to develop the complexities of boiler-plate data recipient interactions.",
   "author": "Regional Australia Bank",
   "engines": {

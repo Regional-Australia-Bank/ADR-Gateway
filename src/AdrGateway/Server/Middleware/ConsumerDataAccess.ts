@@ -156,12 +156,14 @@ class ConsumerDataAccessMiddleware {
 
         let url = new URL("."+resourcePath,await dh.getResourceEndpoint())
 
+        let requestId = uuid.v4();
+
         let headers = <any>{
             Authorization: `Bearer ${consent.accessToken}`,
             "x-v":"1",
             "content-type":"application/json",
             "accept":"application/json",
-            "x-fapi-interaction-id":uuid.v4(),
+            "x-fapi-interaction-id":requestId,
             "x-fapi-auth-date":params.user.lastAuthenticated,
             //"x-cds-subject":consent.ppid, // removed as per https://consumerdatastandardsaustralia.github.io/standards/includes/releasenotes/releasenotes.1.1.1.html#high-level-standards
         }
@@ -194,6 +196,12 @@ class ConsumerDataAccessMiddleware {
             headers: headers,
             responseType:"json"
         }
+
+        this.logger.debug({
+            requestStatus: "sending",
+            consentId: consent.id,
+            headers,
+        })
 
         this.clientCertInjector.inject(options);
 
@@ -240,6 +248,12 @@ class ConsumerDataAccessMiddleware {
             res.json(body);
 
         } catch (err) {
+            this.logger.debug({
+                requestStatus: "failed",
+                requestId,
+                consentId: consent.id,
+                error: err
+            })
             throw new ConsumerDataAccessError(err,(<AxiosError<any>>err).response);
         }
     }

@@ -104,9 +104,9 @@ class ConsentRequestLog extends BaseEntity {
     HasCurrentAccessToken = ():boolean => {
         try {this.ValidateAsCurrent()} catch {return false;}
 
-        // return true if we have an access token that lasts for another 30 seconds
+        // return true if we have an access token that lasts for another 0 seconds
         if (this.accessToken){
-            if (moment().utc().isBefore(moment(this.accessTokenExpiry).subtract(30,'seconds'))) {
+            if (moment().utc().isBefore(moment(this.accessTokenExpiry).subtract(0,'seconds'))) {
                 return true;
             }
         }
@@ -116,9 +116,9 @@ class ConsentRequestLog extends BaseEntity {
     HasCurrentRefreshToken = ():boolean => {
         try {this.ValidateAsCurrent()} catch {return false;}
 
-        // return true if we have an refresh token that lasts for another 30 seconds
+        // return true if we have an refresh token that lasts for another 0 seconds
         if (this.refreshToken){
-            if (moment().utc().isBefore(moment(this.refreshTokenExpiry).subtract(30,'seconds'))) {
+            if (moment().utc().isBefore(moment(this.refreshTokenExpiry).subtract(0,'seconds'))) {
                 return true;
             }
         }
@@ -127,7 +127,7 @@ class ConsentRequestLog extends BaseEntity {
 
     SharingDurationExpired = ():boolean => {
         if (this.sharingEndDate){
-            if (moment().utc().isBefore(moment(this.sharingEndDate).subtract(30,'seconds'))) {
+            if (moment().utc().isBefore(moment(this.sharingEndDate).subtract(0,'seconds'))) {
                 return false;
             } else {
                 return true;
