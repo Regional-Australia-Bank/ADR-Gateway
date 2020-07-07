@@ -98,7 +98,7 @@ class ClientRegistrationManager {
             for (let registration of crs) {
                 registration.status = SoftwareProductStatus.DELETED;
                 registration.lastUpdated = moment.utc().toDate();
-                await registration.save();
+                await resolvedConnection.getRepository(ClientRegistration).save(registration);
             }
         }
 
