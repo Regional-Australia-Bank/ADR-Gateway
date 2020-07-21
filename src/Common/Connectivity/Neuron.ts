@@ -862,7 +862,11 @@ export class CompoundNeuron<Input,Output> extends AbstractNeuron<Input,Output> {
 
         this.logger.debug("CompoundNeuron: GetWithHealing started",{neuronId:this.id,name: this.pathwayName})
 
-        for (let cacheIgnoranceLength = 0; cacheIgnoranceLength <= this.GetMaxLength(); cacheIgnoranceLength++) {
+        let maxHealingLength = this.GetMaxLength();
+        if (process.env.DISABLE_HEALING && process.env.DISABLE_HEALING === "true") {
+            maxHealingLength = 0;
+        }
+        for (let cacheIgnoranceLength = 0; cacheIgnoranceLength <= maxHealingLength; cacheIgnoranceLength++) {
             this.logger.debug("CompoundNeuron: GetWithHealing: Setting healing depth.",{neuronId:this.id,name: this.pathwayName, cacheIgnoranceLength})
 
             try {
@@ -886,6 +890,7 @@ export class CompoundNeuron<Input,Output> extends AbstractNeuron<Input,Output> {
 
         throw 'GetWithHealing: Maximum depth reached with no valid output.'
     }
+
 }
 
 export class ValueNeuron<T> extends Neuron<void,T> {
