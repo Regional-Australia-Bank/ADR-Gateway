@@ -16,6 +16,7 @@ import { AdrGatewayConfig } from "../../Config";
 import { DefaultPathways } from "../Connectivity/Pathways";
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
+import urljoin from "url-join";
 
 interface DataAccessRequestParams {
     user: {
@@ -154,7 +155,7 @@ class ConsumerDataAccessMiddleware {
     
     ForwardRequest = async (dh: Dataholder, resourcePath: string, consent: ConsentRequestLog, params:DataAccessRequestParams, req: express.Request, res:express.Response) =>{
 
-        let url = new URL("."+resourcePath,await dh.getResourceEndpoint())
+        let url = new URL(urljoin(await dh.getResourceEndpoint(),resourcePath))
 
         // forward query string parameters
         for (let [key,value] of Object.entries(req.query)) {
