@@ -161,7 +161,11 @@ class ConsumerDataAccessMiddleware {
             url.searchParams.append(key,<string>value)
         }
         
-        let requestId = uuid.v4();
+        let requestId = uuid.v4(); //default if none valid supplied
+        let suppliedRequestId = req.header("x-fapi-interaction-id");
+        if (typeof suppliedRequestId === "string" && suppliedRequestId.length) {
+            requestId = suppliedRequestId
+        }
 
         let headers = <any>{
             Authorization: `Bearer ${consent.accessToken}`,
