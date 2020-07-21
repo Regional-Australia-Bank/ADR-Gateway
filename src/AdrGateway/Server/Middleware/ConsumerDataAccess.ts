@@ -188,6 +188,9 @@ class ConsumerDataAccessMiddleware {
         this.logger.debug({
             requestStatus: "sending",
             consentId: consent.id,
+            url: url.toString(),
+            method: "GET",
+            requestId,
             headers,
         })
 
