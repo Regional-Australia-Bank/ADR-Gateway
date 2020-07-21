@@ -156,6 +156,11 @@ class ConsumerDataAccessMiddleware {
 
         let url = new URL("."+resourcePath,await dh.getResourceEndpoint())
 
+        // forward query string parameters
+        for (let [key,value] of Object.entries(req.query)) {
+            url.searchParams.append(key,<string>value)
+        }
+        
         let requestId = uuid.v4();
 
         let headers = <any>{
@@ -165,7 +170,6 @@ class ConsumerDataAccessMiddleware {
             "accept":"application/json",
             "x-fapi-interaction-id":requestId,
             "x-fapi-auth-date":params.user.lastAuthenticated,
-            //"x-cds-subject":consent.ppid, // removed as per https://consumerdatastandardsaustralia.github.io/standards/includes/releasenotes/releasenotes.1.1.1.html#high-level-standards
         }
 
         if (params.user.present) {
@@ -173,22 +177,6 @@ class ConsumerDataAccessMiddleware {
             headers["x-cds-User-Agent"] = params.user.userAgent
         }
 
-        // forward headers from the original request where they do not overlap with those special ones above
-        // for (let i = 0; i < req.rawHeaders.length; i+=2) {
-        //     let key = req.rawHeaders[i];
-        //     let value = req.rawHeaders[i+1]
-        //     if (key.toLowerCase() != 'host') {
-        //         if (typeof _.find(Object.entries(headers),e => e[0].toLowerCase() == key.toLowerCase()) === 'undefined') {
-        //             headers[key] = value
-        //         }    
-        //     }
-        // }
-
-        // forward query string parameters
-
-        for (let [key,value] of Object.entries(req.query)) {
-            url.searchParams.append(key,<string>value)
-        }
 
         let options:AxiosRequestConfig = {
             method: "GET",
@@ -205,23 +193,20 @@ class ConsumerDataAccessMiddleware {
 
         this.clientCertInjector.inject(options);
 
-        // return res.json(options); TODO remove this line
-
         try {
             let dhRes = await axios.request(options);
-            // for (let i = 0; i < dhRes.rawHeaders.length; i+=2) {
-            //     res.setHeader(dhRes.rawHeaders[i], dhRes.rawHeaders[i+1]);
-            // }
 
             // set the status
             res.statusCode = dhRes.status
             res.statusMessage = dhRes.statusText
 
-            // TODO remove these headers and instead assert the equality of the sent vs. received headers
-            res.setHeader('x-fapi-sent',dhRes.request.getHeader('x-fapi-interaction-id'));
             let xFapiReceived = dhRes.headers['x-fapi-interaction-id'];
+            res.set('x-fapi-interaction-id',xFapiReceived);
+            if (xFapiReceived !== requestId) {
+                res.set('x-fapi-interaction-id-expected',requestId);
+                throw 'x-fapi-interaction-id in response did not match request';
+            }
             if (typeof xFapiReceived != 'string') throw 'Expected exactly one x-fapi-interaction-id header in response';
-            res.setHeader('x-fapi-received',xFapiReceived);
 
             let body:{links:any} = dhRes.data;
 
