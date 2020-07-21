@@ -100,14 +100,14 @@ class ConsumerDataAccessMiddleware {
             try {
                 consent = await this.GetActiveConsent(m.consentId);
             } catch {
-                return res.sendStatus(404).json("Consent does not exist")
+                return res.status(404).json("Consent does not exist")
             }
 
             let dataholder: Dataholder
             try {
                 dataholder = await this.dataHolderMetadataProvider.getDataHolder(consent.dataHolderId)
             } catch {
-                return res.sendStatus(500).json("Could not retrive dataholder metadata")
+                return res.status(500).json("Could not retrive dataholder metadata")
             }
 
             if (!consent.HasCurrentAccessToken()) {
