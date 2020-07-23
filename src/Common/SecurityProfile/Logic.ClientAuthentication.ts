@@ -1,9 +1,7 @@
 import { JWKS, JWT, JWS } from "jose";
 import { JtiLogManager } from "../Entities/JtiLog";
-import {injectable,inject} from "tsyringe";
-import { ClientJwksManager } from "../Entities/ClientJwks";
-import { DefaultPathways } from "../../AdrGateway/Server/Connectivity/Pathways";
-import { CompoundNeuron } from "../Connectivity/Neuron";
+import {injectable} from "tsyringe";
+import { GetOpts } from "../../AdrGateway/Server/Connectivity/Types";
 
 interface ClientJWTPayload {
     iss:string;
@@ -14,11 +12,6 @@ interface ClientJWTPayload {
     iat?:string;
 }
 
-class DataHolderPathways {
-    DataHolderJwks = (...args:any[]):CompoundNeuron<any,any> => {
-        throw 'DataHolderPathways not implemented yet'
-    }
-}
 
 @injectable()
 class BearerJwtVerifier {
@@ -28,7 +21,14 @@ class BearerJwtVerifier {
     ) {}
 
     // TODO acceptableClientId can be removed
-    verifyClientId = async (acceptableClientId: string|undefined, authHeaderValue:string|undefined, audienceBaseUri:string, GetJwks:(assumedClientId:string) => CompoundNeuron<void,JWKS.KeyStore>):Promise<string> => {
+    verifyClientId = async (
+        acceptableClientId: string|undefined,
+        authHeaderValue:string|undefined,
+        audienceBaseUri:string,
+        GetJwks: (assumedClientId:string) => {
+            GetWithHealing: ($?: GetOpts<any>) => Promise<JWKS.KeyStore>
+        }
+    ):Promise<string> => {
     
         if (typeof authHeaderValue == 'undefined') throw new Error("Authorization header is not present");
     
@@ -49,9 +49,11 @@ class BearerJwtVerifier {
 
         let verified = <JWT.completeResult|undefined>undefined;
         // get the key the verifies the signature
-        let jwks = await GetJwks(assumedClientId).GetWithHealing((jwks) => {
-            JWS.verify(bearerTokenJwt,jwks);
-            return true;
+        let jwks = await GetJwks(assumedClientId).GetWithHealing({
+            validator:(jwks) => {
+                JWS.verify(bearerTokenJwt,jwks);
+                return true;
+            }
         });
 
         verified = JWT.verify(bearerTokenJwt,jwks,{

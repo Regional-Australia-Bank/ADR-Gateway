@@ -4,8 +4,8 @@ import "reflect-metadata";
 import moment = require("moment");
 import winston = require("winston");
 import uuid = require("uuid");
-import { DataholderRegistrationResponse } from "../Server/Connectivity/Neurons/DataholderRegistration";
 import _ from "lodash"
+import { DataholderRegistrationResponse } from "../Server/Connectivity/Types";
 
 enum RegistrationStatus {
     CURRENT = 'CURRENT',

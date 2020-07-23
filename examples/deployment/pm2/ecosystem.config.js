@@ -10,8 +10,7 @@ const env = {
   // NO_PROXY: "localhost",
   
   //LOG_FILE: "debug.log.txt",
-  LOG_LEVEL: "warn",
-  // CACHE_FOLDER: "cache",
+  LOG_LEVEL: "info",
 
   /** JWKS service (optional). Provides a single source of truth JWKS in a microservice. Any URL could be used instead */
   /** JWKS can also be supplied in the ADR_JWKS var as a JSON string or URL */
@@ -67,6 +66,11 @@ const env = {
 
 }
 
+const env_production = {
+  NODE_ENV: 'production',
+  LOG_LEVEL: "warn",
+}
+
 module.exports = {
   apps : [{
     name: 'AdrJwks',
@@ -75,9 +79,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    }
+    env_production
   },
   {
     name: 'MockSoftwareProduct',
@@ -86,9 +88,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    }
+    env_production
   },{
     name: 'AdrGateway',
     script: 'dist/AdrGateway/Server/start.js',
@@ -96,9 +96,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    },
+    env_production,
     node_args: "--inspect --inspect-port 9290"
   },{
     name: 'AdrHousekeeper',
@@ -107,9 +105,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    }
+    env_production
   },{
     name: 'AdrServer',
     script: 'dist/AdrServer/Server/start.js',
@@ -117,9 +113,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    }
+    env_production
   },{
     name: 'DhServer',
     script: 'dist/MockServices/DhServer/Server/start.js',
@@ -127,9 +121,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    },
+    env_production,
     node_args: "--inspect --inspect-port 9291"
   },{
     name: 'MockRegister',
@@ -138,9 +130,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    }
+    env_production
   },{
     name: 'HttpsProxy',
     script: 'dist/HttpsProxy/start.js',
@@ -149,8 +139,6 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production: {
-      NODE_ENV: 'production'
-    }
+    env_production
   }]
 };

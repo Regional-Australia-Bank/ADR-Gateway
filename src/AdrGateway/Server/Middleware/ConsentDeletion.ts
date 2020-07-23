@@ -8,7 +8,7 @@ import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/Cons
 import { validationResult, matchedData, param } from "express-validator";
 import * as _ from "lodash";
 import { AdrGatewayConfig } from "../../Config";
-import { DefaultPathways } from "../Connectivity/Pathways";
+import { DefaultConnector } from "../Connectivity/Connector.generated";
 
 
 @injectable()
@@ -16,7 +16,7 @@ class ConsentDeletionMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
-        private pw: DefaultPathways,
+        private connector: DefaultConnector,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager
     ) { }
@@ -64,7 +64,7 @@ class ConsentDeletionMiddleware {
 
             try {
                 // this is purposely not awaited. It should not block the sending of a 200 response.
-                this.pw.PropagateRevokeConsent(status.consent).GetWithHealing().catch(e => this.pw.logger.error({message:"Could not propagate consent revocation", meta: status.consent}))
+                this.connector.PropagateRevokeConsent(status.consent).GetWithHealing().catch(e => this.connector.logger.error({message:"Could not propagate consent revocation", meta: status.consent}))
             } finally {
                 return res.status(200).send();
             }

@@ -2,11 +2,11 @@ import _ from "lodash"
 import uuid from "uuid";
 import moment from "moment";
 import { JWT, JWK } from "jose";
-import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { Client } from "../Server/server";
 import { MockRegisterConfig } from "../Server/Config";
+import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
 
-export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId:string, dataRecipients:any[], signingKey: JWK.Key, pw:DefaultPathways, clientProvider:(id:string) => Promise<Client>, configFn: () => Promise<MockRegisterConfig>):Promise<string> => {
+export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId:string, dataRecipients:any[], signingKey: JWK.Key, pw:DefaultConnector, clientProvider:(id:string) => Promise<Client>, configFn: () => Promise<MockRegisterConfig>):Promise<string> => {
     
     try {
         const dataRecipientBrands = _.filter(_.flatten(_.map(dataRecipients,dr=>dr.dataRecipientBrands)),brand => brand.dataRecipientBrandId == dataRecipientBrandId);    

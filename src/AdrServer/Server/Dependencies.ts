@@ -1,8 +1,5 @@
-import {singleton} from "tsyringe";
 import { Connection, createConnection } from "typeorm";
 import { JtiLog } from "../../Common/Entities/JtiLog";
-import { ClientJwks } from "../../Common/Entities/ClientJwks";
-import { MetadataUpdateLog } from "../../Common/Entities/MetadataUpdateLog";
 import winston from "winston";
 import * as Transport from 'winston-transport';
 import { ConsentRequestLog } from "../../AdrGateway/Entities/ConsentRequestLog";
@@ -10,11 +7,14 @@ import * as _ from "lodash"
 import { container } from "../AdrDiContainer";
 import { DevClientCertificateInjector, DefaultClientCertificateInjector } from "../../AdrGateway/Services/ClientCertificateInjection";
 import { AdrServerConfig } from "./Config";
+import { AbstractCache } from "../../AdrGateway/Server/Connectivity/Cache/AbstractCache";
+import { DefaultCache } from "../../AdrGateway/Server/Connectivity/Cache/DefaultCache";
+import { combineReplacers, errorReplacer, configReplacer, axiosReplacer } from "../../Common/LogReplacers";
 
 async function RegisterDependencies(configFn:() => Promise<AdrServerConfig>,db?:Promise<Connection>): Promise<void> {
     let config = await configFn();
 
-    const level = process.env.LOG_LEVEL || "warning";
+    const level = process.env.LOG_LEVEL || "warn";
 
     const transports:Transport[] = [
         new winston.transports.Console({
@@ -31,7 +31,9 @@ async function RegisterDependencies(configFn:() => Promise<AdrServerConfig>,db?:
         exitOnError: false,
         format: winston.format.combine(
           winston.format.timestamp(),
-          winston.format.json()
+          winston.format.json({
+            replacer: combineReplacers(errorReplacer,configReplacer,axiosReplacer)
+          })
         )
       });
 
@@ -40,6 +42,7 @@ async function RegisterDependencies(configFn:() => Promise<AdrServerConfig>,db?:
     container.register("AdrConnectivityConfig",{useValue:configFn})
     container.register("AdrServerConfig",{useValue:configFn}) // TODO cleanup so there is only one config
     container.register("JoseBindingConfig",{useValue:configFn}) // TODO cleanup so there is only one config
+    container.register("Cache", { useValue: new DefaultCache() })
 
     if (config.mtls?.ca) {
       container.register("ClientCertificateInjector", {

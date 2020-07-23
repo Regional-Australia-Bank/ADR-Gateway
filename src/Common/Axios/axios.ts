@@ -5,6 +5,7 @@ import {Agent as httpAgent}  from "http"
 import https from "https"
 import URLParse from "url-parse"
 import tls from "tls"
+import { requestFormatter, responseFormatter } from "../LogReplacers"
 
 interface MtlsOptions {
     ca?: any,
@@ -103,6 +104,18 @@ const axiosClient = (() => {
         httpsAgent: createLocalHttpsAgent(),
     };
     let client = axios.create(<any>defaultOptions)
+
+    client.interceptors.response.use(response => response,error => {
+        let toj = error.toJSON
+        error.toJSON = () => {
+            let r = toj.call(error);
+            r.isAxiosError = true;
+            r.response = error?.response
+            return r;
+        }
+        throw error
+    })
+
     client.interceptors.request.use(config => {
 
         // use the https proxy for non-localhost addresses

@@ -1,7 +1,10 @@
-import * as _ from "lodash"
+import _ from "lodash"
 import fs from "fs"
 import path from "path"
-import { AbstractCache, CacheOptions } from "./AbstractCache";
+import { AbstractCache, CacheImplementationStatus } from "./AbstractCache";
+import { Dependency } from "../Dependency";
+import { Dictionary } from "../../../../Common/Server/Types";
+import moment from "moment";
 
 let safefilenames:{[key: string]:string} = {}
 
@@ -26,24 +29,64 @@ const SafeFileName = (s:string) => {
 }
 
 
-export class DiskCache<T> extends AbstractCache<T> {
-    constructor(protected storeName:string, protected options: CacheOptions<T>) {
-        super(storeName, options)
+export class DiskCache extends AbstractCache {
+    static GetStoreId = (dependency: Dependency<any,any,any>, parameters:object) => {
+        let storeName = dependency.spec.name;
+        for (let [k, toString] of Object.entries(dependency.spec.parameters)) {
+            let v = toString(parameters[k]);
+            storeName += `_${v}`;
+        }
+        return storeName;
+    }
+    
+    static Serialize = (dependency: Dependency<any,any,any>, result:any) => {
+        let expiresAt = dependency.spec.cache?.maxAge && moment().utc().add(dependency.spec.cache?.maxAge,'seconds').toISOString()
+        let freshUntil = dependency.spec.cache?.minAge && moment().utc().add(dependency.spec.cache?.minAge,'seconds').toISOString()
+        let value = dependency.serializer.Serialize(result)
+        return JSON.stringify({expiresAt, freshUntil, value})
     }
 
-    UpdateCache = async (v: T):Promise<void> => {
-        fs.writeFileSync(SafeFileName(this.storeName),this.options.Serializer(v))
+    static Deserialize = (dependency: Dependency<any,any,any>, result:any) => {
+        let manifest:{
+            value:string,
+            expiresAt?:string,
+            freshUntil?:string
+        } = JSON.parse(result);
+        let {value,expiresAt,freshUntil} = {
+            value: dependency.serializer.Deserialize(manifest.value),
+            expiresAt: manifest.expiresAt && moment(manifest.expiresAt),
+            freshUntil: manifest.freshUntil && moment(manifest.freshUntil)
+        }
+        return {value,expiresAt,freshUntil}
     }
-    FetchCache = async ():Promise<T> => {
-        if (fs.existsSync(SafeFileName(this.storeName))) {
-            return this.options.Deserializer(fs.readFileSync(SafeFileName(this.storeName),'utf8'))
+
+    UpdateCache = async (dependency: Dependency<any,any,any>, parameters:Dictionary<string>, result: any):Promise<void> => {
+        fs.writeFileSync(
+            SafeFileName(DiskCache.GetStoreId(dependency,parameters)),
+            DiskCache.Serialize(dependency,result)
+        )
+    }
+    FetchCache = async (dependency: Dependency<any,any,any>, parameters:Dictionary<string>):Promise<CacheImplementationStatus> => {
+        let filename = SafeFileName(DiskCache.GetStoreId(dependency,parameters))
+
+        if (fs.existsSync(filename)) {
+            let manifest = DiskCache.Deserialize(dependency,fs.readFileSync(filename,'utf8'))
+            let status:CacheImplementationStatus = {
+                inCache: true,
+                expired: manifest.expiresAt && moment().isSameOrAfter(moment(manifest.expiresAt)),
+                tooFreshToUpdate: manifest.freshUntil && moment().isSameOrBefore(moment(manifest.freshUntil)),
+                value: manifest.value
+            }
+            return status;
         } else {
-            throw 'DiskCache: Cache value is undefined'
+            return {
+                inCache: false
+            }
         }
     }
-    EmptyCache = async ():Promise<void> => {
-        if (fs.existsSync(SafeFileName(this.storeName))) {
-            fs.unlinkSync(SafeFileName(this.storeName))
+    EmptyCache = async (dependency: Dependency<any,any,any>, parameters:Dictionary<string>):Promise<void> => {
+        if (fs.existsSync(SafeFileName(DiskCache.GetStoreId(dependency,parameters)))) {
+            fs.unlinkSync(SafeFileName(DiskCache.GetStoreId(dependency,parameters)))
         }
     }
     

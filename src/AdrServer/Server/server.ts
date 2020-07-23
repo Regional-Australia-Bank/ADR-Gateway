@@ -4,10 +4,10 @@ import express from "express";
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
 import { RevokeMiddleware } from "./Handlers/Revoke";
-import { DefaultPathways } from "../../AdrGateway/Server/Connectivity/Pathways";
 import { ClientBearerJwtVerificationMiddleware } from "../../Common/Server/Middleware/CdsClientBearerJwtVerification";
 import uuid from "uuid"
 import http from "http"
+import { DefaultConnector } from "../../AdrGateway/Server/Connectivity/Connector.generated";
 
 const requestCorrelationMiddleware = (req,res:http.ServerResponse,next) => {
     req.correlationId = uuid.v4()
@@ -20,7 +20,7 @@ export class AdrServer {
     constructor(
         @inject("Logger") private logger:winston.Logger,
         private revocationMiddleware: RevokeMiddleware,
-        private pw: DefaultPathways,
+        private connector: DefaultConnector,
         private clientBearerJwtVerificationMiddleware: ClientBearerJwtVerificationMiddleware
     ) {}
 
@@ -33,14 +33,15 @@ export class AdrServer {
             // output the public portion of the key
           
             res.setHeader("content-type","application/json");
-            res.send((await this.pw.DataRecipientJwks().GetWithHealing()).toJWKS(false));
+            let result = (await this.connector.DataRecipientJwks().GetWithHealing()).toJWKS(false)
+            res.send(result);
             this.logger.info("Someone requested JWKS")
             
         } );
                
         app.post( "/revoke",
             this.clientBearerJwtVerificationMiddleware.handler((assumedClientId:string) => {
-                return this.pw.DataHolderJwks_ForRevokeNotifyToAdr(assumedClientId)
+                return this.connector.DataHolderRevocationJwks(assumedClientId)
             }),
             this.revocationMiddleware.handler()
         );

@@ -9,11 +9,10 @@ import { DataHolderMetadataProvider, DataholderMetadata, Dataholder, DataholderO
 import * as _ from "lodash";
 import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
 import { AdrGatewayConfig } from "../../Config";
-import { DefaultPathways } from "../Connectivity/Pathways";
-import { DataHolderRegistration } from "../../Entities/DataHolderRegistration";
-import { DataholderOidcResponse } from "../Connectivity/Neurons/DataholderRegistration";
+import { DefaultConnector } from "../Connectivity/Connector.generated";
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
+import { DataholderOidcResponse } from "../Connectivity/Types";
 
 interface UserInfoRequestParams {
     consentId: number
@@ -34,7 +33,7 @@ class UserInfoProxyMiddleware {
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager,
-        private pw:DefaultPathways
+        private connector:DefaultConnector
     ) { }
 
     GetActiveConsent = async (consentId: number) => {
@@ -71,7 +70,7 @@ class UserInfoProxyMiddleware {
 
             if (!consent.HasCurrentAccessToken()) {
                 if (consent.HasCurrentRefreshToken()) {
-                    consent = await this.pw.ConsentCurrentAccessToken(consent).GetWithHealing()
+                    consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
                 } else {
                     if (consent.SharingDurationExpired()) {
                         return res.status(403).json("Consent has expired with the end of the sharing period")
@@ -85,12 +84,14 @@ class UserInfoProxyMiddleware {
             }
   
             try {
-                await this.pw.UserInfoAccessCredentials(consent).GetWithHealing(async (o) => {
-                    await this.ForwardRequest(o.dhOidc,consent,req,res);
-                    return true;
+                await this.connector.UserInfoAccessCredentials(consent).GetWithHealing({
+                    validator: async (o) => {
+                        await this.ForwardRequest(o.DataHolderOidc,o.Consent,req,res);
+                        return true;
+                    }
                 });
             } catch (err) {
-                this.logger.log("UserInfoAccess error",err)
+                this.logger.error("UserInfoAccess error",err)
                 res.status(500).send();
             }
 
@@ -134,7 +135,7 @@ class UserInfoProxyMiddleware {
                 throw 'Unexpected userInfo access error'
             }
         } catch (e) {
-            throw new UserInfoAccessError(e,(<AxiosError<any>>e).response);
+            throw new UserInfoAccessError(e);
         }
 
     }

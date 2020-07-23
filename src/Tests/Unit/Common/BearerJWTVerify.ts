@@ -49,8 +49,8 @@ export const Tests = (() => {
   let pw = {
     DataHolderJwks: (clientId: "client1" | "client2" | "cdr-register") => {
       return {
-        GetWithHealing: async (validator: ((o: JWKS.KeyStore) => Promise<boolean>)) => {
-          await validator(jwks[clientId])
+        GetWithHealing: async ($:{validator: ((o: JWKS.KeyStore) => Promise<boolean>)}) => {
+          await $.validator(jwks[clientId])
           return jwks[clientId]
         }
       }

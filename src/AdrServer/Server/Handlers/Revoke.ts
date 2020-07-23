@@ -7,11 +7,10 @@ import { injectable, inject } from "tsyringe";
 import winston from "winston";
 import bodyParser, { urlencoded } from "body-parser";
 import { ConsentRequestLogManager } from "../../../AdrGateway/Entities/ConsentRequestLog";
-import { JWT } from "jose";
-import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { AdrServerConfig } from "../Config";
 import moment from "moment";
 import { GatewayRequest } from "../../../Common/Server/Types";
+import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
 
 // TODO remove some repetition. Similar to DhServer\Server\Handlers\ClientAccesstoken.ts and AdrServer\Server\Handlers\Revocation.ts
 @injectable()
@@ -19,7 +18,7 @@ class RevokeMiddleware {
     constructor(
         @inject("Logger") private logger:winston.Logger,
         private consentManager:ConsentRequestLogManager,
-        private pw:DefaultPathways,
+        private connector:DefaultConnector,
         @inject("AdrServerConfig") private config:AdrServerConfig
     ){}
     

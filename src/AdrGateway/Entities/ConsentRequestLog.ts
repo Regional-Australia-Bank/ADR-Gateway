@@ -268,9 +268,10 @@ class ConsentRequestLogManager {
 
     MarkRevoked = async (consent:ConsentRequestLog) => {
         consent.revocationPropagationDate = moment.utc().toDate();
-        await consent.save();
+        consent = await consent.save();
 
         this.logger.info(`Revocation propagated ${consent.id}`);
+        return consent;
     }
 
     GetConsent = async (consentId:number) => {

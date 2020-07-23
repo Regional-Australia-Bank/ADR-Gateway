@@ -33,7 +33,7 @@ async function RegisterDependencies(configFn: () => Promise<DhServerConfig>, db?
 
   let config = await configFn();
 
-  const level = process.env.LOG_LEVEL || "warning";
+  const level = process.env.LOG_LEVEL || "warn";
 
   const transports:Transport[] = [
       new winston.transports.Console({

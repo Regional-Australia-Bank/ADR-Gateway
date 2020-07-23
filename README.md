@@ -3,7 +3,7 @@ ADR-Gateway is a set of microservices that enables a Data Recipient to interact 
 
 # Quick starts
 
-## Docker
+## Docker (recommended)
 
 ```
 npm run build:docker
@@ -12,10 +12,9 @@ npm run start:docker
 
 ## PM2
 
-You must have Node 14.
+You must have Node 14. This method is not recommended except for the most basic verifications, because the component services do not share the same database. This may lead to strange behaviours.
 
 ```
-npm i -g pm2
 npm i 
 npm run start
 ```

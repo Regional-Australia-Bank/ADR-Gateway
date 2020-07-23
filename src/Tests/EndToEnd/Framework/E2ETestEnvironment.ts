@@ -11,7 +11,6 @@ import fs from "fs"
 import { AdrGatewayConfig, SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { AdrServerConfig } from "../../../AdrServer/Server/Config";
 import { AdrGatewayStartup } from "../../../AdrGateway/Server/startup";
-import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { DhServerConfig } from "../../../MockServices/DhServer/Server/Config";
 import { DhServerStartup } from "../../../MockServices/DhServer/Server/startup";
 import _ from "lodash"
@@ -27,6 +26,7 @@ import { AdrJwksStartup } from "../../../AdrJwks/startup";
 import { AdrJwksConfig } from "../../../AdrJwks/Config";
 import { AxiosRequestConfig } from "axios";
 import { DefaultClientCertificateInjector, TLSInject } from "../../../AdrGateway/Services/ClientCertificateInjection";
+import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
 
 const getPort = require('get-port');
 
@@ -101,7 +101,7 @@ export class E2ETestEnvironment {
 
     OnlySoftwareProductConfig = async ():Promise<SoftwareProductConnectivityConfig> => {
         let softwareProduct = await this.OnlySoftwareProduct()
-        return this.TestServices.adrGateway.connectivity.SoftwareProductConfig(softwareProduct).Evaluate()
+        return this.TestServices.adrGateway.connectivity.SoftwareProductConfig(softwareProduct,undefined).Evaluate()
     }
 
     OnlySoftwareProduct = async () => {
@@ -128,7 +128,7 @@ export class E2ETestEnvironment {
         adrServer?: {port:number,server:Server}
         softwareProduct?: {port:number,server:Server}
         adrJwks?: {port:number,server:Server}
-        adrGateway?: {port:number,server:Server,connectivity:DefaultPathways}
+        adrGateway?: {port:number,server:Server,connectivity:DefaultConnector}
         mockRegister?: {port:number,server:Server},
         mockDhServer?: {port:number,server:Server},
         httpsProxy?:{

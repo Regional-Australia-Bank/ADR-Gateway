@@ -45,7 +45,7 @@ class DefaultClientCertificateInjector implements ClientCertificateInjector{
             cert: this.cert,
             key: this.key,
             ca: this.ca,
-            passphrase: this.passphrase
+            passphrase: this.passphrase,
         })        
         return options;
     }

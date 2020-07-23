@@ -1,6 +1,3 @@
-//(`${this.scenarioId} - ${this.description}` + (this.persona ? `(${this.persona})` : "")
-
-
 import { Scenario as ScenarioBase, TestContext } from "./Framework/TestContext";
 import { DoRequest } from "./Framework/DoRequest";
 import { expect } from "chai";
@@ -11,9 +8,7 @@ import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 import urljoin from "url-join"
 import { JWT } from "jose";
 import moment from "moment";
-import { DhServerStartup } from "../../MockServices/DhServer/Server/startup";
 import qs from "qs";
-import { NO_CACHE_LENGTH } from "../../Common/Connectivity/Neuron";
 
 export const RegisterSymbols = {
     Context: {
@@ -68,7 +63,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             })
             .When(SetValue,async (ctx) => {
                 let connectivityConfig = (await environment.GetServiceDefinition.Connectivity())
-                let softwareProductConfig = await environment.TestServices.adrGateway.connectivity.SoftwareProductConfig("sandbox").Evaluate()
+                let softwareProductConfig = await environment.TestServices.adrGateway.connectivity.SoftwareProductConfig("sandbox",undefined).Evaluate()
 
                 let drs:any[] = (await (ctx.GetResult(DoRequest))).body.data
                 
@@ -265,7 +260,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
                 })
                 .When(SetValue,async (ctx) => {
-                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH}).catch(console.error)
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(console.error)
                 })
                 .Then(async ctx => {
                     let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
@@ -287,7 +282,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
                 })
                 .When(SetValue,async (ctx) => {
-                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH}).catch(console.error)
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(console.error)
                 })
                 .Then(async ctx => {
                     let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
@@ -309,7 +304,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
                 })
                 .When(SetValue,async (ctx) => {
-                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate(undefined,{cacheIgnoranceLength: NO_CACHE_LENGTH}).catch(console.error)
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(console.error)
                 })
                 .Then(async ctx => {
                     let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)

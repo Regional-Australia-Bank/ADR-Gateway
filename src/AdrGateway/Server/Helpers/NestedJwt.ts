@@ -1,8 +1,6 @@
 import { Dataholder } from "../../Services/DataholderMetadata";
 import { AdrGatewayConfig } from "../../Config";
 import { JWE, JWK, JWT, JWKS } from "jose";
-import moment = require("moment");
-import { Neuron } from "../../../Common/Connectivity/Neuron";
 
 const DecryptIdToken = (nestedToken:string, dataholder: Dataholder, decryptionKey: JWK.Key) => {
     try {

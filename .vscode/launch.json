@@ -130,6 +130,25 @@
             "console": "integratedTerminal"
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha DCR",
+            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+            "cwd": "${workspaceRoot}",
+            "env": {
+                "TEST_SUITE_MOCK_ONLY": "1"
+            },
+            "args": [
+                "--colors",
+                "--grep",
+                "'Dynamic client registration'",
+                "dist/Tests/**/*spec.js"
+            ],
+			"protocol": "inspector",
+            "internalConsoleOptions": "neverOpen",
+            "console": "integratedTerminal"
+        },
+        {
 			"type": "node",
 			"request": "launch",
 			"name": "Mocha Headless",

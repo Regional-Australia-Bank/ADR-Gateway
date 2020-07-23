@@ -3,7 +3,6 @@ import { container } from "../AdrGwContainer";
 import winston = require("winston");
 import { Connection } from "typeorm";
 import { AdrGateway } from "./server";
-import { Server } from "http";
 import { AdrGatewayConfig } from "../Config";
 
 export namespace AdrGatewayStartup {
@@ -21,7 +20,7 @@ export namespace AdrGatewayStartup {
     let app = container.resolve(AdrGateway).init();
     let logger = <winston.Logger>container.resolve("Logger");
   
-    return {port,connectivity:app.pw,server:app.listen(port,() => {
+    return {port,connectivity:app.connector,server:app.listen(port,() => {
       logger.info( `adr-gateway started at http://localhost:${ port }` );
     })}
   }

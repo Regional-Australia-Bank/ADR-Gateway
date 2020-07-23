@@ -9,14 +9,14 @@ import urljoin from "url-join"
 import { JWT, JWKS, JWS, JWE } from "jose";
 import moment from "moment";
 import { GenerateTestData } from "./Framework/TestData";
-import { DataholderOidcResponse } from "../../AdrGateway/Server/Connectivity/Neurons/DataholderRegistration";
 import { NewGatewayConsent, ExistingCurrentGatewayConsent, GatewayConsentWithCurrentAccessToken, RefreshAccessTokenForConsent} from "./NewGatewayConsent";
 import { ConsentRequestLog } from "../../AdrGateway/Entities/ConsentRequestLog";
 import uuid from "uuid";
 import qs from "qs";
 import { RegisterSymbols } from "./E2E-UAT-Scenarios.CdrRegister";
-import { NO_CACHE_LENGTH } from "../../Common/Connectivity/Neuron";
 import { URL } from "url";
+import { DataholderOidcResponse } from "../../AdrGateway/Server/Connectivity/Types";
+import { ClearDefaultInMemoryCache } from "../../AdrGateway/Server/Connectivity/Cache/InMemoryCache";
 
 const validator = require("validator")
 
@@ -57,7 +57,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
             Scenario($ => it.apply(this,$('TS_050')), undefined, 'Validate OpenID Provider Configuration End Point.')
                 .Given('Cold start')
                 .When(SetValue,async () => {
-                    return await env.TestServices.adrGateway!.connectivity.DataHolderOidc(env.Config.SystemUnderTest.Dataholder).Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
+                    ClearDefaultInMemoryCache();
+                    return await env.TestServices.adrGateway!.connectivity.DataHolderOidc(env.Config.SystemUnderTest.Dataholder).Evaluate({ignoreCache:"all"})
                 },SecurityProfileSymbols.Values.OpenIdDiscoveryResponse)
                 .Then(async ctx => {
                     let oidcConfig:DataholderOidcResponse = <any>(await (ctx.GetResult(SetValue))).value;
@@ -699,8 +700,9 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .Given('Cold start')
                 .When()
                 .Then(async ctx => {
-                    let requestResult = await (ctx.GetTestContext(SecurityProfileSymbols.Context.OpenIdDiscoveryResponse).GetResult(SetValue,SecurityProfileSymbols.Values.OpenIdDiscoveryResponse));
+                    await (ctx.GetTestContext(SecurityProfileSymbols.Context.OpenIdDiscoveryResponse).GetResult(SetValue,SecurityProfileSymbols.Values.OpenIdDiscoveryResponse));
 
+                    //let result = requestResult.value;
                     let result = ctx.GetTestContext(SecurityProfileSymbols.Context.OpenIdDiscoveryResponse).GetLastHttpRequest("GET",/well-known/)
                     // Expect the result of the "Do/Measure" to error code
                     expect(result.response?.status).to.equal(200);

@@ -1,14 +1,11 @@
 import winston = require("winston");
 import { MockRegister, Client } from "./server";
-import { GetJwks } from "../../../Common/Init/Jwks";
-import { JWKS } from "jose";
-import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { DefaultClientCertificateInjector, DevClientCertificateInjector, ClientCertificateInjector } from "../../../AdrGateway/Services/ClientCertificateInjection";
 
-
-import { MtlsConfig, AdrConnectivityConfig } from "../../../AdrGateway/Config";
+import { AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { MockRegisterConfig } from "./Config";
-import { NeuronFactory } from "../../../AdrGateway/Server/Connectivity/NeuronFactory";
+import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
+import { InMemoryCache } from "../../../AdrGateway/Server/Connectivity/Cache/InMemoryCache";
 
 export namespace MockRegisterServerStartup {
     export async function Start(configFn:() => Promise<MockRegisterConfig>,clientProvider:(clientId:string) => Promise<Client>) {
@@ -27,7 +24,7 @@ export namespace MockRegisterServerStartup {
             cert = new DevClientCertificateInjector()
         }
 
-        const pathwaysConfigFn = async () => {
+        const dependenciesConfigFn = async () => {
             const config = await configFn();
 
             // A stub configuration to enable the Mock Register to connect to a live register
@@ -43,7 +40,7 @@ export namespace MockRegisterServerStartup {
                 })]
             })
 
-        const pw = new DefaultPathways(pathwaysConfigFn,cert,logger,<any>undefined,<any>undefined,new NeuronFactory(logger));
+        const pw = new DefaultConnector(dependenciesConfigFn,cert,logger,<any>undefined,<any>undefined,new InMemoryCache());
 
         let app = await new MockRegister(configFn,clientProvider,pw).init()
         

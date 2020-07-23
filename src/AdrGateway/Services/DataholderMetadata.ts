@@ -1,9 +1,8 @@
-import { JWKS, JWK } from "jose"
+import { JWKS } from "jose"
 import * as _ from "lodash"
 import { injectable } from "tsyringe";
-import { DataholderRegisterMetadata } from "../Server/Connectivity/Neurons/RegisterDataholders";
-import { DefaultPathways } from "../Server/Connectivity/Pathways";
-import { PathwayFactory } from "../../Common/Connectivity/PathwayFactory";
+import { DefaultConnector } from "../Server/Connectivity/Connector.generated";
+import { DataHolderRegisterMetadata } from "../Server/Connectivity/Types";
 
 interface DataholderMethods {
     getAuthEndpoint(): Promise<string>
@@ -52,7 +51,7 @@ abstract class DataHolderMetadataProvider<T extends Dataholder> {
 }
 
 class EcosystemDataholder implements Dataholder {
-    constructor(private pw:DefaultPathways,dm:DataholderRegisterMetadata) {
+    constructor(private connector:DefaultConnector,dm:DataHolderRegisterMetadata) {
         this.dataHolderBrandId = dm.dataHolderBrandId;
         this.brandName = dm.brandName;
 
@@ -72,7 +71,7 @@ class EcosystemDataholder implements Dataholder {
     }
 
 
-    getResourceEndpoint = async () => {return (await this.pw.DataHolderBrandMetadata(this.dataHolderBrandId).GetWithHealing()).endpointDetail.resourceBaseUri}
+    getResourceEndpoint = async () => {return (await this.connector.DataHolderBrandMetadata(this.dataHolderBrandId).GetWithHealing()).endpointDetail.resourceBaseUri}
 
     getAuthEndpoint = () => {throw new Error("Method not implemented.")}
     getTokenEndpoint = () => {throw new Error("Method not implemented.")}
@@ -97,12 +96,12 @@ class EcosystemDataholder implements Dataholder {
 @injectable()
 export class SelfHealingDataHolderMetadataProvider extends DataHolderMetadataProvider<EcosystemDataholder> {
     constructor(
-        private pathwayFactory:DefaultPathways
+        private connector:DefaultConnector
     ){super()}
 
     getDataHolders = async ():Promise<EcosystemDataholder[]> => {
-        return _.map(await this.pathwayFactory.DataHolderBrands().GetWithHealing(v => true),dm => {
-            return new EcosystemDataholder(this.pathwayFactory,dm)
+        return _.map(await this.connector.DataHolderBrands().GetWithHealing({validator: v => true}),dm => {
+            return new EcosystemDataholder(this.connector,dm)
         })
     }
 

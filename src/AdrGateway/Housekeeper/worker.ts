@@ -5,10 +5,9 @@ import express from "express";
 import { JWKS } from "jose";
 import { AdrServerConfig } from "../../AdrServer/Server/Config";
 import { ConsentRequestLogManager, ConsentRequestLog } from "../Entities/ConsentRequestLog";
-import { DefaultPathways } from "../Server/Connectivity/Pathways";
 import moment from "moment"
 import _ from "lodash";
-import { NO_CACHE_LENGTH } from "../../Common/Connectivity/Neuron";
+import { DefaultConnector } from "../Server/Connectivity/Connector.generated";
 
 @injectable()
 export class AdrHousekeeper {
@@ -17,7 +16,7 @@ export class AdrHousekeeper {
     constructor(
         @inject("Logger") private logger:winston.Logger,
         private consentManager:ConsentRequestLogManager,
-        private pw:DefaultPathways,
+        private connector:DefaultConnector,
     ) {}
 
     OnInterval = async (task:string,fn: () => Promise<void>,amount:number,unit:"hours"|"minutes"|"seconds") => {
@@ -95,7 +94,7 @@ export class AdrHousekeeper {
             }
            
             try {
-                await this.pw.PropagateRevokeConsent(consent).GetWithHealing()
+                await this.connector.PropagateRevokeConsent(consent).GetWithHealing()
                 this.logger.debug({message:"PropagateConsents: Revoked consent", meta: consent, date: moment().toISOString()})
             } catch(e) {
                 brokenDataholders.push(consent.dataHolderId)
@@ -108,23 +107,23 @@ export class AdrHousekeeper {
 
     UpdateDataholderMeta = async () => {
         // Get the new brand metadata with the cache ignored during execution. This will internally update the cache.
-        await this.pw.DataHolderBrands().Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
+        await this.connector.DataHolderBrands().GetWithHealing({ignoreCache:"top"})
         this.logger.info({message:"UpdateDataholderMeta: Success.", date: moment().toISOString()})
     }
 
     DynamicClientRegistration = async () => {
         // Get the new brand metadata with the cache ignored during execution. This will internally update the cache.
 
-        let brands = await this.pw.DataHolderBrands().Evaluate()
+        let brands = await this.connector.DataHolderBrands().GetWithHealing()
 
-        let config = await this.pw.AdrConnectivityConfig().Evaluate()
+        let config = await this.connector.AdrConnectivityConfig().GetWithHealing()
 
         let softwareProductIds = Object.keys(config.SoftwareProductConfigUris)
 
         for (let softwareProductId of softwareProductIds) {
             for (let brand of brands) {
                 try {
-                    await this.pw.CheckAndUpdateClientRegistration(softwareProductId,brand.dataHolderBrandId).Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
+                    await this.connector.CheckAndUpdateClientRegistration(softwareProductId,brand.dataHolderBrandId).GetWithHealing({ignoreCache:"all"})
                     this.logger.info({message:`ClientRegistration: Success. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
                 } catch (error) {
                     this.logger.error({error, message:`ClientRegistration: Error. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
@@ -132,7 +131,6 @@ export class AdrHousekeeper {
             }    
         }
 
-        await this.pw.DataHolderBrands().Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH})
     }
 
 

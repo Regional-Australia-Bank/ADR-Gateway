@@ -2,17 +2,13 @@ import express, { request } from "express";
 import { NextFunction } from "connect";
 import { GatewayRequest } from "../../../Common/Server/Types";
 import winston from "winston";
-import {JWKS,JWT} from "jose"
-import { readFileSync } from "fs";
-import { default as Url} from "url-parse";
+import {JWKS} from "jose"
 import { IncomingMessage } from "http";
 import { BearerJwtVerifier } from "../../SecurityProfile/Logic.ClientAuthentication";
-import {default as UrlParse} from "url-parse"
-import { inject, singleton, injectable } from "tsyringe";
-import { GetJwks } from "../../Init/Jwks";
+import { inject, injectable } from "tsyringe";
 import urljoin from "url-join";
-import { CompoundNeuron } from "../../Connectivity/Neuron";
 import { JoseBindingConfig } from "../Config";
+import { GetOpts } from "../../../AdrGateway/Server/Connectivity/Types";
 
 @injectable()
 export class ClientBearerJwtVerificationMiddleware {
@@ -23,7 +19,14 @@ export class ClientBearerJwtVerificationMiddleware {
         @inject("JoseBindingConfig") private configFn:() => Promise<JoseBindingConfig>
     ) {}
 
-    verifyClientId = async (acceptableClientId:string|undefined, authHeaderValue:string | undefined,audienceBaseUri:string, GetJwks:(assumedClientId:string) => CompoundNeuron<void,JWKS.KeyStore>) => {
+    verifyClientId = async (
+        acceptableClientId:string|undefined,
+        authHeaderValue:string | undefined,
+        audienceBaseUri:string,
+        GetJwks: (assumedClientId:string) => {
+            GetWithHealing: ($?: GetOpts<any>) => Promise<JWKS.KeyStore>
+        }
+    ) => {
 
         this.logger.debug("ClientBearerJwtVerification: Auth header.", {acceptableClientId, authHeaderValue, audienceBaseUri})
 
@@ -32,7 +35,12 @@ export class ClientBearerJwtVerificationMiddleware {
     }
 
     // TODO apply to the Dataholder Metadata endpoint
-    handler = (GetJwks: (assumedClientId:string) => CompoundNeuron<void,JWKS.KeyStore>, acceptableClientId?:string) => {
+    handler = (
+        GetJwks: (assumedClientId:string) => {
+            GetWithHealing: ($?: GetOpts<any>) => Promise<JWKS.KeyStore>
+        },
+        acceptableClientId?:string
+    ) => {
         return async (req:IncomingMessage & express.Request,res:express.Response,next: NextFunction) => {
             // extract the base Uri from the url
             try {

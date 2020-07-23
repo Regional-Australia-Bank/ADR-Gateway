@@ -15,10 +15,10 @@ import { ConsentListingMiddleware } from "./Middleware/ConsentListing";
 import { ConsentDeletionMiddleware } from "./Middleware/ConsentDeletion";
 import cors from "cors";
 import { UserInfoProxyMiddleware } from "./Middleware/UserInfo";
-import { DefaultPathways } from "./Connectivity/Pathways";
 import { ConsentDetailsMiddleware } from "./Middleware/ConsentDetails";
 import URLParse from "url-parse";
 import qs from "qs";
+import { DefaultConnector } from "./Connectivity/Connector.generated";
 
 @injectable()
 class AdrGateway {
@@ -33,7 +33,7 @@ class AdrGateway {
         private consentDeletionMiddleware: ConsentDeletionMiddleware,
         private consumerDataAccess: ConsumerDataAccessMiddleware,
         private userInfo: UserInfoProxyMiddleware,
-        private pw:DefaultPathways
+        private connector:DefaultConnector
     ) {}
 
     init(): any {
@@ -46,7 +46,7 @@ class AdrGateway {
             // output the public portion of the key
           
             res.setHeader("content-type","application/json");
-            let jwks = await this.pw.DataRecipientJwks().GetWithHealing();
+            let jwks = await this.connector.DataRecipientJwks().GetWithHealing();
             res.json(jwks.toJWKS());
             this.logger.info("Someone requested JWKS")
             
@@ -68,7 +68,7 @@ class AdrGateway {
 
         app.get( "/cdr/products", async (req,res) => {
             try {
-                return res.json(await this.pw.SoftwareProductConfigs().GetWithHealing())
+                return res.json(await this.connector.SoftwareProductConfigs().GetWithHealing())
             } catch (e) {
                 return res.status(500).send();
             }
@@ -76,7 +76,7 @@ class AdrGateway {
 
         app.get( "/config/products", async (req,res) => {
             try {
-                let config = await this.pw.AdrConnectivityConfig().GetWithHealing();
+                let config = await this.connector.AdrConnectivityConfig().GetWithHealing();
                 return res.json(config.SoftwareProductConfigUris)
             } catch (e) {
                 return res.status(500).send();
@@ -164,7 +164,7 @@ class AdrGateway {
         );
       
         // Test hook
-        (<any>app).pw = this.pw;
+        (<any>app).connector = this.connector;
 
         return app;
        

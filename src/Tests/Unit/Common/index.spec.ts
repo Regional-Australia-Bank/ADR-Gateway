@@ -9,6 +9,6 @@ chai.use(spies);
 chai.should();
 
 describe('Unit Tests', async () => {
-    require("./ConnectivityNeurons").Tests()
+    require("./DependencyEvaluation").Tests()
     require("./BearerJWTVerify").Tests()
 })

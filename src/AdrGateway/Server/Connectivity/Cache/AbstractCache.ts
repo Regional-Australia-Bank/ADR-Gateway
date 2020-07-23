@@ -1,18 +1,16 @@
-import { CachingImplementation } from "../../../../Common/Connectivity/Neuron";
+import { Dependency } from "../Dependency"
+import { DiskCache } from "./DiskCache"
+import { InMemoryCache } from "./InMemoryCache"
 
-export interface CacheOptions<T> {
-    Serializer: (i:T) => string
-    Deserializer: (i:string) => T
+export type CacheImplementationStatus = {inCache: false} | {
+    inCache: true,
+    value: any,
+    expired: boolean,
+    tooFreshToUpdate: boolean
 }
 
-export abstract class AbstractCache<T> implements CachingImplementation<T> {
-    protected serial: CacheOptions<T>
-
-    constructor (protected storeName:string, options: CacheOptions<T>) {
-        this.serial = options;
-    }
-
-    abstract UpdateCache: (v: T) => Promise<void>
-    abstract FetchCache: () => Promise<T>
-    abstract EmptyCache: () => Promise<void>
+export abstract class AbstractCache {
+    abstract UpdateCache: (dependency: Dependency<any,any,any>, parameters:object, result: any) => Promise<void>
+    abstract FetchCache: (dependency: Dependency<any,any,any>, parameters:object) => Promise<CacheImplementationStatus>
+    abstract EmptyCache: (dependency: Dependency<any,any,any>, parameters:object) => Promise<void>
 }

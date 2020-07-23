@@ -12,17 +12,12 @@ import { JWKS, JWT, JSONWebKeySet } from "jose";
 import { ScopeMiddleware } from "../../../Common/Server/Middleware/TokenVerification";
 import { DataHolders } from "../MockData/DataHolders";
 import { DataRecipients } from "../MockData/DataRecipients";
-import { GetJwks } from "../../../Common/Init/Jwks";
-import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { MockRegisterConfig } from "./Config";
 import { axios } from "../../../Common/Axios/axios";
 import moment from "moment";
-import { PathwayFactory } from "../../../Common/Connectivity/PathwayFactory";
-import { Neuron } from "../../../Common/Connectivity/Neuron";
-import { SoftwareProductConfig } from "../../../AdrGateway/Server/Connectivity/Neurons/SoftwareProductConfig";
-import { SoftwareProductConnectivityConfig } from "../../../AdrGateway/Config";
 import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
 import urljoin from "url-join";
+import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
 
 export interface Client {
     clientId: string
@@ -33,7 +28,7 @@ export class MockRegister {
     constructor(
         private configFn:() => Promise<MockRegisterConfig>,
         private clientProvider:(clientId:string) => Promise<Client>,
-        private pw:DefaultPathways
+        private connector:DefaultConnector
     ) {}
 
     private paginationMiddleware:PaginationMiddleware = new PaginationMiddleware(this.configFn)
@@ -54,7 +49,7 @@ export class MockRegister {
             options.headers['User-Agent'] = 'oidc-provider/${VERSION} (${ISSUER_IDENTIFIER})';
             options.retry = 0;
             options.throwHttpErrors = false;
-            options.timeout = 2500;
+            options.timeout = 10000;
             options.ca = certs.caCert
             return options;
         }
@@ -63,12 +58,11 @@ export class MockRegister {
 
         // replace the SoftwareProductConfig
 
-        this.pw.SoftwareProductConfig = PathwayFactory.GenerateOnce((softwareProductId:string) => 
-            Neuron.NeuronZero().Extend(Neuron.CreateSimple(async ():Promise<SoftwareProductConnectivityConfig> => {
-                return <any>{ProductId:softwareProductId}
-            }))
-        )
-
+        this.connector.SoftwareProductConfig = (softwareProductId:string) => ({
+            Evaluate: () => (<any>{ProductId:softwareProductId}),
+            GetWithHealing: () => (<any>{ProductId:softwareProductId}),
+        })
+        
         // replace the placeholder client with that given by the provider
         oidc.Client.find = async (id:string):Promise<Client|undefined> => {
             let client = await originalFind('client-id-placeholder')
@@ -116,7 +110,7 @@ export class MockRegister {
         app.get('/v1/banking/data-holders/brands',
             OAuthScope("cdr:register:realm","cdr-register:bank:read"),
             // MockDataArray(async () => DataHolders((await this.configFn()).MockDhBaseUri)),
-            MockDataArray(async (req:express.Request) => _.filter(await DataHolders((await this.configFn()),this.pw), (t:any) => {
+            MockDataArray(async (req:express.Request) => _.filter(await DataHolders((await this.configFn()),this.connector), (t:any) => {
                 if (typeof req.query["updated-since"] === 'string') {
                     if (!t.lastUpdated) return true;
                     if (moment(t.lastUpdated).isSameOrAfter(moment(req.query["updated-since"]))) return true;
@@ -163,7 +157,7 @@ export class MockRegister {
                 } = <any>matchedData(req);
 
                 try {
-                    const ssa = await GetSSA(m.dataRecipientBrandId,m.softwareProductId,dataRecipients,JWKS.asKeyStore(jwks).get({use:'sig',alg:'PS256'}),this.pw,this.clientProvider,this.configFn);
+                    const ssa = await GetSSA(m.dataRecipientBrandId,m.softwareProductId,dataRecipients,JWKS.asKeyStore(jwks).get({use:'sig',alg:'PS256'}),this.connector,this.clientProvider,this.configFn);
                     res.status(200).contentType('application/jwt').send(ssa);
                 } catch (err) { 
                     if (typeof err.statusCode == 'number') {

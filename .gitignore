@@ -8,3 +8,4 @@ mochawesome-report
 *.zip
 .evidence
 FileWriter.log
+*.generated.ts

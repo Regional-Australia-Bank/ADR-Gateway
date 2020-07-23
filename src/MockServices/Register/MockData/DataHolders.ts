@@ -1,12 +1,12 @@
 import { Dictionary } from "../../../Common/Server/Types";
 import _ from "lodash"
-import { DefaultPathways } from "../../../AdrGateway/Server/Connectivity/Pathways";
 import { MockRegisterConfig } from "../Server/Config";
 import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
 import { axios } from "../../../Common/Axios/axios";
 import { DefaultClientCertificateInjector } from "../../../AdrGateway/Services/ClientCertificateInjection";
+import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
 
-export const DataHolders = async (config:MockRegisterConfig,pw:DefaultPathways):Promise<any[]> => {
+export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector):Promise<any[]> => {
 
     let certs = await TestPKI.TestConfig();
     let mtls = new DefaultClientCertificateInjector({ca:certs.caCert});   

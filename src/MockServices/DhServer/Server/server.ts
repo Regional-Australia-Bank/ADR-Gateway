@@ -35,10 +35,8 @@ import { TokenIntrospectionMiddleware } from "./Handlers/TokenIntrospection";
 import { ClientBearerJwtVerificationMiddleware } from "../../../Common/Server/Middleware/CdsClientBearerJwtVerification";
 import { EcosystemMetadata } from "./Helpers/EcosystemMetadata";
 import { TokenRevocationMiddleware } from "./Handlers/TokenRevocation";
-import { registerDecorator } from "class-validator";
 import { DhGatewayRequest } from "./Types";
-import { isHttpCodeError } from "../../../Common/Server/ErrorHandling";
-import { Neuron } from "../../../Common/Connectivity/Neuron";
+import urljoin from "url-join";
 
 @injectable()
 class DhServer {
@@ -110,9 +108,9 @@ class DhServer {
 
         app.post("/admin/register/metadata",
             container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate
-            container.resolve(ClientBearerJwtVerificationMiddleware).handler(() => {
-                return Neuron.NeuronZero().Extend(Neuron.CreateSimple(async () => JWKS.asKeyStore(await this.getRegisterKeystore())))
-            },"cdr-register"), // verify Bearer JWT and check JWT ~ client cert. Returns 401 on conflicting creds, and 403 on wrong permissions.
+            container.resolve(ClientBearerJwtVerificationMiddleware).handler(() => ({
+                GetWithHealing: async () => JWKS.asKeyStore(await this.getRegisterKeystore())
+            }),"cdr-register"), // verify Bearer JWT and check JWT ~ client cert. Returns 401 on conflicting creds, and 403 on wrong permissions.
             container.resolve(CDSVersionComplianceMiddleware).handle,
             async (req, res) => {
                 try {
@@ -285,7 +283,7 @@ class DhServer {
             container.resolve(UserInfoMiddleware).handler()
         )    
 
-        app.get("/v1/discovery/status", async (req, res) => {
+        app.get("/cds-au/v1/discovery/status", async (req, res) => {
             // output the public portion of the key
 
             res.setHeader("content-type", "application/json");
@@ -295,7 +293,7 @@ class DhServer {
                   "updateTime": moment().toISOString()
                 },
                 "links": {
-                  "self": (await this.config()).FrontEndUrl + "/v1/discovery/status"
+                  "self": urljoin((await this.config()).FrontEndUrl,"cds-au/v1/discovery/status")
                 }
               });
 

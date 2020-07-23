@@ -13,10 +13,11 @@ import { ClientCertificateInjector } from "../../Services/ClientCertificateInjec
 import { IncomingMessage } from "http";
 import { Dictionary } from "../../../Common/Server/Types";
 import { AdrGatewayConfig } from "../../Config";
-import { DefaultPathways } from "../Connectivity/Pathways";
+import { DefaultConnector } from "../Connectivity/Connector.generated";
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
 import urljoin from "url-join";
+import { DataHolderRegisterMetadata } from "../Connectivity/Types";
 
 interface DataAccessRequestParams {
     user: {
@@ -61,7 +62,7 @@ class ConsumerDataAccessMiddleware {
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager,
-        private pw: DefaultPathways
+        private connector: DefaultConnector
     ) { }
 
     GetActiveConsent = async (consentId: number) => {
@@ -113,7 +114,7 @@ class ConsumerDataAccessMiddleware {
 
             if (!consent.HasCurrentAccessToken()) {
                 if (consent.HasCurrentRefreshToken()) {
-                    consent = await this.pw.ConsentCurrentAccessToken(consent).GetWithHealing()
+                    consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
                 } else {
                     if (consent.SharingDurationExpired()) {
                         return res.status(403).json("Consent has expired with the end of the sharing period")
@@ -131,9 +132,11 @@ class ConsumerDataAccessMiddleware {
             // TODO forward request to data holder, injecting bearer token, x-v header and query parameters and headers from client
 
             try {
-                await this.pw.ConsumerDataAccessCredentials(consent,resolvedResourcePath).GetWithHealing(async (o) => {
-                    await this.ForwardRequest(dataholder,resolvedResourcePath,consent,params,req,res);
-                    return true;
+                await this.connector.ConsumerDataAccessCredentials(consent,resolvedResourcePath).GetWithHealing({
+                    validator: async (o) => {
+                        await this.ForwardRequest(o.DataHolderBrandMetadata,resolvedResourcePath,o.Consent,params,req,res);
+                        return true;
+                    }
                 });
             } catch (err) {
                 this.logger.error("ConsumerDataAccess error",err)
@@ -153,9 +156,9 @@ class ConsumerDataAccessMiddleware {
             ])
     }
     
-    ForwardRequest = async (dh: Dataholder, resourcePath: string, consent: ConsentRequestLog, params:DataAccessRequestParams, req: express.Request, res:express.Response) =>{
+    ForwardRequest = async (dh: DataHolderRegisterMetadata, resourcePath: string, consent: ConsentRequestLog, params:DataAccessRequestParams, req: express.Request, res:express.Response) =>{
 
-        let url = new URL(urljoin(await dh.getResourceEndpoint(),resourcePath))
+        let url = new URL(urljoin(dh.endpointDetail.resourceBaseUri,resourcePath))
 
         // forward query string parameters
         for (let [key,value] of Object.entries(req.query)) {
@@ -247,7 +250,7 @@ class ConsumerDataAccessMiddleware {
                 consentId: consent.id,
                 error: err
             })
-            throw new ConsumerDataAccessError(err,(<AxiosError<any>>err).response);
+            throw new ConsumerDataAccessError(err);
         }
     }
 

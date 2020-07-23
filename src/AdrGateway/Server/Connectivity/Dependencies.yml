@@ -1,0 +1,429 @@
+AdrConnectivityConfig:
+  output: Types.AdrConnectivityConfig
+  evaluator: factory.configFn
+  cache: {noCache: true}
+
+SoftwareProductConfigs:
+  dependencies:
+    - AdrConnectivityConfig
+  output: Types.IndexedSoftwareProductConfigs
+  evaluator: util.GetSoftwareProductConfigs
+
+SoftwareProductConfig:
+  parameters:
+    SoftwareProductKey: Types.StringOrUndefined
+    SoftwareProductId: Types.StringOrUndefined
+  dependencies:
+    - SoftwareProductConfigs
+  output: Types.SoftwareProductConnectivityConfig
+  evaluator: util.GetSoftwareProductConfig
+
+DataRecipientJwks:
+  dependencies:
+    - AdrConnectivityConfig
+  output: Types.JWKS.KeyStore
+  evaluator: ({AdrConnectivityConfig}) => {return util.GetJwks(AdrConnectivityConfig)}
+  serializer: Serial.JWKS
+  validator: util.Validation.DataRecipientJwks
+
+RegisterOidc:
+  dependencies:
+    - AdrConnectivityConfig
+  output: Types.RegisterOidcResponse
+  evaluator: util.GetRegisterOIDC.bind(undefined,factory.cert)
+  cache: {minAge: 3600}
+
+DataRecipientStatus:
+  dependencies:
+    - AdrConnectivityConfig
+  output: string
+  evaluator: util.DataRecipientStatus.bind(undefined,factory.cert)
+  cache: {minAge: 300}
+
+AssertDataRecipientIsActive:
+  dependencies:
+    - DataRecipientStatus
+  output: void
+  evaluator: util.AssertDataRecipientActive
+  cache: {noCache: true}
+
+SoftwareProductStatus:
+  parameters:
+    SoftwareProductKey: string
+  output: string
+  dependencies:
+    - AdrConnectivityConfig
+    - SoftwareProductConfig
+  evaluator: util.SoftwareProductStatus.bind(undefined,factory.cert)
+  cache: {minAge: 300}
+
+AssertSoftwareProductStatusIsActive:
+  parameters:
+    SoftwareProductKey: string
+  dependencies:
+    - SoftwareProductStatus
+    - SoftwareProductConfig
+  output: void
+  evaluator: util.AssertSoftwareProductActive
+  cache: {noCache: true}
+
+
+RegisterAccessCredentials:
+  dependencies:
+    - AdrConnectivityConfig
+    - DataRecipientJwks
+    - RegisterOidc
+    - AssertDataRecipientIsActive
+  output: Types.AccessToken
+  evaluator: util.GetRegisterAccessToken.bind(undefined,factory.cert)
+  cache: {minAge: 30, maxAge: 300}
+
+DataHolderBrands:
+  dependencies:
+    - AdrConnectivityConfig
+    - RegisterAccessCredentials
+  output: Types.DataHolderRegisterMetadata[]
+  evaluator: util.GetDataholders.bind(undefined,factory.cert)
+  cache: {maxAge: 14400}
+
+DataHolderBrandMetadata:
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderBrands
+  output: Types.DataHolderRegisterMetadata
+  evaluator: util.GetDataholderMetadata
+  cache: {noCache: true}
+
+AssertDataHolderActiveAtRegister:
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderBrandMetadata
+  evaluator: util.AssertDataHolderActiveAtRegister
+  cache: {noCache: true}
+
+DataHolderStatus:
+  parameters:
+    DataHolderBrandId: string
+  output: Types.DataHolderStatus
+  dependencies:
+    - DataHolderBrandMetadata
+  evaluator: util.DataHolderStatus.bind(undefined,factory.cert)
+  cache: {maxAge: 300}
+
+AssertDataHolderIsUp:
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderBrandMetadata
+    - DataHolderStatus
+  evaluator: util.AssertDataHolderIsUp
+  cache: {noCache: true}
+
+DataHolderUpAndReady: 
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderBrandMetadata
+    - AssertDataHolderActiveAtRegister
+    - AssertDataHolderIsUp
+  evaluator: async () => {return}
+  cache: {maxAge: 300}
+
+DataHolderOidc: 
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderBrandMetadata
+    - DataHolderUpAndReady
+  output: Types.DataholderOidcResponse
+  evaluator: util.GetDataHolderOidc.bind(undefined,factory.cert)
+  validator: util.Validation.DataHolderOidcResponse
+  cache: {minAge: 300}
+
+DataHolderJwks:
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderOidc
+  output: Types.JWKS.KeyStore
+  serializer: Serial.JWKS
+  evaluator: util.GetDataHolderJwks.bind(undefined,factory.cert)
+  validator: util.Validation.DataHolderJwks
+  cache: {minAge: 300}
+
+DataHolderRevocationJwks:
+  parameters:
+    DataHolderBrandId: string
+  dependencies:
+    - DataHolderBrandMetadata
+  output: Types.JWKS.KeyStore
+  serializer: Serial.JWKS
+  evaluator: util.GetDataHolderRevocationJwks
+  validator: util.Validation.DataHolderRevocationJwks
+  cache: {minAge: 300}
+
+SoftwareStatementAssertion:
+  parameters:
+    SoftwareProductKey: string
+  dependencies:
+    - SoftwareProductConfig
+    - AdrConnectivityConfig
+    - RegisterAccessCredentials
+  output: string
+  evaluator: util.RegisterGetSSA.bind(undefined,factory.cert)
+  validator: util.Validation.ValidAndCurrentSSA
+  cache: {minAge: 300, maxAge: 1800}
+
+CurrentClientRegistration:
+  parameters:
+    SoftwareProductKey: string
+    DataHolderBrandId: string
+  dependencies:
+    - SoftwareProductConfig
+    - DataHolderBrandMetadata
+  output: Types.DataHolderRegistration
+  evaluator: util.GetCurrentClientRegistration.bind(undefined,factory.dataholderRegistrationManager)
+  cache: {noCache: true}
+
+DhNewClientRegistration: 
+  parameters:
+    SoftwareProductKey: string
+    DataHolderBrandId: string
+  dependencies:
+    - AdrConnectivityConfig
+    - SoftwareProductConfig
+    - DataRecipientJwks
+    - DataHolderOidc
+    - DataHolderBrandMetadata
+    - DataHolderUpAndReady
+    - SoftwareStatementAssertion
+  output: Types.DataHolderRegistration
+  evaluator: util.NewClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager)
+  cache: {noCache: true}
+
+BootstrapClientRegistration:
+  parameters:
+    SoftwareProductKey: string
+    DataHolderBrandId: string
+  dependencies:
+    - AssertSoftwareProductStatusIsActive
+    - CurrentClientRegistration
+    - DhNewClientRegistration:
+        when: ctx => !ctx.intermediate.CurrentClientRegistration
+  output: Types.DataHolderRegistration
+  evaluator: $ => $.CurrentClientRegistration || $.DhNewClientRegistration || (() => {throw new Error('Could not bootstrap client registration')})()
+  cache: {noCache: true}
+
+DhRegAccessToken:
+  parameters:
+    SoftwareProductKey: string
+    DataHolderBrandId: string
+  dependencies:
+    - DataRecipientJwks
+    - DataHolderOidc
+    - BootstrapClientRegistration
+  output: Types.AccessToken
+  evaluator: util.GetDataHolderRegistrationAccessToken.bind(undefined,factory.cert)
+  cache: {minAge: 60, maxAge: 300}
+
+CheckAndUpdateClientRegistration:
+  parameters:
+    SoftwareProductKey: string
+    DataHolderBrandId: string
+  dependencies:
+    - AssertSoftwareProductStatusIsActive
+    - AdrConnectivityConfig
+    - SoftwareProductConfig
+    - DataRecipientJwks
+    - DataHolderOidc
+    - DataHolderUpAndReady
+    - SoftwareStatementAssertion
+    - BootstrapClientRegistration
+    - DhRegAccessToken
+  output: Types.DataHolderRegistration
+  evaluator: util.CheckAndUpdateClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager)
+  cache: {minAge: 600, maxAge: 3600}
+
+GetAuthorizationRequest:
+  parameters:
+    ConsentRequestParams: Types.ConsentRequestParams
+  project:
+    SoftwareProductKey: $ => $.ConsentRequestParams.productKey
+    DataHolderBrandId: $ => $.ConsentRequestParams.dataholderBrandId
+  preassertions:
+    - AssertSoftwareProductStatusIsActive
+    - DataHolderOidc: {disableCache: true}
+    - DataHolderUpAndReady: {disableCache: true}
+  dependencies:
+    - DataHolderOidc
+    - DataHolderUpAndReady
+    - CheckAndUpdateClientRegistration
+    - AdrConnectivityConfig
+    - SoftwareProductConfig
+    - DataRecipientJwks
+    # It is a requirement of the ecosystem that the data recipient must not contact the data holder if the cache is older
+    # than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Dependency below
+    - DataHolderBrandMetadata
+  output: "{redirectUrl: string, consentId: number, softwareProductId: string}"
+  evaluator: util.GetAuthorizationRequest.bind(undefined,this.consentManager)
+  cache: {noCache: true}
+
+FetchTokens:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  preassertions:
+    - AssertSoftwareProductStatusIsActive
+  dependencies:
+    - DataRecipientJwks
+    - DataHolderOidc
+    - CheckAndUpdateClientRegistration
+  output: "{tokenResponse:Types.TokenResponse, tokenRequestTime:Date}"
+  evaluator: util.FetchTokens.bind(undefined,factory.logger,factory.cert)
+  cache: {noCache: true}
+
+FetchTokensAndUpdateClaims:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - DataRecipientJwks
+    - DataHolderOidc
+    - DataHolderJwks
+    - CheckAndUpdateClientRegistration
+    - FetchTokens
+  output: Types.ConsentRequestLog
+  evaluator: util.UpdateClaims.bind(undefined,factory.cert,factory.consentManager)
+  cache: {noCache: true}
+
+ConsentRefreshTokens:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - FetchTokensAndUpdateClaims
+  output: Types.ConsentRequestLog
+  evaluator: $ => $.FetchTokensAndUpdateClaims
+  cache: {noCache: true}
+
+ConsentCurrentAccessToken:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - AssertSoftwareProductStatusIsActive
+    - DataRecipientJwks
+    - DataHolderOidc
+    - CheckAndUpdateClientRegistration
+    - ConsentRefreshTokens:
+        {do: ConsentRefreshTokens, when: ctx => ctx.parameters.Consent.HasCurrentRefreshToken() && !ctx.parameters.Consent.HasCurrentAccessToken()}
+  output: Types.ConsentRequestLog
+  evaluator: $ => ($.ConsentRefreshTokens || $.Consent)
+  validator: output => output.HasCurrentAccessToken()
+  cache: {noCache: true}
+
+ConsumerDataAccessCredentials:
+  parameters:
+    Consent: Types.ConsentRequestLog
+    ResourcePath: string
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - DataHolderUpAndReady
+    - DataHolderOidc
+    - ConsentCurrentAccessToken
+    # It is a requirement of the ecosystem that the data recipient must not contact the data holder if the cache is older
+    # than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Dependency below
+    - DataHolderBrandMetadata
+  output: "{Consent: Types.ConsentRequestLog, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}"
+  evaluator: "$ => ({Consent: $.ConsentCurrentAccessToken, DataHolderBrandMetadata: $.DataHolderBrandMetadata})"
+  cache: {noCache: true}
+
+UserInfoAccessCredentials:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - DataHolderUpAndReady
+    - DataHolderOidc
+    - ConsentCurrentAccessToken
+    # It is a requirement of the ecosystem that the data recipient must not contact the data holder if the cache is older
+    # than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Dependency below
+    - DataHolderBrandMetadata
+  output: "{Consent: Types.ConsentRequestLog, DataHolderOidc: Types.DataholderOidcResponse}"
+  evaluator: "$ => ({Consent: $.ConsentCurrentAccessToken, DataHolderOidc: $.DataHolderOidc})"
+  cache: {noCache: true}
+
+ConsentUserInfo:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - DataHolderOidc
+    - ConsentCurrentAccessToken
+  output: Types.UserInfoResponse
+  evaluator: $ => util.GetUserInfo(factory.cert,$)
+  cache: {noCache: true}
+
+AssertValidAuthorizeResponse:
+  parameters:
+    Consent: Types.ConsentRequestLog
+    AuthCode: string
+    IdToken: string
+    State: string
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - CheckAndUpdateClientRegistration
+    - DataHolderOidc
+    - DataHolderJwks
+    - DataRecipientJwks
+  output: void
+  evaluator: util.ValidateAuthorizeResponse
+  cache: {noCache: true}
+
+FinaliseConsent:
+  parameters:
+    Consent: Types.ConsentRequestLog
+    AuthCode: string
+    IdToken: string
+    State: string
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - AssertValidAuthorizeResponse
+    - FetchTokensAndUpdateClaims
+  output: Types.ConsentRequestLog
+  evaluator: $ => $.FetchTokensAndUpdateClaims
+  cache: {noCache: true}
+
+PropagateRevokeConsent:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  dependencies:
+    - DataRecipientJwks
+    - DataHolderOidc
+    - CheckAndUpdateClientRegistration
+  output: Types.ConsentRequestLog
+  evaluator: util.PropagateRevokedConsent.bind(undefined,this.cert)
+  cache: {noCache: true}

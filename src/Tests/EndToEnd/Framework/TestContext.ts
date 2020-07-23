@@ -430,7 +430,7 @@ class TestContext extends PartialContext {
                     _.last(currentlyExecutingContextStack)?.requestLog.push(newLogEntry);
         
                     console.error("Failed request:")
-                    let request = err.request?._currentRequest || err.request
+                    let request = err.request?._currentRequest || err.request || err
                     console.log(request._requestBody);
                     console.log("Response:")
                     console.log(JSON.stringify(_.pick(err.response,'headers','status','statusText','data')))

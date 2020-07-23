@@ -1,7 +1,6 @@
 import { E2ETestEnvironment } from "../Framework/E2ETestEnvironment";
 import { AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { axios } from "../../../Common/Axios/axios";
-import { NO_CACHE_LENGTH } from "../../../Common/Connectivity/Neuron";
 import _ from "lodash";
 
 const AlgSets = [{
@@ -49,12 +48,12 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
         }
     }
 
-    // Create a new registration using the Neuron Pathways
+    // Create a new registration using the Connectivity framework
     const dataholder = environment.Config.SystemUnderTest.Dataholder;
     console.log(`Test new client registration with dataholder ${dataholder}`)
 
     let softwareProductId = await environment.OnlySoftwareProduct();
-    let pathway = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(softwareProductId,dataholder);
+    let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(softwareProductId,dataholder);
 
     let interceptor = axios.interceptors.response.use(async res => {
         if (res.config.method == "get" && res.config.url && /register\/[^\/]+$/.test(res.config.url)) {
@@ -66,11 +65,11 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
 
     try {
         // Get the current registration
-        await pathway.Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH});
+        await dependency.Evaluate({ignoreCache:"all"});
         // This ^ will also populate a new configuration value for the desired id_token encryption algs
 
         // Evaluate again to update the registration
-        await pathway.Evaluate(undefined,{cacheIgnoranceLength:NO_CACHE_LENGTH});
+        await dependency.Evaluate({ignoreCache:"all"});
 
     } catch (e) {
     } finally {

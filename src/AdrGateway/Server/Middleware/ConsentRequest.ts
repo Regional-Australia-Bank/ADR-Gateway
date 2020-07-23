@@ -1,20 +1,15 @@
 import express from "express";
 import { NextFunction } from "connect";
 import { injectable, inject } from "tsyringe";
-import { IncomingMessage } from "http";
-import { Dictionary } from "../../../Common/Server/Types";
 import winston from "winston";
 import { ConsentRequestLogManager } from "../../Entities/ConsentRequestLog";
 import { Schema, validationResult, matchedData, checkSchema, query } from "express-validator";
 import { DataHolderMetadataProvider, Dataholder } from "../../Services/DataholderMetadata";
-import * as _ from "lodash";
+import _ from "lodash";
 import { AdrGatewayConfig } from "../../Config";
-import uuid from "uuid";
-import { getAuthPostGetRequestUrl } from "../Helpers/HybridAuthJWS";
-import { JWKS } from "jose";
-import { ConsentRequestParams } from "../Connectivity/Neurons/AuthorizationRequest";
-import { DefaultPathways } from "../Connectivity/Pathways";
 import { NoneFoundError } from "../Connectivity/Errors";
+import { DefaultConnector } from "../Connectivity/Connector.generated";
+import { ConsentRequestParams } from "../Connectivity/Types";
 
 
 
@@ -56,7 +51,7 @@ class ConsentRequestMiddleware {
         @inject("Logger") private logger: winston.Logger,
         @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
-        private pathways: DefaultPathways,
+        private connector: DefaultConnector,
         // private tokenRequestor: TokenRequestor,
         private consentManager:ConsentRequestLogManager
     ) { }
@@ -104,7 +99,7 @@ class ConsentRequestMiddleware {
 
     RequestConsent = async (p: ConsentRequestParams) =>{
         this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.productKey}`);
-        let requestor = this.pathways.GetAuthorizationRequest(p);
+        let requestor = this.connector.GetAuthorizationRequest(p);
         return (await requestor.Evaluate())
 
     }

@@ -10,6 +10,12 @@ import * as _ from "lodash"
 import { DevClientCertificateInjector, DefaultClientCertificateInjector } from "../Services/ClientCertificateInjection";
 import { DataHolderRegistration } from "../Entities/DataHolderRegistration";
 import { SelfHealingDataHolderMetadataProvider } from "../Services/DataholderMetadata";
+import { InMemoryCache } from "./Connectivity/Cache/InMemoryCache";
+import { AbstractCache } from "./Connectivity/Cache/AbstractCache";
+import { DefaultCache } from "./Connectivity/Cache/DefaultCache";
+import * as http from "http"
+import { AxiosAdapter, AxiosRequestConfig, AxiosResponse } from "axios";
+import { configReplacer, axiosReplacer, errorReplacer, combineReplacers } from "../../Common/LogReplacers";
 
 export const EntityDefaults = {
     type: "sqlite",
@@ -22,7 +28,7 @@ export const EntityDefaults = {
 async function RegisterDependencies(configFn:() => Promise<AdrConnectivityConfig>, db?: Promise<Connection>): Promise<void> {
     let config = await configFn();
 
-    const level = process.env.LOG_LEVEL || "warning";
+    const level = process.env.LOG_LEVEL || "warn";
 
     const transports:Transport[] = [
         new winston.transports.Console({
@@ -39,7 +45,9 @@ async function RegisterDependencies(configFn:() => Promise<AdrConnectivityConfig
         exitOnError: false,
         format: winston.format.combine(
             winston.format.timestamp(),
-            winston.format.json()
+            winston.format.json({
+                replacer: combineReplacers(errorReplacer,configReplacer,axiosReplacer)
+            })
         )
     });
 
@@ -73,6 +81,7 @@ async function RegisterDependencies(configFn:() => Promise<AdrConnectivityConfig
 
     container.register("AdrConnectivityConfig", { useValue: configFn })
     container.register("AdrGatewayConfig", { useValue: configFn }) // TODO cleanup so there is only one config
+    container.register("Cache", { useValue: new DefaultCache() })
 
 }
 
