@@ -9,3 +9,4 @@ mochawesome-report
 .evidence
 FileWriter.log
 *.generated.ts
+.nyc_output

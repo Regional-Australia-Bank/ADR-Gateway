@@ -1,6 +1,6 @@
 {
   "name": "adr-gateway",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A gateway ready to interact with the Australian Consumer Data Right ecosystem. Allows Accredited Data Recipients to quickly deploy their software products and participate in the CDR without needing to develop the complexities of boiler-plate data recipient interactions.",
   "author": "Regional Australia Bank",
   "engines": {
@@ -46,11 +46,13 @@
     "start:docker": "docker-compose -f ./examples/deployment/docker/docker-compose.yml up --build",
     "build:docker": "npm run copy-proj && docker build --build-arg HTTP_PROXY --build-arg HTTPS_PROXY examples/deployment/docker -t adr-gateway",
     "watch-templates": "node node_modules/chokidar-cli/index.js src/**/*template.hbs src/**/Dependencies.yml src/**/Dependencies.generator.js -c \"npm run build-templates\"",
-    "build-templates": "node ./src/AdrGateway/Server/Connectivity/Dependencies.generator.js",
-    "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 mocha dist/Tests/**/*spec.js && echo Test Success",
+    "build-templates": "node ./src/Common/Connectivity/Dependencies.generator.js",
+    "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha dist/Tests/**/*spec.js",
+    "test-coverage": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 nyc npm run test",
     "copy-proj": "npx rimraf examples/deployment/docker/.work && npx cpx src/** examples/deployment/docker/.work && npx cpx {package,tsconfig}.json examples/deployment/docker/.work/"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.1",
     "@types/chai": "^4.2.3",
     "@types/chai-arrays": "^1.0.3",
     "@types/chai-as-promised": "^7.1.2",
@@ -80,12 +82,14 @@
     "handlebars": "^4.7.6",
     "mocha": "^6.2.1",
     "mochawesome": "^4.1.0",
+    "nyc": "^15.1.0",
     "open": "^7.0.0",
     "pm2": "^4.4.1",
     "puppeteer": "^>=2.1 <3",
     "puppeteer-har": "^1.1.2",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
+    "source-map-support": "^0.5.19",
     "sqlite3": "https://github.com/mapbox/node-sqlite3/tarball/master",
     "ts-node": "^8.10.2",
     "util.promisify": "^1.0.1",

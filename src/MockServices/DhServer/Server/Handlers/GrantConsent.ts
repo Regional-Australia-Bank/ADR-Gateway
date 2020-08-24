@@ -1,5 +1,5 @@
 import { Dictionary } from "../../../../Common/Server/Types";
-import * as _ from "lodash";
+import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 import { getType } from "mime";

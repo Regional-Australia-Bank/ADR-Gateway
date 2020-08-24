@@ -14,9 +14,10 @@ import fs from "fs"
 import { TestContext } from "./Framework/TestContext";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 const rimraf = require("rimraf")
+import { logger } from "../Logger";
 
 process.on("unhandledRejection", (error) => {
-    console.error(error); // This prints error with stack included (as for normal errors)
+    logger.error(error); // This prints error with stack included (as for normal errors)
     throw error; // Following best practices re-throw error and let the process exit with error code
 });
 
@@ -36,13 +37,13 @@ const GenerateTests = (environment:E2ETestEnvironment) => {
                 envDir = TestConfigBase()
                 process.chdir(envDir);
             }
-            console.log(`Starting environment: ${environment.Name}`)
+            logger.debug(`Starting environment: ${environment.Name}`)
 
             if (environment.Config.EvidenceDir) {
                 try {
                     MakeAndEnter(environment.Config.EvidenceDir)
                     if (fs.existsSync(".work")) {
-                        console.log('The path exists.');
+                        logger.debug('The path exists.');
                         let deletedPromise = new Promise((resolve,reject) => rimraf('.work', (err?:any) => {
                             if (err) {
                                 reject(err)
@@ -62,7 +63,7 @@ const GenerateTests = (environment:E2ETestEnvironment) => {
             try {
                 return await environment.Start();
             } catch (e) {
-                console.error(e)
+                logger.error(e)
             }
         })
 
@@ -78,12 +79,12 @@ const GenerateTests = (environment:E2ETestEnvironment) => {
 
         after(async function() {
             this.timeout(10000)
-            console.log(`Stopping environment: ${environment.Name}`)
+            logger.debug(`Stopping environment: ${environment.Name}`)
             try {
                 await ExecuteTestCleanup(environment);
             } finally {
                 await environment.Stop();
-                console.log(`Stopped environment: ${environment.Name}`)
+                logger.debug(`Stopped environment: ${environment.Name}`)
             }
             if (environment.Name != 'Mock test environment') {
                 process.chdir(prevDir);

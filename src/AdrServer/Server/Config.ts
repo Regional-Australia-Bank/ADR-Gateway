@@ -1,9 +1,7 @@
-import { ConnectionOptions } from "typeorm";
-import { JWKS } from "jose";
-import { AdrGatewayConfig, AdrConnectivityConfig, ConnectivityConvictOptions, LoadMtls } from "../../AdrGateway/Config";
 import convict = require("convict");
 import { ConvictFormats, JoseBindingConfig } from "../../Common/Server/Config";
 import _ from "lodash"
+import { AdrConnectivityConfig, ConnectivityConvictOptions, LoadMtls } from "../../Common/Config";
 
 export type AdrServerConfig = {
     Port: number,

@@ -3,7 +3,7 @@ import moment from "moment";
 import { GatewayConsentWithCurrentAccessToken, NewGatewayConsent } from "./NewGatewayConsent";
 import { JWKS } from "jose";
 import { SetValue } from "./Framework/SetValue";
-import { ConsentRequestLog } from "../../AdrGateway/Entities/ConsentRequestLog";
+import { ConsentRequestLog } from "../../Common/Entities/ConsentRequestLog";
 import { Scenario as ScenarioBase, TestContext } from "./Framework/TestContext"
 import { expect } from "chai";
 
@@ -18,6 +18,7 @@ import Validator from "validatorjs"
 import {isAscii} from "validator"
 import { Dictionary } from "tsyringe/dist/typings/types";
 import { TestBoundaryParams } from "./Environments";
+import { logger } from "../Logger";
 
 const SMALL_PAGE_SIZE = 20;
 
@@ -704,8 +705,8 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     let resultPages = _.map(pageNumbers, async n => {
                         let options = await AllTransactionsOptions(ctx,accountId,SMALL_PAGE_SIZE);
                         (<any>options.params).page = n.toString()
-                        console.log(`Spawning regular pagination request ${n} with options:`);
-                        console.log(options);
+                        logger.debug(`Spawning regular pagination request ${n} with options:`);
+                        logger.debug(options);
                         return axios.request(TransformMtlsOptions(<any>options))
                     })
 
@@ -755,8 +756,8 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     for (let n of pageNumbers) {
                         let options = await AllTransactionsOptions(ctx,accountId,SMALL_PAGE_SIZE);
                         (<any>options.params).page = n.toString()
-                        console.log(`Spawning regular pagination request ${n} with options:`);
-                        console.log(options);
+                        logger.debug(`Spawning regular pagination request ${n} with options:`);
+                        logger.debug(options);
                         resultPages.push(Promise.resolve(await axios.request(TransformMtlsOptions(<any>options))))
                     }
 
@@ -857,7 +858,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         }       
                     }
 
-                    console.log("Assert left (clientFiltered) is set-equivalent to right (serverFiltered)")
+                    logger.debug("Assert left (clientFiltered) is set-equivalent to right (serverFiltered)")
                     AssertUnorderedListEquivalence(clientFiltered,serverFiltered)
 
                 },120)
@@ -922,7 +923,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         }       
                     }
 
-                    console.log("Assert left (clientFiltered) is set-equivalent to right (serverFiltered)")
+                    logger.debug("Assert left (clientFiltered) is set-equivalent to right (serverFiltered)")
                     AssertUnorderedListEquivalence(clientFiltered,serverFiltered)
 
                 },120)
@@ -959,7 +960,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         expect(Array.isArray(transactionsDepaginated)).to.be.true;
                         expect(transactionsDepaginated.length).to.eq(transactionsAll.length)
         
-                        console.log("Assert left (transactionsDepaginated) is set-equivalent to right (transactionsAll)")
+                        logger.debug("Assert left (transactionsDepaginated) is set-equivalent to right (transactionsAll)")
                         AssertUnorderedListEquivalence(transactionsDepaginated,transactionsAll)
 
         
@@ -1002,7 +1003,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         expect(Array.isArray(transactionsAll)).to.be.true;
                         expect(Array.isArray(transactionsDepaginated)).to.be.true;
 
-                        console.log("Assert left (transactionsDepaginated) is set-equivalent to right (transactionsAll)")
+                        logger.debug("Assert left (transactionsDepaginated) is set-equivalent to right (transactionsAll)")
                         AssertUnorderedListEquivalence(transactionsDepaginated,transactionsAll)
             
                         for (let transaction of transactionsDepaginated) {
@@ -1050,7 +1051,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         }       
                     }
 
-                    console.log("Assert left (transactionsDepaginated) is set-equivalent to right (transactionsAll)")
+                    logger.debug("Assert left (transactionsDepaginated) is set-equivalent to right (transactionsAll)")
                     AssertUnorderedListEquivalence(transactionsDepaginated,transactionsAll)
 
                 },120)
@@ -1216,7 +1217,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         title: string,
                         detail: string
                     }[] = response.data.errors;
-                    console.log(errors)
+                    logger.debug(errors)
                     let error = _.find(errors,e => e.code.startsWith("0001") && e.title === 'Invalid account' && e.detail == ctx.environment.Config.TestData?.Personas?.Jane?.InvalidAccountId!)
 
                     expect(error).to.not.be.undefined

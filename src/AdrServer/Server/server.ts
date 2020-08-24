@@ -7,7 +7,7 @@ import { RevokeMiddleware } from "./Handlers/Revoke";
 import { ClientBearerJwtVerificationMiddleware } from "../../Common/Server/Middleware/CdsClientBearerJwtVerification";
 import uuid from "uuid"
 import http from "http"
-import { DefaultConnector } from "../../AdrGateway/Server/Connectivity/Connector.generated";
+import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
 
 const requestCorrelationMiddleware = (req,res:http.ServerResponse,next) => {
     req.correlationId = uuid.v4()

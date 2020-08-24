@@ -1,7 +1,7 @@
 import { Scenario, TestContext } from "./Framework/TestContext";
 import { DoRequest } from "./Framework/DoRequest";
 import { expect } from "chai";
-import * as _ from "lodash"
+import _ from "lodash"
 import { SetValue } from "./Framework/SetValue";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 

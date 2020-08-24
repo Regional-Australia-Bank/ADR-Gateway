@@ -1,16 +1,12 @@
-import { singleton } from "tsyringe";
 import { Connection, createConnection } from "typeorm";
 import { JtiLog } from "../../../Common/Entities/JtiLog";
-import { ClientJwks } from "../../../Common/Entities/ClientJwks";
-import { MetadataUpdateLog } from "../../../Common/Entities/MetadataUpdateLog";
 import winston from "winston";
 import * as Transport from 'winston-transport';
 import { ThumbprintHeaderClientCertificateVerifier } from "../../../Common/SecurityProfile/Logic";
 import { IClientCertificateVerificationConfig } from "../../../Common/Server/Config";
 import { JWKS, JWK } from "jose";
 import { Consent } from "../Entities/Consent";
-import * as _ from "lodash"
-import * as fs from "fs"
+import _ from "lodash"
 import { DefaultOIDCConfiguration, DhServerConfig } from "./Config";
 import { container } from "../DhDiContainer";
 import { DefaultIssuer } from "./Helpers/TokenConfigProviders";
@@ -18,7 +14,9 @@ import { DefaultEcosystemMetadata } from "./Helpers/EcosystemMetadata";
 import { EcosystemClientConfigProvider } from "./Helpers/ClientConfigProviders";
 import { GetRegisterJWKS } from "./Helpers/GetRegisterJWKS";
 import { ClientRegistration } from "../Entities/ClientRegistration";
-import { ClientCertificateInjector, DefaultClientCertificateInjector } from "../../../AdrGateway/Services/ClientCertificateInjection";
+import { DefaultClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
+import { MetadataUpdateLog } from "../Entities/MetadataUpdateLog";
+import { logger } from "../../MockLogger";
 
 
 export const EntityDefaults = {
@@ -26,29 +24,12 @@ export const EntityDefaults = {
   database: ":memory:",
   entityPrefix: "dh_",
   synchronize: true,
-  entities: [JtiLog, ClientJwks, MetadataUpdateLog, Consent, ClientRegistration]
+  entities: [JtiLog, MetadataUpdateLog, Consent, ClientRegistration]
 };
 
 async function RegisterDependencies(configFn: () => Promise<DhServerConfig>, db?: Promise<Connection>): Promise<void> {
 
   let config = await configFn();
-
-  const level = process.env.LOG_LEVEL || "warn";
-
-  const transports:Transport[] = [
-      new winston.transports.Console({
-          handleExceptions: true,
-          level
-      }),
-  ];
-  if (process.env.LOG_FILE) {
-      transports.push(new winston.transports.File({ filename: process.env.LOG_FILE, level }))
-  }
-
-  const logger = winston.createLogger({
-    transports,
-    exitOnError: false
-  });
 
   container.registerInstance<() => Promise<JWKS.KeyStore>>("PrivateKeystore", (async (): Promise<JWKS.KeyStore> => {
     return JWKS.asKeyStore((await configFn()).Jwks);

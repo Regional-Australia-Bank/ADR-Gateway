@@ -1,23 +1,20 @@
-import express, { response } from "express";
+import express from "express";
 import { NextFunction } from "connect";
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
-import { AxiosResponse, AxiosRequestConfig, AxiosError } from "axios";
-import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/ConsentRequestLog";
-import { Schema, validationResult, matchedData, checkSchema, query, param, body } from "express-validator";
-import {toBoolean} from 'validator';
-import { DataHolderMetadataProvider, DataholderMetadata, Dataholder } from "../../Services/DataholderMetadata";
-import * as _ from "lodash";
+import { AxiosResponse, AxiosRequestConfig } from "axios";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
+import { Schema, validationResult, matchedData, checkSchema, param } from "express-validator";
+import _ from "lodash";
 import uuid from "uuid";
-import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
-import { IncomingMessage } from "http";
+import { ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
 import { Dictionary } from "../../../Common/Server/Types";
 import { AdrGatewayConfig } from "../../Config";
-import { DefaultConnector } from "../Connectivity/Connector.generated";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
 import urljoin from "url-join";
-import { DataHolderRegisterMetadata } from "../Connectivity/Types";
+import { DataHolderRegisterMetadata } from "../../../Common/Connectivity/Types";
 
 interface DataAccessRequestParams {
     user: {
@@ -58,7 +55,6 @@ class ConsumerDataAccessMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
-        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager,
@@ -105,13 +101,6 @@ class ConsumerDataAccessMiddleware {
                 return res.status(404).json("Consent does not exist")
             }
 
-            let dataholder: Dataholder
-            try {
-                dataholder = await this.dataHolderMetadataProvider.getDataHolder(consent.dataHolderId)
-            } catch {
-                return res.status(500).json("Could not retrive dataholder metadata")
-            }
-
             if (!consent.HasCurrentAccessToken()) {
                 if (consent.HasCurrentRefreshToken()) {
                     consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
@@ -127,10 +116,6 @@ class ConsumerDataAccessMiddleware {
                 }
             }
     
-            // TODO pre-check the scope value to avoid unnecessary calls to the DH which can be known to fail
-
-            // TODO forward request to data holder, injecting bearer token, x-v header and query parameters and headers from client
-
             try {
                 await this.connector.ConsumerDataAccessCredentials(consent,resolvedResourcePath).GetWithHealing({
                     validator: async (o) => {

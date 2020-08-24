@@ -63,7 +63,7 @@ npm run test
 
 ## User/workspace settings
 
-Include the following settings for Mocha Test Explorer
+Include the following settings for Mocha Test Explorer. These are already configured in the workspace.
 
 ```
 "mochaExplorer.files":"**/*.spec.js",

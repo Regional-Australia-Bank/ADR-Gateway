@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 
@@ -14,7 +14,7 @@ import { ConsentManager, Consent } from "../../Entities/Consent";
 import { TokenIssuer } from "../Helpers/TokenIssuer";
 import { axios } from "../../../../Common/Axios/axios";
 import { GatewayContext } from "../../../../Common/Server/Types";
-import { ClientCertificateInjector } from "../../../../AdrGateway/Services/ClientCertificateInjection";
+import { ClientCertificateInjector } from "../../../../Common/Services/ClientCertificateInjection";
 
 // TODO, probably a lot of other things to check here
 
@@ -129,7 +129,7 @@ class ClientAccessTokenMiddleware {
         // decide whether to validate based on body or query parameters
         // TODO add client authorization
         return _.concat([
-            bodyParser.urlencoded(),
+            bodyParser.urlencoded({extended:true}),
             check("grant_type").isIn(['refresh_token','authorization_code','client_credentials']).withMessage("grant_type must be refresh_token or authorization_code").bail(),
             body('code').isString().optional(),
             body('refresh_token').isString().optional(),

@@ -1,11 +1,11 @@
 import winston = require("winston");
 import { MockRegister, Client } from "./server";
-import { DefaultClientCertificateInjector, DevClientCertificateInjector, ClientCertificateInjector } from "../../../AdrGateway/Services/ClientCertificateInjection";
+import { DefaultClientCertificateInjector, DevClientCertificateInjector, ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
 
-import { AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { MockRegisterConfig } from "./Config";
-import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
-import { InMemoryCache } from "../../../AdrGateway/Server/Connectivity/Cache/InMemoryCache";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { InMemoryCache } from "../../../Common/Connectivity/Cache/InMemoryCache";
+import { AdrConnectivityConfig } from "../../../Common/Config";
 
 export namespace MockRegisterServerStartup {
     export async function Start(configFn:() => Promise<MockRegisterConfig>,clientProvider:(clientId:string) => Promise<Client>) {
@@ -32,11 +32,11 @@ export namespace MockRegisterServerStartup {
             return adrConnectivityConfig
         }
         let logger = <winston.Logger>winston.createLogger({
-            level:"debug",
+            level: process.env.LOG_LEVEL || "debug",
             transports: [
                 new winston.transports.Console({
                     handleExceptions: true,
-                    level: "debug"
+                    level: process.env.LOG_LEVEL || "debug"
                 })]
             })
 

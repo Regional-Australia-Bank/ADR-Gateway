@@ -1,10 +1,10 @@
 
 import convict = require("convict");
-import {AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import {JSONWebKeySet } from "jose";
 import { ConvictFormats, ConvictSchema } from "../../../Common/Server/Config";
 import { GenerateRegisterJwks, GenerateDrJwks } from "../../../Common/Init/Jwks";
 import { Dictionary } from "../../../Common/Server/Types";
+import { AdrConnectivityConfig } from "../../../Common/Config";
 
 export interface MockRegisterConfig{
     Port: number,

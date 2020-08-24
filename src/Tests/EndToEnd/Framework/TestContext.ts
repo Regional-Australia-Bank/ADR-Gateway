@@ -2,6 +2,7 @@ import { TestAction, TestActionResult } from "./TestActions";
 import { injectable, inject, singleton } from "tsyringe"
 import { ITestData, GenerateTestData } from "./TestData";
 import path from "path"
+import { logger } from "../../Logger";
 
 // import { container } from "../UatTestContainer"
 import uuid = require("uuid");
@@ -125,8 +126,8 @@ class TestContext extends PartialContext {
 
             this._evidenceWriterPushed = true;
         } catch (e) {
-            console.error("Bad 1")
-            console.error(e)
+            logger.error("Bad 1")
+            logger.error(e)
             process.kill(process.pid)
             throw e
         } finally {
@@ -154,8 +155,8 @@ class TestContext extends PartialContext {
             }
     
         } catch (e) {
-            console.error("Bad 2")
-            console.error(e)
+            logger.error("Bad 2")
+            logger.error(e)
             process.kill(process.pid)
             throw e
         }
@@ -225,9 +226,9 @@ class TestContext extends PartialContext {
     }
 
     GetValue = async (name:string|symbol) => {
-        console.log(`GetValue(${name.toString()})`);
+        logger.debug(`GetValue(${name.toString()})`);
         let value = (await this.GetResult(SetValue,name)).value;
-        console.log(value)
+        logger.debug(value)
         return value
     }
 
@@ -353,7 +354,7 @@ class TestContext extends PartialContext {
         try {
             await this._doTestPromise
         } catch (e) {
-            console.error(e.stack)
+            logger.error(e.stack)
         } finally {
             QueueTestCleanup({
                 _doTestPromise: this._doTestPromise,
@@ -397,11 +398,11 @@ class TestContext extends PartialContext {
                 return req;
             },(err) => {
                 try {
-                    console.error("Failed request:")
-                    console.log(err.request._requestBody);
-                    console.log("Response:")
-                    console.log(JSON.stringify(_.pick(err.response,'headers','status','statusText','data')))
-                    console.error(err);
+                    logger.error("Failed request:")
+                    logger.debug(err.request._requestBody);
+                    logger.debug("Response:")
+                    logger.debug(JSON.stringify(_.pick(err.response,'headers','status','statusText','data')))
+                    logger.error(err);
                     throw(err)
                 } finally {
                     resolveRequest(err.config)
@@ -414,10 +415,10 @@ class TestContext extends PartialContext {
     
                     _.last(currentlyExecutingContextStack)?.requestLog.push(newLogEntry);
         
-                    console.log("Successful request:")
-                    console.log(res.request._requestBody);
-                    console.log("Response:")
-                    console.log(JSON.stringify(_.pick(res,'headers','status','statusText','data')))
+                    logger.debug("Successful request:")
+                    logger.debug(res.request._requestBody);
+                    logger.debug("Response:")
+                    logger.debug(JSON.stringify(_.pick(res,'headers','status','statusText','data')))
                     return res;
     
                 } finally {
@@ -429,12 +430,12 @@ class TestContext extends PartialContext {
         
                     _.last(currentlyExecutingContextStack)?.requestLog.push(newLogEntry);
         
-                    console.error("Failed request:")
+                    logger.error("Failed request:")
                     let request = err.request?._currentRequest || err.request || err
-                    console.log(request._requestBody);
-                    console.log("Response:")
-                    console.log(JSON.stringify(_.pick(err.response,'headers','status','statusText','data')))
-                    console.error(err);
+                    logger.debug(request._requestBody);
+                    logger.debug("Response:")
+                    logger.debug(JSON.stringify(_.pick(err.response,'headers','status','statusText','data')))
+                    logger.error(err);
                     throw(err)
                 } finally {
                     resolveRequest(err.config)
@@ -446,8 +447,8 @@ class TestContext extends PartialContext {
                     try {
                         await Once(precondition.cond,this);
                     } catch (e) {
-                        console.warn(`Skipping test case ${this.description} due to missing precondition: ${precondition.description}`)
-                        console.error(e)
+                        logger.warn(`Skipping test case ${this.description} due to missing precondition: ${precondition.description}`)
+                        logger.error(e)
                         this.mochaContext?.skip()                
                     }
                 }
@@ -545,8 +546,8 @@ class TestContext extends PartialContext {
                         try {
                             await Once(precondition.cond,ctx);
                         } catch (e) {
-                            console.warn(`Skipping test case ${this.description} due to missing precondition: ${precondition.description}`)
-                            console.error(e)
+                            logger.warn(`Skipping test case ${this.description} due to missing precondition: ${precondition.description}`)
+                            logger.error(e)
                             return testCase.mochaContext?.skip()                
                         }
                     }

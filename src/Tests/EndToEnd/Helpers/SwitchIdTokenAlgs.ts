@@ -1,7 +1,8 @@
 import { E2ETestEnvironment } from "../Framework/E2ETestEnvironment";
-import { AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { axios } from "../../../Common/Axios/axios";
 import _ from "lodash";
+import { AdrConnectivityConfig } from "../../../Common/Config";
+import { logger } from "../../Logger";
 
 const AlgSets = [{
     id_token_encrypted_response_alg: "RSA-OAEP",
@@ -50,7 +51,7 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
 
     // Create a new registration using the Connectivity framework
     const dataholder = environment.Config.SystemUnderTest.Dataholder;
-    console.log(`Test new client registration with dataholder ${dataholder}`)
+    logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
     let softwareProductId = await environment.OnlySoftwareProduct();
     let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(softwareProductId,dataholder);

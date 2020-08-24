@@ -1,0 +1,8 @@
+{
+      "mochaExplorer.files":"dist/**/*.spec.js",
+      "mochaExplorer.require": ["source-map-support/register"],
+      "mochaExplorer.env": {
+          "LOG_LEVEL":"debug"
+      },
+      "typescript.tsdk": "./node_modules/typescript/lib"
+  }

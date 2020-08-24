@@ -17,7 +17,8 @@ import { axios } from "../../../Common/Axios/axios";
 import moment from "moment";
 import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
 import urljoin from "url-join";
-import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { logger } from "../../MockLogger";
 
 export interface Client {
     clientId: string
@@ -53,7 +54,12 @@ export class MockRegister {
             options.ca = certs.caCert
             return options;
         }
+
+        const oldConsoleWarn = console.warn;
+        console.warn = () => {};
         const oidc = new Provider(issuerUrl, oidcSpec);
+        console.warn = oldConsoleWarn;
+
         const originalFind:((client:string) => Promise<Client>) = oidc.Client.find;
 
         // replace the SoftwareProductConfig
@@ -80,8 +86,8 @@ export class MockRegister {
               
         function handleClientAuthErrors(err:any, meta:any) {
         //   if (err.statusCode === 401 && err.message === 'invalid_client') {
-             console.log(err);
-             console.log(meta);
+             logger.error(err);
+             logger.error(meta);
         //     // save error details out-of-bands for the client developers, `authorization`, `body`, `client`
         //     // are just some details available, you can dig in ctx object for more.
         //   }
@@ -147,7 +153,7 @@ export class MockRegister {
                 try {
                     JWT.verify(bearer,JWKS.asKeyStore(jwks));
                 } catch (e) {
-                    console.error(e)
+                    logger.error(e)
                     return res.status(401).send();
                 }
 
@@ -163,7 +169,7 @@ export class MockRegister {
                     if (typeof err.statusCode == 'number') {
                         res.status(err.statusCode).json(err.errorMessage);
                     } else {
-                        console.log(err);
+                        logger.error(err);
                         res.status(500).json("Internal Server Error");
                     }
                     

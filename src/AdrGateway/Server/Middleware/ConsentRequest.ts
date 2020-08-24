@@ -2,14 +2,11 @@ import express from "express";
 import { NextFunction } from "connect";
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
-import { ConsentRequestLogManager } from "../../Entities/ConsentRequestLog";
 import { Schema, validationResult, matchedData, checkSchema, query } from "express-validator";
-import { DataHolderMetadataProvider, Dataholder } from "../../Services/DataholderMetadata";
 import _ from "lodash";
-import { AdrGatewayConfig } from "../../Config";
-import { NoneFoundError } from "../Connectivity/Errors";
-import { DefaultConnector } from "../Connectivity/Connector.generated";
-import { ConsentRequestParams } from "../Connectivity/Types";
+import { NoneFoundError } from "../../../Common/Connectivity/Errors";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { ConsentRequestParams } from "../../../Common/Connectivity/Types";
 
 
 
@@ -49,11 +46,7 @@ class ConsentRequestMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
-        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
-        @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
-        private connector: DefaultConnector,
-        // private tokenRequestor: TokenRequestor,
-        private consentManager:ConsentRequestLogManager
+        private connector: DefaultConnector
     ) { }
 
     handler = () => {

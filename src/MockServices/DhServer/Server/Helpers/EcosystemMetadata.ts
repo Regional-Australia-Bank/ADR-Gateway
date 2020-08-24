@@ -1,11 +1,11 @@
 import { Dictionary } from "tsyringe/dist/typings/types";
 import { JWK, JWKS } from "jose";
-import * as _ from "lodash"
+import _ from "lodash"
 import { injectable, inject } from "tsyringe";
 import { ClientRegistrationManager } from "../../Entities/ClientRegistration";
 import { axios } from "../../../../Common/Axios/axios";
 import { DhServerConfig } from "../Config";
-import { ClientCertificateInjector } from "../../../../AdrGateway/Services/ClientCertificateInjection";
+import { ClientCertificateInjector } from "../../../../Common/Services/ClientCertificateInjection";
 
 interface EcosystemMetadata {
     getDataRecipient(clientId: string):Promise<DataRecipient>;

@@ -1,6 +1,6 @@
 import { EndToEndTestingConfig, Deparameterize, InTestConfigBase, ServiceDefinitionParameterized } from "../Environments"
 import { Server } from "http";
-import { createConnection, Connection, ConnectionOptions } from "typeorm";
+import { createConnection, Connection } from "typeorm";
 import { JWKS } from "jose";
 import { GetJwks } from "../../../Common/Init/Jwks";
 import { EntityDefaults } from "../../../AdrGateway/Server/Dependencies";
@@ -8,25 +8,25 @@ import { AdrServerStartup } from "../../../AdrServer/Server/startup";
 import { MockRegisterServerStartup } from "../../../MockServices/Register/Server/startup";
 import { TestHttpsProxy } from "../Helpers/TestHttpsProxy";
 import fs from "fs"
-import { AdrGatewayConfig, SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../AdrGateway/Config";
+import { AdrGatewayConfig } from "../../../AdrGateway/Config";
 import { AdrServerConfig } from "../../../AdrServer/Server/Config";
 import { AdrGatewayStartup } from "../../../AdrGateway/Server/startup";
 import { DhServerConfig } from "../../../MockServices/DhServer/Server/Config";
 import { DhServerStartup } from "../../../MockServices/DhServer/Server/startup";
 import _ from "lodash"
-import { ConsentRequestLogManager } from "../../../AdrGateway/Entities/ConsentRequestLog";
+import { ConsentRequestLogManager } from "../../../Common/Entities/ConsentRequestLog";
 import winston from "winston";
-import https from "https"
 import { TestPKI } from "../Helpers/PKI";
 import { CertsFromFilesOrStrings } from "../../../Common/SecurityProfile/Util";
-import { type } from "os";
 import { MockSoftwareProductServerStartup } from "../../../MockServices/SoftwareProduct/Server/startup";
 import { MockSoftwareProductConfig } from "../../../MockServices/SoftwareProduct/Server/Config";
 import { AdrJwksStartup } from "../../../AdrJwks/startup";
 import { AdrJwksConfig } from "../../../AdrJwks/Config";
 import { AxiosRequestConfig } from "axios";
-import { DefaultClientCertificateInjector, TLSInject } from "../../../AdrGateway/Services/ClientCertificateInjection";
-import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
+import { DefaultClientCertificateInjector, TLSInject } from "../../../Common/Services/ClientCertificateInjection";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../Common/Config";
+import { logger } from "../../Logger";
 
 const getPort = require('get-port');
 
@@ -52,7 +52,7 @@ export class E2ETestEnvironment {
             try {
                 this.persistanceDb = JSON.parse(fs.readFileSync(`${this.Name}_persistance.json`,{encoding:'utf8',flag:'r'}))
             } catch {
-                console.warn(`Could not load ${this.Name}_persistance.json`);
+                logger.warn(`Could not load ${this.Name}_persistance.json`);
                 this.persistanceDb = {}
             }
         })
@@ -328,10 +328,10 @@ export class E2ETestEnvironment {
         let dbClosed = new Promise((resolve,reject) => {
             if (typeof this.TestServices.adrDbConn != 'undefined') {
                 this.TestServices.adrDbConn.then(conn => conn.close().then(() => {
-                    console.log("Closed temporary database")
+                    logger.debug("Closed temporary database")
                     resolve()
                 },(err) => {
-                    console.log("Error closing temporary database")
+                    logger.debug("Error closing temporary database")
                     reject(err)
                 }))
             } else {

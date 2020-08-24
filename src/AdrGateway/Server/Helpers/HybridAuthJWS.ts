@@ -1,5 +1,5 @@
 import { JWKS, JWT, JWK } from "jose";
-import * as _ from "lodash"
+import _ from "lodash"
 import { Dictionary } from "../../../Common/Server/Types";
 import { URL } from "url";
 

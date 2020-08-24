@@ -1,22 +1,23 @@
 import { Scenario as ScenarioBase, TestContext } from "./Framework/TestContext";
 import { DoRequest } from "./Framework/DoRequest";
 import { expect } from "chai";
-import * as _ from "lodash"
+import _ from "lodash"
 import { SetValue } from "./Framework/SetValue";
-import { CreateAssertion } from "../../AdrGateway/Server/Connectivity/Assertions";
+import { CreateAssertion } from "../../Common/Connectivity/Assertions";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 import urljoin from "url-join"
 import { JWT, JWKS, JWS, JWE } from "jose";
 import moment from "moment";
 import { GenerateTestData } from "./Framework/TestData";
 import { NewGatewayConsent, ExistingCurrentGatewayConsent, GatewayConsentWithCurrentAccessToken, RefreshAccessTokenForConsent} from "./NewGatewayConsent";
-import { ConsentRequestLog } from "../../AdrGateway/Entities/ConsentRequestLog";
+import { ConsentRequestLog } from "../../Common/Entities/ConsentRequestLog";
 import uuid from "uuid";
 import qs from "qs";
 import { RegisterSymbols } from "./E2E-UAT-Scenarios.CdrRegister";
 import { URL } from "url";
-import { DataholderOidcResponse } from "../../AdrGateway/Server/Connectivity/Types";
-import { ClearDefaultInMemoryCache } from "../../AdrGateway/Server/Connectivity/Cache/InMemoryCache";
+import { DataholderOidcResponse } from "../../Common/Connectivity/Types";
+import { ClearDefaultInMemoryCache } from "../../Common/Connectivity/Cache/InMemoryCache";
+import { logger } from "../Logger";
 
 const validator = require("validator")
 
@@ -62,7 +63,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 },SecurityProfileSymbols.Values.OpenIdDiscoveryResponse)
                 .Then(async ctx => {
                     let oidcConfig:DataholderOidcResponse = <any>(await (ctx.GetResult(SetValue))).value;
-                    console.log(oidcConfig);
+                    logger.debug(oidcConfig);
                     // Expect the result of the "Do/Measure" to error code
                     for (let key of ["issuer","authorization_endpoint","token_endpoint","introspection_endpoint","revocation_endpoint","userinfo_endpoint","registration_endpoint","scopes_supported","response_types_supported","response_modes_supported","grant_types_supported","acr_values_supported","subject_types_supported","id_token_signing_alg_values_supported","request_object_signing_alg_values_supported","token_endpoint_auth_methods_supported","mutual_tls_sender_constrained_access_tokens","claims_supported"]) {
                         expect(_.keys(oidcConfig)).to.contain(key);
@@ -167,8 +168,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         .and.not.be.undefined
                         .and.not.be.empty;
                     
-                    console.log('ID Token claims')
-                    console.log(id_token_claims);
+                    logger.debug('ID Token claims')
+                    logger.debug(id_token_claims);
                     expect(consent.IsCurrent()).to.be.true
 
                     expect(consent.accessToken).to.be.a('string').and.lengthOf.at.least(5);
@@ -199,9 +200,9 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(SetValue,async ctx => undefined)
                 .Then(async ctx => {
                     let oidcConfig = (await ctx.GetTestContext(SecurityProfileSymbols.Context.OpenIdDiscoveryResponse).GetResult(SetValue,SecurityProfileSymbols.Values.OpenIdDiscoveryResponse)).value
-                    console.log(oidcConfig)
+                    logger.debug(oidcConfig)
                     expect(oidcConfig.revocation_endpoint).to.satisfy((url) => validator.isURL(url,{require_tld:false}))                        
-                    console.log(`revocation_endpoint: ${oidcConfig.revocation_endpoint}`)
+                    logger.debug(`revocation_endpoint: ${oidcConfig.revocation_endpoint}`)
                 },120)
 
             Scenario($ => it.apply(this,$('TS_058 - Refresh Token')), undefined, 'Dataholder revokes refresh tokens')
@@ -837,7 +838,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         }))
                         .Then(async ctx => {
                                 let requestResult = await (ctx.GetResult(DoRequest));
-                                // console.log(requestResult.response.request);
+                                // logger.debug(requestResult.response.request);
                                 return expect(statusCodes).to.include(requestResult.response.status);
                             },600).Keep(`TS_012.${expectationSet.endpointName}.${key}`)
                     }
@@ -1072,7 +1073,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     const consent = (await (authCtx.GetResult(NewGatewayConsent))).consent
                     if (typeof consent == 'undefined') throw 'Consent is undefined'
 
-                    console.log(consent)
+                    logger.debug(consent)
 
                     const id_token = JSON.parse(consent.idTokenJson);
                     expect(id_token.iat).to.be.a('number');
@@ -1126,7 +1127,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .Then(async ctx => {
                     const authCtx = ctx.GetTestContext(SecurityProfileSymbols.Context.MainAuthorizationFlow);
                     let id_token_claims = (await authCtx.GetResult(SetValue,"id_token_claims")).value
-                    console.log(id_token_claims)
+                    logger.debug(id_token_claims)
                     expect(id_token_claims.c_hash).to.be.a('string');
                     expect(id_token_claims.s_hash).to.be.a('string');
                 })

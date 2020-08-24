@@ -6,7 +6,7 @@ import { IncomingMessage } from "http";
 import { CdsScope } from "../../../../Common/SecurityProfile/Scope";
 import moment from "moment";
 import { Consent, ConsentManager } from "../../Entities/Consent";
-import * as _ from "lodash";
+import _ from "lodash";
 import { inject, singleton } from "tsyringe";
 import { HttpCodeError, ErrorPayload, isHttpCodeError, formatErrorPayload} from "../../../../Common/Server/ErrorHandling";
 import { ExtractBearerToken, SingleHeader } from "../../../../Common/Server/Validation";

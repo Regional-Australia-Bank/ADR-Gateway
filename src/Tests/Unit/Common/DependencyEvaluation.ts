@@ -1,8 +1,8 @@
 import chai from 'chai';
 import { expect } from "chai";
-import { Dependency } from '../../../AdrGateway/Server/Connectivity/Dependency';
-import { CommsDependencyEvaluator } from '../../../AdrGateway/Server/Connectivity/CommsDependencyEvaluator';
-import { InMemoryCache } from '../../../AdrGateway/Server/Connectivity/Cache/InMemoryCache';
+import { Dependency } from '../../../Common/Connectivity/Dependency';
+import { CommsDependencyEvaluator } from '../../../Common/Connectivity/CommsDependencyEvaluator';
+import { InMemoryCache } from '../../../Common/Connectivity/Cache/InMemoryCache';
 import winston from 'winston';
 import moment from 'moment';
 

@@ -1,22 +1,16 @@
-import express, { response } from "express";
+import express from "express";
 import { NextFunction } from "connect";
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
-import { AxiosRequestConfig, AxiosError, AxiosResponse } from "axios";
-import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/ConsentRequestLog";
-import { Schema, validationResult, matchedData, checkSchema, query, param, body } from "express-validator";
-import { DataHolderMetadataProvider, DataholderMetadata, Dataholder, DataholderOidcMetadata } from "../../Services/DataholderMetadata";
-import * as _ from "lodash";
-import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
-import { AdrGatewayConfig } from "../../Config";
-import { DefaultConnector } from "../Connectivity/Connector.generated";
+import { AxiosRequestConfig, AxiosResponse } from "axios";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
+import { validationResult, matchedData, param } from "express-validator";
+import _ from "lodash";
+import { ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
-import { DataholderOidcResponse } from "../Connectivity/Types";
-
-interface UserInfoRequestParams {
-    consentId: number
-}
+import { DataholderOidcResponse } from "../../../Common/Connectivity/Types";
 
 class UserInfoAccessError extends Error {
     constructor(public err:any, public res?:AxiosResponse<any>) {
@@ -29,9 +23,7 @@ class UserInfoProxyMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
-        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
-        @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager,
         private connector:DefaultConnector
     ) { }
@@ -59,13 +51,6 @@ class UserInfoProxyMiddleware {
                 consent = await this.GetActiveConsent(m.consentId);
             } catch {
                 return res.sendStatus(404).json("Consent does not exist")
-            }
-
-            let dataholder: Dataholder
-            try {
-                dataholder = await this.dataHolderMetadataProvider.getDataHolder(consent.dataHolderId)
-            } catch {
-                return res.sendStatus(500).json("Could not retrive dataholder metadata")
             }
 
             if (!consent.HasCurrentAccessToken()) {

@@ -1,0 +1,120 @@
+{{#*inline "parameters"}}
+{{~#each parameters}}{{@key}}: {{this}}{{#unless @last}}, {{/unless}}{{/each~}}
+{{~/inline}}
+{{#*inline "parametersInObject"}}
+{
+  {{~> parameters~}}
+}
+{{~/inline}}
+{{#*inline "dependencyOutputs"}}
+{
+  {{~#each dependencyOutputs}}{{@key}}: {{{this}}}{{#unless @last}}, {{/unless}}{{/each~}}
+}
+{{~/inline}}
+{{#*inline "outputType"}}
+{{#if output}}{{{output}}}{{else}}void{{/if}}
+{{~/inline}}
+{{#*inline "unwrapDependency"}}
+{{~#if simple~}}
+{{simple}}
+{{~else~}}
+{do: {{dependency}}{{#if condition}}, when: {{{condition}}}{{/if}}{{#if disableCache}}, disableCache: {{{disableCache}}}{{/if~}} }
+{{~/if~}}
+{{~/inline}}
+import { Dependency } from "./Dependency"
+import * as util from "./Util"
+import * as Types from "./Types"
+import { injectable } from "tsyringe";
+import { ClientCertificateInjector } from "../Services/ClientCertificateInjection";
+import winston from "winston";
+import { DataHolderRegistrationManager } from "../Entities/DataHolderRegistration";
+import { ConsentRequestLogManager } from "../Entities/ConsentRequestLog";
+import _ from "lodash"
+import * as Serial from "./Cache/Serializers";
+
+
+const Identifiers = {
+  string: s => s,
+  Types: {
+    ConsentRequestLog: (x:Types.ConsentRequestLog) => x.id.toString(),
+    ConsentRequestParams: (x:Types.ConsentRequestParams) => { throw 'Do not cache consent request'},
+    StringOrUndefined: s => s
+  }
+}
+
+@injectable()
+export class DependencyGraph {
+  constructor(
+    public configFn:() => Promise<Types.AdrConnectivityConfig>,
+    public cert:ClientCertificateInjector,
+    public logger:winston.Logger,
+    public dataholderRegistrationManager: DataHolderRegistrationManager,
+    public consentManager:ConsentRequestLogManager,
+  ) {
+    
+  }
+
+  private MakeDependencies = () => {
+    const factory = this;
+
+    {{#each dependencies}}
+    const {{@key}} = new Dependency<{{> parametersInObject}}, {{> dependencyOutputs}}, {{> outputType}}>({
+      name: "{{@key}}",
+      evaluator: {{{evaluator}}},
+      {{#if validator}}
+      validator: {{{validator}}},
+      {{/if}}
+      {{#if preassertions}}
+      preassertions: [
+      {{#each processedPreassertions}}
+        {{> unwrapDependency}}{{#unless @last}},{{/unless}}
+      {{/each}}
+      ],
+      {{/if}}
+      {{#if parameters}}
+      parameters: {
+      {{#each parameters}}
+        {{@key}}:Identifiers.{{this}}{{#unless @last}},{{/unless}}
+      {{/each}}
+      },
+      {{else}}
+      parameters: {},
+      {{/if}}
+      {{#if project}}
+      project: {
+      {{#each project}}
+        {{@key}}:{{{this}}},
+      {{/each}}
+      },
+      {{/if}}
+      {{#if dependencies}}
+      dependencies: [
+      {{#each processedDependencies}}
+        {{> unwrapDependency}}{{#unless @last}},{{/unless}}
+      {{/each}}
+      ],
+      {{/if}}
+      // disabledCaches: {{{disabledCaches}}}
+      cacheTrail: [{{#each cacheTrailSanitized}}{{this}},{{/each}}],
+      {{#if cache}}
+      cache: {
+        {{#each cache}}
+        {{@key}}: {{{this}}}{{#unless @last}},{{/unless}}
+        {{/each}}
+      },
+      {{/if}}
+      {{#if serializer}}
+      serializer: {{{serializer}}},
+      {{/if}}
+    })
+
+    {{/each}}
+    
+    return { {{#each dependencies}}{{@key}}, {{/each}} }
+    
+  
+  }
+
+  public Dependencies = this.MakeDependencies()
+
+}

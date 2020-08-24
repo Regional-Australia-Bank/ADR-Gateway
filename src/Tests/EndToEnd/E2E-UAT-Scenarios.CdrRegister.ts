@@ -1,14 +1,15 @@
 import { Scenario as ScenarioBase, TestContext } from "./Framework/TestContext";
 import { DoRequest } from "./Framework/DoRequest";
 import { expect } from "chai";
-import * as _ from "lodash"
+import _ from "lodash"
 import { SetValue } from "./Framework/SetValue";
-import { CreateAssertion } from "../../AdrGateway/Server/Connectivity/Assertions";
+import { CreateAssertion } from "../../Common/Connectivity/Assertions";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 import urljoin from "url-join"
 import { JWT } from "jose";
 import moment from "moment";
 import qs from "qs";
+import { logger } from "../Logger";
 
 export const RegisterSymbols = {
     Context: {
@@ -87,14 +88,14 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
                 expect(requestResult.response.status).to.eq(200)
 
-                console.log(await ctx.GetValue("Statuses"))
+                logger.debug(await ctx.GetValue("Statuses"))
 
             }).Keep(RegisterSymbols.Context.DRStatuses)
 
         Scenario($ => it.apply(this,$('Register OIDC')), undefined, 'Validate OpenID Provider Configuration End Point.')
             .Given('Cold start')
             .PreTask(DoRequest,async () => {
-                console.log(environment.SystemUnderTest.Register())
+                logger.debug(environment.SystemUnderTest.Register())
                 return ({
                     requestOptions:await environment.Mtls({
                         method: "GET",
@@ -111,7 +112,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             ,"tokenEndpoint")
             .Then(async ctx => {
                 let requestResult = await (ctx.GetResult(DoRequest));
-                console.log(requestResult.response.body);
+                logger.debug(requestResult.response.body);
                 expect(requestResult.response.status).to.equal(200);
                 expect(await (ctx.GetValue("tokenEndpoint"))).to.be.a('string').that.is.not.empty;
                 expect(requestResult.body.grant_types_supported).to.be.an('array').that.contains("client_credentials");
@@ -144,10 +145,10 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 ,"token")
             .Then(async ctx => {
                 let requestResult = await (ctx.GetResult(DoRequest,"getTokenResponse"));
-                // console.log(requestResult);
+                // logger.debug(requestResult);
                 let responseBody = requestResult.body;
                 let scopes:string[] = responseBody.scope.split(" ");
-                console.log(responseBody.access_token);
+                logger.debug(responseBody.access_token);
                 expect(requestResult.response.status).to.equal(200);
                 expect(responseBody.token_type).to.equal("Bearer");
                 expect(scopes).to.include("cdr-register:bank:read");
@@ -189,7 +190,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 }
 
                 let responseJwt = requestResult.body;
-                console.log(responseJwt);
+                logger.debug(responseJwt);
                 JWT.decode(responseJwt,{complete:true})
 
             }).Keep(RegisterSymbols.Context.GetSSA)
@@ -260,7 +261,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
                 })
                 .When(SetValue,async (ctx) => {
-                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(console.error)
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(logger.error)
                 })
                 .Then(async ctx => {
                     let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
@@ -282,7 +283,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
                 })
                 .When(SetValue,async (ctx) => {
-                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(console.error)
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(logger.error)
                 })
                 .Then(async ctx => {
                     let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
@@ -304,7 +305,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
                 })
                 .When(SetValue,async (ctx) => {
-                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(console.error)
+                    await ctx.environment.TestServices.adrGateway.connectivity.SoftwareStatementAssertion(await environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"}).catch(logger.error)
                 })
                 .Then(async ctx => {
                     let log = ctx.GetLastHttpRequest(undefined,/(token|ssa)$/)
@@ -352,7 +353,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let payload = <any>JWT.decode(ssa,{complete:true}).payload;
 
                     let diff = moment.utc(payload.exp*1000).diff(moment.utc(),'seconds')/60;
-                    console.log(`${diff} SSA minutes to expiry`)
+                    logger.debug(`${diff} SSA minutes to expiry`)
                     if (diff < 0 || Math.abs(diff-30) > 0.1) throw `Does not expire in 30 minutes, but ${diff}`;
                 })
 
@@ -383,7 +384,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     }
     
                     let dataHolders = requestResult.body.data;
-                    console.log(JSON.stringify(dataHolders));
+                    logger.debug(JSON.stringify(dataHolders));
     
                 }).Keep(RegisterSymbols.Context.GetDataHolderBrands)
 
@@ -431,7 +432,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let lastDataHolders = await ctx.GetValue("LastDhs");
                     let dataHoldersFiltered = requestResult.body.data;
 
-                    console.log(JSON.stringify({allDataHolders,lastDataHolders,dataHoldersFiltered}));
+                    logger.debug(JSON.stringify({allDataHolders,lastDataHolders,dataHoldersFiltered}));
                     if (!_.isEqual(lastDataHolders,dataHoldersFiltered)) {
                         throw `The filtered list of data holders does not match expectation`
                     }
@@ -451,10 +452,10 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
                     let dataholders:any[] = await ctx.GetTestContext(RegisterSymbols.Context.GetDataHolderBrands).GetValue(RegisterSymbols.Values.GetDataHolderBrandsAll);
 
-                    console.info("Expected page 2, size 2 from set of All.")
+                    logger.info("Expected page 2, size 2 from set of All.")
 
                     let page2Dhs = _.map([2,3],i => dataholders[i])
-                    console.log(page2Dhs);
+                    logger.debug(page2Dhs);
 
                     return page2Dhs;
                 },"Page2Dhs")
@@ -488,7 +489,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let page2DataHolders = await ctx.GetValue("Page2Dhs");
                     let dataHoldersPaginated= requestResult.body.data;
 
-                    console.log(JSON.stringify({allDataHolders,page2DataHolders,dataHoldersPaginated}));
+                    logger.debug(JSON.stringify({allDataHolders,page2DataHolders,dataHoldersPaginated}));
                     if (!_.isEqual(page2DataHolders,dataHoldersPaginated)) {
                         throw `The page of data holders does not match expectation`
                     }

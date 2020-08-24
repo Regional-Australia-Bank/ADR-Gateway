@@ -14,16 +14,6 @@ class JtiLog extends BaseEntity {
     sub!: string;
 }
 
-/**
- * Usage:
- * let jlm = (new JtiLogManager());
- *   jlm.IsJtiUnique("jti1233","iss1","sub").then((res) => {
- *       console.log(res);
- *   }).catch(err => {
- *       console.error(err)
- *   });
- */
-
 @injectable()
 class JtiLogManager {
     /**

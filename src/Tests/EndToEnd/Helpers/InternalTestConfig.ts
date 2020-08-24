@@ -1,12 +1,11 @@
 import { EndToEndTestingConfig } from "../Environments";
 import { GenerateDrJwks, GenerateRegisterJwks, GenerateDhJwks } from "../../../Common/Init/Jwks";
 import { E2ETestEnvironment } from "../Framework/E2ETestEnvironment";
-import { DataRecipients, TestDataRecipientApplication } from "../../../MockServices/Register/MockData/DataRecipients";
-import { DefaultOIDCConfiguration } from "../../../MockServices/DhServer/Server/Config";
+import { TestDataRecipientApplication } from "../../../MockServices/Register/MockData/DataRecipients";
 import _ from "lodash"
 import { TestPKI } from "./PKI";
-import { AdrConnectivityConfig } from "../../../AdrGateway/Config";
 import { MockSoftwareProductConfig } from "../../../MockServices/SoftwareProduct/Server/Config";
+import { AdrConnectivityConfig } from "../../../Common/Config";
 
 const getPort = require('get-port')
 

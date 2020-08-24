@@ -1,6 +1,6 @@
 import winston = require("winston");
 import { Client, MockSoftwareProduct } from "./server";
-import { DefaultClientCertificateInjector, DevClientCertificateInjector, ClientCertificateInjector } from "../../../AdrGateway/Services/ClientCertificateInjection";
+import { DefaultClientCertificateInjector, DevClientCertificateInjector, ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
 
 
 import { MockSoftwareProductConfig } from "./Config";
@@ -12,11 +12,11 @@ export namespace MockSoftwareProductServerStartup {
         let port = config.Port;
 
         let logger = <winston.Logger>winston.createLogger({
-            level:"debug",
+            level: process.env.LOG_LEVEL || "debug",
             transports: [
                 new winston.transports.Console({
                     handleExceptions: true,
-                    level: "debug"
+                    level: process.env.LOG_LEVEL || "debug"
                 })]
             })
 

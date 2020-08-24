@@ -8,7 +8,7 @@ import { BearerJwtVerifier } from "../../SecurityProfile/Logic.ClientAuthenticat
 import { inject, injectable } from "tsyringe";
 import urljoin from "url-join";
 import { JoseBindingConfig } from "../Config";
-import { GetOpts } from "../../../AdrGateway/Server/Connectivity/Types";
+import { GetOpts } from "../../../Common/Connectivity/Types";
 
 @injectable()
 export class ClientBearerJwtVerificationMiddleware {

@@ -3,8 +3,8 @@ import _ from "lodash"
 import { MockRegisterConfig } from "../Server/Config";
 import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
 import { axios } from "../../../Common/Axios/axios";
-import { DefaultClientCertificateInjector } from "../../../AdrGateway/Services/ClientCertificateInjection";
-import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
+import { DefaultClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
 export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector):Promise<any[]> => {
 

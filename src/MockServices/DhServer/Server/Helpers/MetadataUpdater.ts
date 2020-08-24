@@ -1,5 +1,5 @@
-import { MetadataUpdateLog, MetadataUpdateLogManager } from "../../../../Common/Entities/MetadataUpdateLog"
 import { singleton } from "tsyringe";
+import { MetadataUpdateLogManager, MetadataUpdateLog } from "../../Entities/MetadataUpdateLog";
 
 @singleton()
 class MetadataUpdater {

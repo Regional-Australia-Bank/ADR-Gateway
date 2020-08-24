@@ -1,14 +1,13 @@
 import { IClientCertificateVerificationConfig, ConvictFormats, ConvictSchema } from "../../../Common/Server/Config";
 import { Dictionary } from "../../../Common/Server/Types";
 import { ConnectionOptions } from "typeorm";
-import { JWKS, JSONWebKeySet } from "jose";
+import { JSONWebKeySet } from "jose";
 import urljoin from "url-join"
 import _ from "lodash"
 import convict = require("convict");
 import { GenerateDhJwks } from "../../../Common/Init/Jwks";
-import { url } from "inspector";
-import { MtlsConfig } from "../../../AdrGateway/Config";
 import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
+import { MtlsConfig } from "../../../Common/Config";
 
 export interface DhServerConfig {
     Port: number,

@@ -1,6 +1,4 @@
 import { TestAction, TestActionResult } from "./TestActions";
-import request = require("request");
-import { response } from "express";
 
 interface SetValueResult extends TestActionResult {
     value: any

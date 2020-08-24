@@ -1,6 +1,6 @@
 import { param } from "express-validator";
 import { stringify } from "querystring";
-import { ConsentRequestLog, ConsentRequestLogManager } from "../../../AdrGateway/Entities/ConsentRequestLog";
+import { ConsentRequestLog, ConsentRequestLogManager } from "../../../Common/Entities/ConsentRequestLog";
 
 import { TestContext } from "../Framework/TestContext";
 import { getAuthPostGetRequestUrl } from "../../../AdrGateway/Server/Helpers/HybridAuthJWS";
@@ -13,6 +13,7 @@ import { axios } from "../../../Common/Axios/axios";
 import { NewConsentParams } from "../NewGatewayConsent";
 import { AdrGatewayConfig } from "../../../AdrGateway/Config";
 import { GenerateTestData } from "../Framework/TestData";
+import { logger } from "../../Logger";
 
 
 class TestConsentRequestor {
@@ -191,7 +192,7 @@ class TestConsentRequestor {
         let cc:ConsentConfirmer;
 
         // Open the redirect URL
-        console.log(authparams);
+        logger.debug(authparams);
         cc = new TestDhConsentConfirmer();
 
         // Wait for the consent to be finalised
@@ -225,7 +226,7 @@ class TestConsentRequestor {
             try {
                 await cc.CleanUp();
             } catch (e) {
-                console.error(e)
+                logger.error(e)
             }
         });
    

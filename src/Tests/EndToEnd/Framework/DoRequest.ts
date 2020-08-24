@@ -4,6 +4,7 @@ import { AxiosRequestConfig, AxiosResponse } from "axios";
 import _ from "lodash"
 import { axios } from "../../../Common/Axios/axios";
 import https from "https"
+import { logger } from "../../Logger";
 
 export const TransformMtlsOptions = (config:AxiosRequestConfig) => {
     let mtlsOptions = _.pick(config,'key','cert','ca','passphrase');
@@ -39,8 +40,8 @@ export class DepaginateRequestResult implements TestActionResult {
 
 class DoRequest extends TestAction<DoRequestResult> {
     Perform = async (): Promise<DoRequestResult> => {
-        console.log("DoRequest with request options:");
-        console.log(this.parameters.requestOptions)
+        logger.debug("DoRequest with request options:");
+        logger.debug(this.parameters.requestOptions)
         const p = new Promise<DoRequestResult>(async (resolve,reject) => {
             try {
                 let requestOptions = TransformMtlsOptions(this.parameters.requestOptions)
@@ -73,8 +74,8 @@ export class DepaginateRequest extends TestAction<DepaginateRequestResult> {
     dataValues:any[] = [];
 
     Perform = async (): Promise<DepaginateRequestResult> => {
-        console.log("DepaginateRequest with request options:");
-        console.log(this.parameters.requestOptions)
+        logger.debug("DepaginateRequest with request options:");
+        logger.debug(this.parameters.requestOptions)
 
         const p = new Promise<DepaginateRequestResult>(async (resolve,reject) => {
             try {

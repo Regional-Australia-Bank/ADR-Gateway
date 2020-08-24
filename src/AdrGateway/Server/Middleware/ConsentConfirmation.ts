@@ -1,31 +1,18 @@
 import express from "express";
 import winston from "winston";
 import { IncomingMessage } from "http";
-import * as _ from "lodash";
+import _ from "lodash";
 import { inject, injectable } from "tsyringe";
-import { isHttpCodeError, formatErrorPayload, HttpCodeError} from "../../../Common/Server/ErrorHandling";
-import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/ConsentRequestLog";
-import { JWKS } from "jose";
-import { AdrGatewayConfig } from "../../Config";
-import { oidc_fapi_hash } from "../../../Common/SecurityProfile/Util";
-import { DataHolderMetadataProvider, Dataholder } from "../../Services/DataholderMetadata";
+import { isHttpCodeError, formatErrorPayload } from "../../../Common/Server/ErrorHandling";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
 import { Dictionary } from "../../../Common/Server/Types";
-import { DefaultConnector } from "../Connectivity/Connector.generated";
-
-
-// class ConsumerUnauthorisedError extends HttpCodeError{
-//     constructor(logmessage:string) {
-//         super(logmessage,401)
-//     }
-// }
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
 @injectable()
 class ConsentConfirmationMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
-        @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
-        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
         private consentManager:ConsentRequestLogManager,
         private connector:DefaultConnector
     ) { }

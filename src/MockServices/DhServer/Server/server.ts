@@ -331,7 +331,7 @@ class DhServer {
 
         })
 
-        app.post('/authorize/consent-flow/:consentId', urlencoded(), async (req, res) => {
+        app.post('/authorize/consent-flow/:consentId', urlencoded({extended:true}), async (req, res) => {
 
             let consentManager = container.resolve(ConsentManager);
             let consent = await consentManager.GetById(parseInt(req.params.consentId))
@@ -412,7 +412,7 @@ class DhServer {
              <circle cx="100" cy="100" r="80" fill="${colorHex}" />
              <text x="100" y="125" font-size="60" font-family="sans-serif" text-anchor="middle" fill="white">${abbr}</text></svg>`;
     
-                let svgBase64 = (new Buffer(svg)).toString('base64');
+                let svgBase64 = Buffer.from(svg,'utf8').toString('base64');
     
                 let uri = `data:image/svg+xml;base64,${svgBase64}`;
                 return uri;

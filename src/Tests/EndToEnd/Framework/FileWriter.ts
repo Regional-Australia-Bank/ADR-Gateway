@@ -4,6 +4,7 @@ import e from "express";
 import path from "path"
 import { E2ETestEnvironment } from "./E2ETestEnvironment";
 import moment from "moment"
+import { logger } from "../../Logger";
 
 const LOG_FILE = path.resolve(process.cwd(),"FileWriter.log")
 
@@ -137,8 +138,8 @@ export const PushWriter = (filename:string,relativePath:string) => {
             return file
         }    
     } catch (e) {
-        console.error("Bad 3")
-        console.error(e)
+        logger.error("Bad 3")
+        logger.error(e)
         process.kill(process.pid)
         throw e
     }
@@ -186,8 +187,8 @@ export const PopWriter = ():string => {
         return removed?.relativePath
             
     } catch (e) {
-        console.error("Bad 4")
-        console.error(e)
+        logger.error("Bad 4")
+        logger.error(e)
         process.kill(process.pid)
         throw e
     }
@@ -207,7 +208,7 @@ export const QueueTestCleanup = (c:TestCleanup) => {
 }
 
 export const ExecuteTestCleanup = async (env:E2ETestEnvironment) => {
-    console.log("Environment test case cleanup")
+    logger.debug("Environment test case cleanup")
 
     // remove duplicates by:
     // group by _evidenceFilename

@@ -1,0 +1,10 @@
+{
+  "include": [
+    "**"
+  ],
+  "exclude": [
+    "dist/Tests/**",
+    "dist/HttpsProxy/**",
+    "dist/MockServices/**"
+  ]
+}

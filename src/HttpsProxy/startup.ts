@@ -27,9 +27,6 @@ export namespace MockInfrastructureStartup {
 
     SpawnProxies(config,tlsConfig,mtlsConfig)
 
-    // return {port,server:app.listen(port,() => {
-    //   console.info( `mock-infrastructure started at http://localhost:${ port }` );
-    // })}
   }
 }
 

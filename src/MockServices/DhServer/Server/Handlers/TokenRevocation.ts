@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 
@@ -13,7 +13,7 @@ import { OIDCConfiguration, DhServerConfig } from "../Config";
 import { ConsentManager, Consent } from "../../Entities/Consent";
 import { TokenIssuer } from "../Helpers/TokenIssuer";
 import { axios } from "../../../../Common/Axios/axios";
-import { ClientCertificateInjector } from "../../../../AdrGateway/Services/ClientCertificateInjection";
+import { ClientCertificateInjector } from "../../../../Common/Services/ClientCertificateInjection";
 
 @injectable()
 export class TokenRevocationMiddleware {
@@ -89,7 +89,7 @@ export class TokenRevocationMiddleware {
         // decide whether to validate based on body or query parameters
         // TODO add client authorization
         return _.concat([
-            bodyParser.urlencoded(),
+            bodyParser.urlencoded({extended:true}),
             check("token_type_hint").isIn(['refresh_token','access_token']).withMessage("token_type_hint must be refresh_token or authorization_code").optional().bail(),
             body('token').isString(),
             check("client_id").isString(),

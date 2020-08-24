@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 
@@ -51,7 +51,7 @@ class UserInfoMiddleware {
         // decide whether to validate based on body or query parameters
 
         return [
-            urlencoded(),
+            urlencoded({extended:true}),
             validationErrorMiddleware,
             UserInfoResponder
         ];

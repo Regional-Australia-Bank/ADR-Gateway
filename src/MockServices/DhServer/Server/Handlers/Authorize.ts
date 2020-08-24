@@ -1,5 +1,5 @@
 import { Dictionary } from "../../../../Common/Server/Types";
-import * as _ from "lodash";
+import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 import { getType } from "mime";
@@ -156,7 +156,7 @@ class AuthorizeMiddleware {
         }
 
         return [
-            urlencoded(),
+            urlencoded({extended:true}),
             par('scope',"scope must be provided").isString().not().isEmpty(),
             par('response_type').equals('code id_token').withMessage("response_type must be code id_token"),
             par('client_id').isString(),

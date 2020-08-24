@@ -1,4 +1,4 @@
-import * as _ from "lodash";
+import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 
@@ -6,11 +6,11 @@ import {check, validationResult, query, ValidationChain, body, matchedData} from
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
 import bodyParser, { urlencoded } from "body-parser";
-import { ConsentRequestLogManager } from "../../../AdrGateway/Entities/ConsentRequestLog";
+import { ConsentRequestLogManager } from "../../../Common/Entities/ConsentRequestLog";
 import { AdrServerConfig } from "../Config";
 import moment from "moment";
 import { GatewayRequest } from "../../../Common/Server/Types";
-import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
 // TODO remove some repetition. Similar to DhServer\Server\Handlers\ClientAccesstoken.ts and AdrServer\Server\Handlers\Revocation.ts
 @injectable()
@@ -88,7 +88,7 @@ class RevokeMiddleware {
         // decide whether to validate based on body or query parameters
 
         return [
-            urlencoded(),
+            urlencoded({extended:true}),
             body('token').isString(),
             body('token_type').isString().equals("refresh_token").optional(),
 

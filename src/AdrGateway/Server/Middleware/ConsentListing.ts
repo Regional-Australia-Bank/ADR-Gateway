@@ -1,17 +1,12 @@
 import express from "express";
 import { NextFunction } from "connect";
 import { injectable, inject } from "tsyringe";
-import { IncomingMessage } from "http";
-import { Dictionary } from "../../../Common/Server/Types";
 import winston from "winston";
-import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/ConsentRequestLog";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
 import { Schema, validationResult, matchedData, checkSchema, query } from "express-validator";
-import { DataHolderMetadataProvider, Dataholder } from "../../Services/DataholderMetadata";
-import * as _ from "lodash";
+import { DataHolderMetadataProvider, DataholderMetadata } from "../../../Common/Services/DataholderMetadata";
+import _ from "lodash";
 import { AdrGatewayConfig } from "../../Config";
-import uuid from "uuid";
-import { getAuthPostGetRequestUrl } from "../Helpers/HybridAuthJWS";
-import { JWKS } from "jose";
 
 const querySchema:Schema = {
     userId: { isString: { errorMessage: "userId must be a string" }, isLength: {options: {min: 5}, errorMessage: "userId must be at least length 5"} },
@@ -28,7 +23,7 @@ enum ConsentType {
     ONE_TIME = "ONE_TIME"
 }
 
-export const SerializeConsentDetails = async (c:ConsentRequestLog, dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>) => {
+export const SerializeConsentDetails = async (c:ConsentRequestLog, dataHolderMetadataProvider: DataHolderMetadataProvider<DataholderMetadata>) => {
     let rendered = {
         consentId: c.id,
         consentType: (c.requestedSharingDuration === 0 ? ConsentType.ONE_TIME: ConsentType.TIME_BOUND),
@@ -78,9 +73,7 @@ class ConsentListingMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
-        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
-        @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
-        // private tokenRequestor: TokenRequestor,
+        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<DataholderMetadata>,
         private consentManager:ConsentRequestLogManager
     ) { }
 
@@ -88,13 +81,6 @@ class ConsentListingMiddleware {
 
     ListConsents = async (m:UserParams) => {
         let consents = await this.consentManager.ListConsents(m);
-
-        // "brandName": string,
-        // "industry": string,
-        // "websiteUri": string,
-        // "legalEntityName": string,
-        // "abn": string,
-        // "acn": string,
 
         let result = []
 

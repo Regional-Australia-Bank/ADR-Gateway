@@ -1,7 +1,5 @@
 import { TestAction, TestActionResult } from "./Framework/TestActions";
-import request = require("request");
-import { response } from "express";
-import { ConsentRequestLog, ConsentRequestLogManager } from "../../AdrGateway/Entities/ConsentRequestLog";
+import { ConsentRequestLog, ConsentRequestLogManager } from "../../Common/Entities/ConsentRequestLog";
 import { TestConsentRequestor } from "./Helpers/TestConsentRequestor";
 import { OAuthHybridFlowResult } from "./Helpers/ConsentConfirmer";
 import { AdrGatewayConfig } from "../../AdrGateway/Config";

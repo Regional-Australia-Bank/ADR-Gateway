@@ -2,13 +2,12 @@ import { Connection, createConnection } from "typeorm";
 import { JtiLog } from "../../Common/Entities/JtiLog";
 import winston from "winston";
 import * as Transport from 'winston-transport';
-import { ConsentRequestLog } from "../../AdrGateway/Entities/ConsentRequestLog";
-import * as _ from "lodash"
+import { ConsentRequestLog } from "../../Common/Entities/ConsentRequestLog";
+import _ from "lodash"
 import { container } from "../AdrDiContainer";
-import { DevClientCertificateInjector, DefaultClientCertificateInjector } from "../../AdrGateway/Services/ClientCertificateInjection";
+import { DevClientCertificateInjector, DefaultClientCertificateInjector } from "../../Common/Services/ClientCertificateInjection";
 import { AdrServerConfig } from "./Config";
-import { AbstractCache } from "../../AdrGateway/Server/Connectivity/Cache/AbstractCache";
-import { DefaultCache } from "../../AdrGateway/Server/Connectivity/Cache/DefaultCache";
+import { DefaultCache } from "../../Common/Connectivity/Cache/DefaultCache";
 import { combineReplacers, errorReplacer, configReplacer, axiosReplacer } from "../../Common/LogReplacers";
 
 async function RegisterDependencies(configFn:() => Promise<AdrServerConfig>,db?:Promise<Connection>): Promise<void> {

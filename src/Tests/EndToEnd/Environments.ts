@@ -1,11 +1,9 @@
-import { MtlsConfig, AdrGatewayConfig, SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../AdrGateway/Config";
-import { ConnectionOptions, createConnection, Connection, TreeChildren } from "typeorm";
+import { AdrGatewayConfig } from "../../AdrGateway/Config";
+import { ConnectionOptions } from "typeorm";
 import { AdrServerConfig } from "../../AdrServer/Server/Config";
-import { GenerateDrJwks, GenerateRegisterJwks, GetJwks } from "../../Common/Init/Jwks";
 import process from "process"
 import fs from "fs"
 import _ from "lodash"
-import { eventNames } from "cluster";
 
 import { InternalTestConfig } from "./Helpers/InternalTestConfig";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
@@ -14,11 +12,10 @@ import { MockRegisterConfig } from "../../MockServices/Register/Server/Config";
 import { PuppeteerConfig } from "./Helpers/TestDhDataholderConsentConfirmer";
 import { MockSoftwareProductConfig } from "../../MockServices/SoftwareProduct/Server/Config";
 import { AdrJwksConfig } from "../../AdrJwks/Config";
+import { AdrConnectivityConfig, MtlsConfig } from "../../Common/Config";
+import { logger } from "../Logger";
 
-const getPort = require('get-port')
-
-var httpProxy = require('http-proxy');
-var path = require('path');
+const path = require('path');
 
 type EnvironmentParameterized<T> = T | ((env:E2ETestEnvironment) => T)
 export type ServiceDefinitionParameterized<T> = T | ((env:E2ETestEnvironment) => Promise<T>)
@@ -109,7 +106,7 @@ export const InTestConfigBase = async (fn:(() => Promise<any>)) => {
     try {
         process.chdir(TestConfigBase())
     } catch (e) {
-        console.warn("Could not change to test config base directory")
+        logger.warn("Could not change to test config base directory")
     }
 
     let out = await fn();
@@ -129,18 +126,18 @@ export const GetEnvironments = ():{liveTestEnvironments:E2ETestEnvironment[], mo
     try {
         process.chdir(testConfigBase)
     
-        console.log(`Looking for test environments in ${testConfigBase}`);
+        logger.debug(`Looking for test environments in ${testConfigBase}`);
         
         try {
             liveTestEnvironments = _.map(<EndToEndTestingConfig[]><any>JSON.parse(fs.readFileSync(path.join(testConfigBase,"e2e.test.environments.json"),'utf8')),env => {
                 return new E2ETestEnvironment(env)
             });
         } catch {
-            console.log(`Unable to read test environments. Please place JSON array at ${path.join(testConfigBase,"e2e.test.environments.json")}`);       
+            logger.debug(`Unable to read test environments. Please place JSON array at ${path.join(testConfigBase,"e2e.test.environments.json")}`);       
         }
     
     } catch (e) {
-        console.log(`Could not change directory to ${testConfigBase}`)
+        logger.debug(`Could not change directory to ${testConfigBase}`)
     }
 
     process.chdir(currentDir)

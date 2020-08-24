@@ -1,7 +1,7 @@
 import { JWKS, JWT, JWS } from "jose";
 import { JtiLogManager } from "../Entities/JtiLog";
 import {injectable} from "tsyringe";
-import { GetOpts } from "../../AdrGateway/Server/Connectivity/Types";
+import { GetOpts } from "../../Common/Connectivity/Types";
 
 interface ClientJWTPayload {
     iss:string;

@@ -8,6 +8,7 @@ import qs from "qs"
 import { param } from "express-validator";
 import urljoin from "url-join";
 import { axios } from "../../../Common/Axios/axios";
+import { logger } from "../../Logger";
 
 const PuppeteerHar = require('puppeteer-har');
 
@@ -110,7 +111,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
             har = new PuppeteerHar(page);
             const harFile =`consent-confirm-${moment().format('YYYY-MM-DD hh-mm-ss a')}.har`;
             const harPath = require('path').join(params.context._evidencePath,harFile);
-            console.log(`ConsentConfirmer: har at ${harFile}`)    
+            logger.debug(`ConsentConfirmer: har at ${harFile}`)    
             await har.start({ path: harPath });
         }
 
@@ -131,7 +132,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                 options.checkboxSelections = ["Select all"]
             }
 
-            console.log(`ConsentConfirmer: New consent with options: ${JSON.stringify(options)}`)  
+            logger.debug(`ConsentConfirmer: New consent with options: ${JSON.stringify(options)}`)  
     
             // Enter username and password
             await page.goto(params.redirectUrl);
@@ -169,7 +170,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                         const otpButton = (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.otp.otp_button})`,{timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
                         if (otpButton) await otpButton.click();    
                     } catch (e) {
-                        console.error(e)
+                        logger.error(e)
                     } finally {
                         resolve()
                     }
@@ -185,7 +186,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                         const nextButton = (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.accounts.select_accounts_next_button})`,{timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
                         if (nextButton) await nextButton.click();
                     } catch (e) {
-                        console.error(e)
+                        logger.error(e)
                     } finally {
                         resolve()
                     }
@@ -198,7 +199,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                         const confirmSharingButton = (await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${selectors.confirmSharing.button})`,{polling: 500, timeout:MAX_CONSENT_FLOW_DURATION})).asElement()!;
                         if (confirmSharingButton) await confirmSharingButton.click();    
                     } catch (e) {
-                        // console.error(e)
+                        // logger.error(e)
                     } finally {
                         resolve()
                     }
@@ -211,9 +212,9 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                             /[#&]code=[^#]+/.test(document.location.hash) && /[#&]id_token=[^#]+/.test(document.location.hash)
                         ) ) && /[#&]state=[^#]+/.test(document.location.hash) && document.location.hash
                     `;
-                        console.log('Waiting for AUTH_FLOW_COMPLETED_SELECTOR')
+                        logger.debug('Waiting for AUTH_FLOW_COMPLETED_SELECTOR')
                         const finalRequest = await page.waitForFunction(`(${AUTH_FLOW_COMPLETED_SELECTOR}) || (${oAuthResultSelector})`,{timeout:MAX_CONSENT_FLOW_DURATION, polling: "raf"})
-                        console.log('Got AUTH_FLOW_COMPLETED_SELECTOR')
+                        logger.debug('Got AUTH_FLOW_COMPLETED_SELECTOR')
 
                         let hash = await finalRequest.jsonValue();
                         if (typeof hash == 'string') {
@@ -222,7 +223,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                             throw 'hash is not a string'
                         }
                     } catch (e) {
-                        console.log('AUTH_FLOW_COMPLETED_SELECTOR')
+                        logger.debug('AUTH_FLOW_COMPLETED_SELECTOR')
                         reject(e)
                     }
                 })
@@ -238,10 +239,10 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                 waitPromises = [authFilled, otpFilled, accountsSelected, consentConfirmed, oauthFlowResult,unredirectableErrorResult]
 
                 let race = new Promise((resolve) => {
-                    oauthFlowResult.then(resolve,() => console.error); // us console.error to prevent unhandled promise rejection
+                    oauthFlowResult.then(resolve,() => logger.error); // us logger.error to prevent unhandled promise rejection
                     unredirectableErrorResult.then(resolve).catch(err => {
                         // occasionally the unredirectableErrorResult waiter may throw an error because document.body is null sometime during tear-down. Just ignore it.
-                        console.error(err);
+                        logger.error(err);
                     });
                 })
 
@@ -261,7 +262,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                     // return the OAuthResponse directly if there is an oAuth error
                     if (!(typeof parts.code == 'string' && typeof parts.id_token == 'string'))
                     {
-                        console.log('id_token response contains error or is malformed',parts)
+                        logger.debug('id_token response contains error or is malformed',parts)
                         return {
                             unredirectableError:false,
                             hash:parts
@@ -283,7 +284,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                         throw {error: "missing scopes", response: response.data}
                     }
     
-                    console.log(`Received OAuth Result: ${JSON.stringify(parts)}`)
+                    logger.debug(`Received OAuth Result: ${JSON.stringify(parts)}`)
 
                     return {
                         hash: parts,
@@ -291,7 +292,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
                     };
     
                 } else {
-                    console.log("Unredirecable error")
+                    logger.debug("Unredirecable error")
                     return {
                         unredirectableError: true
                     }
@@ -301,26 +302,22 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
 
             await finalisedConsent;
 
-            console.info("ConsentConfirmer: Success")
+            logger.info("ConsentConfirmer: Success")
 
             return await finalisedConsent;
         } catch (err) {
-            console.info("ConsentConfirmer: Error")
+            logger.info("ConsentConfirmer: Error")
             throw err;
         } finally {
-            console.info("ConsentConfirmer: Cleaning up")
-            console.log('Setting AUTH_FLOW_COMPLETED_SELECTOR')
+            logger.info("ConsentConfirmer: Cleaning up")
+            logger.debug('Setting AUTH_FLOW_COMPLETED_SELECTOR')
             await page.evaluate(`${AUTH_FLOW_COMPLETED_SELECTOR} = true`)
-            await Promise.all(_.map(waitPromises, p => p.then(console.log,console.log))) // Assuming that if we don't wait for them all, some waitSelectors may hang
+            await Promise.all(_.map(waitPromises, p => p.then(logger.debug,logger.debug))) // Assuming that if we don't wait for them all, some waitSelectors may hang
             if (har?.stop) {
-                await har.stop().catch(console.error);
+                await har.stop().catch(logger.error);
             }
             await page.close().catch().then(() => this.browser.close())
         }
-
-        // return {
-        //     unredirectableError: true
-        // }
     
     }
 

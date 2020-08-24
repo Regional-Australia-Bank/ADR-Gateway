@@ -4,11 +4,11 @@ import express from "express";
 import { JWKS } from "jose";
 import { injectable, inject, registry } from "tsyringe";
 import winston from "winston";
-import { DataHolderMetadataProvider, DataholderMetadata, Dataholder } from "../Services/DataholderMetadata";
+import { DataHolderMetadataProvider, DataholderMetadata } from "../../Common/Services/DataholderMetadata";
 import bodyParser from "body-parser";
 import { AdrGatewayConfig } from "../Config";
 import { ConsentConfirmationMiddleware } from "./Middleware/ConsentConfirmation";
-import * as _ from "lodash"
+import _ from "lodash"
 import { ConsentRequestMiddleware } from "./Middleware/ConsentRequest";
 import { ConsumerDataAccessMiddleware } from "./Middleware/ConsumerDataAccess";
 import { ConsentListingMiddleware } from "./Middleware/ConsentListing";
@@ -18,14 +18,13 @@ import { UserInfoProxyMiddleware } from "./Middleware/UserInfo";
 import { ConsentDetailsMiddleware } from "./Middleware/ConsentDetails";
 import URLParse from "url-parse";
 import qs from "qs";
-import { DefaultConnector } from "./Connectivity/Connector.generated";
+import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
 
 @injectable()
 class AdrGateway {
     constructor(
         @inject("Logger") private logger:winston.Logger,
-        @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
-        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<Dataholder>,
+        @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<DataholderMetadata>,
         private consentConfirmationMiddleware: ConsentConfirmationMiddleware,
         private consentRequestMiddleware: ConsentRequestMiddleware,
         private consentListingMiddleware: ConsentListingMiddleware,

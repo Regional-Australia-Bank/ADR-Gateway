@@ -4,7 +4,8 @@ import moment from "moment";
 import { JWT, JWK } from "jose";
 import { Client } from "../Server/server";
 import { MockRegisterConfig } from "../Server/Config";
-import { DefaultConnector } from "../../../AdrGateway/Server/Connectivity/Connector.generated";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { logger } from "../../MockLogger";
 
 export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId:string, dataRecipients:any[], signingKey: JWK.Key, pw:DefaultConnector, clientProvider:(id:string) => Promise<Client>, configFn: () => Promise<MockRegisterConfig>):Promise<string> => {
     
@@ -43,7 +44,7 @@ export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId
                 claims.jwks_uri = testClient.jwksUri
             }
         } catch(e) {
-            console.error(e)
+            logger.error(e)
         }
         return JWT.sign(claims,signingKey);
     } catch (e) {

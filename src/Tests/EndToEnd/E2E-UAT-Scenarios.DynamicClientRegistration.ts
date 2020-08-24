@@ -1,19 +1,17 @@
 import { Scenario as ScenarioBase, TestContext, HttpLogEntry } from "./Framework/TestContext";
-import { DoRequest } from "./Framework/DoRequest";
 import { expect } from "chai";
 import _ from "lodash"
 import { SetValue } from "./Framework/SetValue";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
-import { DataHolderRegistration } from "../../AdrGateway/Entities/DataHolderRegistration";
+import { DataHolderRegistration } from "../../Common/Entities/DataHolderRegistration";
 import { JWT } from "jose";
 import urljoin from "url-join";
-import { AdrConnectivityConfig } from "../../AdrGateway/Config";
+import { AdrConnectivityConfig } from "../../Common/Config";
 import { axios } from "../../Common/Axios/axios";
 import moment from "moment";
 import { SwitchIdTokenAlgs } from "./Helpers/SwitchIdTokenAlgs";
-import { UpdateRegistrationAtDataholder } from "../../AdrGateway/Server/Connectivity/Evaluators/DynamicClientRegistration";
-
-const NO_CACHE_LENGTH = 10000000;
+import { UpdateRegistrationAtDataholder } from "../../Common/Connectivity/Evaluators/DynamicClientRegistration";
+import { logger } from "../Logger";
 
 export const DcrSymbols = {
     Context: {
@@ -161,7 +159,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"Registration")
             .Then(async ctx => {
                 let reg:DataHolderRegistration = await ctx.GetValue("Registration")
-                console.log(reg?.clientId);
+                logger.debug(reg?.clientId);
             }).Keep(DcrSymbols.Context.ClientRegistration)
 
         Scenario($ => it.apply(this,$('Get token')), undefined, 'Get Token for DCR (existing client)')
@@ -179,7 +177,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"Token")
             .Then(async ctx => {
                 let reg:DataHolderRegistration = await ctx.GetValue("Token")
-                console.log(reg.clientId);
+                logger.debug(reg.clientId);
             }).Keep(DcrSymbols.Context.DCRAccessToken)
 
         Scenario($ => it.apply(this,$('Get current registration')), undefined, 'Get current registration (existing client)')
@@ -197,7 +195,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"UpdatedRegistration")
             .Then(async ctx => {
                 let result:DataHolderRegistration = (await ctx.GetResult(SetValue,"UpdatedRegistration")).value
-                console.log(result);
+                logger.debug(result);
             })
 
         Scenario($ => it.apply(this,$('TS_084')), undefined, 'redirect_uris must be a subset of those in the SSA')
@@ -224,7 +222,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
                 // Create a new registration using the Connector
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
-                console.log(`Test new client registration with dataholder ${dataholder}`)
+                logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 // Expect the NewClientRegistration to be evaluated
                 let productId = (await ctx.environment.OnlySoftwareProduct());
@@ -261,7 +259,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
                 // Create a new registration using the Connector
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
-                console.log(`Test new client registration with dataholder ${dataholder}`)
+                logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 // Expect the NewClientRegistration to be evaluated
                 let dependency = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration((await ctx.environment.OnlySoftwareProduct()),dataholder);
@@ -320,7 +318,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
                 // Create a new registration using the Connector
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
-                console.log(`Test new client registration with dataholder ${dataholder}`)
+                logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 await dependency.Evaluate()
@@ -362,7 +360,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 UpdateRegistrationPropertiesExpectations(200,registrationHttpRequest);
 
                 expect(registrationHttpRequest.response?.data.id_token_encrypted_response_alg).to.not.equal(original_id_token_encrypted_response_alg);
-                console.log(`Successfully changed id_token_encrypted_response_alg from ${original_id_token_encrypted_response_alg} to ${registrationHttpRequest.response?.data.id_token_encrypted_response_alg}`)
+                logger.debug(`Successfully changed id_token_encrypted_response_alg from ${original_id_token_encrypted_response_alg} to ${registrationHttpRequest.response?.data.id_token_encrypted_response_alg}`)
 
             },300)
 
@@ -379,7 +377,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
                 // Create a new registration using the Connector
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
-                console.log(`Test new client registration with dataholder ${dataholder}`)
+                logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 let interceptor = axios.interceptors.request.use(config => {
                     if (config.method == "get" && config.url && /register\/[^\/]+$/.test(config.url)) {
@@ -422,7 +420,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
                 // Create a new registration using the Connector
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
-                console.log(`Test new client registration with dataholder ${dataholder}`)
+                logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 let interceptor = axios.interceptors.request.use(config => {
                     if (config.method == "get" && config.url) {
@@ -538,11 +536,11 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 try {
                     old_ssa = await environment.GetPersistedValue("Old SSA")
                 } catch (e) {
-                    console.log("Getting an SSA")
+                    logger.debug("Getting an SSA")
                     let ssa = await environment.TestServices.adrGateway?.connectivity.SoftwareStatementAssertion(await ctx.environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"})
                     if (!ssa) throw 'Failed to get an SSA'
                     await environment.PersistValue("Old SSA",ssa);
-                    console.log(`Received SSA: ${ssa}`);
+                    logger.debug(`Received SSA: ${ssa}`);
                     throw 'Waiting for the SSA to expire'
                 }
 
@@ -550,7 +548,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 let now = moment.utc();
                 let testTime = moment.utc(parts.payload.exp*1000).add(30,'seconds')
                 if (now.isAfter(testTime)) {
-                    console.log("SSA has expired. Proceeding to test")
+                    logger.debug("SSA has expired. Proceeding to test")
                 } else {
                     let diff = now.diff(testTime,"second");
                     throw `SSA is not yet expired. Test can start in ${diff} seconds.`
@@ -571,7 +569,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 let SoftwareProductConfig = await ctx.environment.OnlySoftwareProductConfig();
 
                 let DhRegAccessToken = await pw.DhRegAccessToken(productKey,dataholder).Evaluate();
-                console.log(`Expired SSA: ${old_ssa}`);
+                logger.debug(`Expired SSA: ${old_ssa}`);
 
                 //reg?.clientId,old_ssa,dhOidc,config,productConfig,jwks,accessToken,pw.cert
 

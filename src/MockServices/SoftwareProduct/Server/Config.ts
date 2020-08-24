@@ -1,11 +1,8 @@
 
 import convict = require("convict");
-import { MtlsConfig, SoftwareProductConnectivityConfig } from "../../../AdrGateway/Config";
-import { JWKS, JSONWebKeySet } from "jose";
 import { ConvictFormats } from "../../../Common/Server/Config";
-import { GenerateDrJwks } from "../../../Common/Init/Jwks";
-import { Dictionary } from "../../../Common/Server/Types";
 import { TestDataRecipientApplication } from "../../Register/MockData/DataRecipients";
+import { SoftwareProductConnectivityConfig } from "../../../Common/Config";
 
 export type MockSoftwareProductConfig = {
     Port: number

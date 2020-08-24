@@ -1,5 +1,6 @@
 import { AdrJwksConfig } from "./Config";
 import { AdrJwks } from "./server";
+import { logger } from "./Logger";
 
 export namespace AdrJwksStartup {
   export async function Start (configFn:() => Promise<AdrJwksConfig>) {
@@ -10,7 +11,7 @@ export namespace AdrJwksStartup {
     let app = new AdrJwks(config).init();
   
     return {port,server:app.listen(port,() => {
-      console.info( `adr-jwks started at http://localhost:${ port }` );
+      logger.info( `adr-jwks started at http://localhost:${ port }` );
     })}
   }
 }

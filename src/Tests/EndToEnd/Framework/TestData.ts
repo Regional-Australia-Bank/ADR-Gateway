@@ -1,17 +1,9 @@
-import fs from "fs";
 import { JWKS, JWT } from "jose";
-const homedir = require('os').homedir();
-const path = require('path');
-import { JwtClientAssertionGenerator } from "../../../AdrGateway/Services/JwtClientAssertion";
-import { Dictionary } from "../../../Common/Server/Types";
 import uuid from "uuid";
 import moment from "moment";
-import * as _ from "lodash";
+import _ from "lodash";
 import { E2ETestEnvironment } from "./E2ETestEnvironment";
-import { GetContextGroup, TestContext } from "./TestContext";
-import { RegisterSymbols } from "../E2E-UAT-Scenarios.CdrRegister";
-import { SecurityProfileSymbols } from "../E2E-UAT-Scenarios.SecurityProfile";
-import { TestPKI } from "../Helpers/PKI";
+import { GetContextGroup } from "./TestContext";
 import { CertsFromFilesOrStrings } from "../../../Common/SecurityProfile/Util";
 import { InTestConfigBase } from "../Environments";
 /**
@@ -188,14 +180,27 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
         
         const CreateAssertion = async (endpoint:string) => {
             const clientId = await TestData.dataRecipient.clientId();
+
+            let claims = {
+                iss: clientId,
+                sub: clientId,
+                aud: endpoint,
+                jti: uuid.v4(),
+                exp: moment.utc().add(30,'s').unix(),
+                iat: moment.utc().format()
+            }
+    
+            let jwks = await TestData.dataRecipient.jwks();
+            let jwk = jwks.get({use:'sig',alg:"PS256"});
+    
+            let assertion = JWT.sign(claims,jwk);    
+
             const params = {
                 "client_id":clientId,
                 "client_assertion_type":"urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
-                "client_assertion": await new JwtClientAssertionGenerator(await TestData.dataRecipient.jwks()).CreateAssertion(<any>{
-                    getClientId: async () => clientId,
-                    getTokenEndpoint: async () => {return Promise.resolve(endpoint)},
-                })
+                "client_assertion": assertion
             }
+
             return params;
         }
         

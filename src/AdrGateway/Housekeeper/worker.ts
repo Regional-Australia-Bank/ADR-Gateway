@@ -4,10 +4,10 @@ import winston = require("winston");
 import express from "express";
 import { JWKS } from "jose";
 import { AdrServerConfig } from "../../AdrServer/Server/Config";
-import { ConsentRequestLogManager, ConsentRequestLog } from "../Entities/ConsentRequestLog";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../Common/Entities/ConsentRequestLog";
 import moment from "moment"
 import _ from "lodash";
-import { DefaultConnector } from "../Server/Connectivity/Connector.generated";
+import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
 
 @injectable()
 export class AdrHousekeeper {

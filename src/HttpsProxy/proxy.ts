@@ -3,6 +3,7 @@ import https from "https"
 import tls from "tls"
 import { MockInfrastructureConfig, ProxySpec, TlsConfig } from "./Config";
 import { Dictionary } from "tsyringe/dist/typings/types";
+import { logger } from "../MockServices/MockLogger";
 
 var httpProxy = require('http-proxy');
 const express = require('express');
@@ -38,7 +39,6 @@ export const spawnHttpsProxy = (config: { ProxyConfig: Dictionary<ProxySpec> }, 
   }
 
   let basicAuthConfig = routeConfig && routeConfig.users && { users: routeConfig.users }
-  console.log({ routeConfig, name })
 
   const basicAuthMiddleware = (basicAuthConfig && basicAuth(basicAuthConfig)) || []
 
@@ -53,7 +53,6 @@ export const spawnHttpsProxy = (config: { ProxyConfig: Dictionary<ProxySpec> }, 
 
   app.use(
     (req: http.IncomingMessage, res: any, next: any) => {
-      //console.log({method:req.method,url:req.url,headers:req.headers});
 
       if (tlsConfig.requestCert) {
         // delete req.headers['x-cdrgw-cert-thumbprint'];
@@ -62,15 +61,12 @@ export const spawnHttpsProxy = (config: { ProxyConfig: Dictionary<ProxySpec> }, 
           if (cert.fingerprint) {
             req.headers['x-cdrgw-cert-thumbprint'] = cert?.fingerprint;
           }
-          console.log(cert)
-          console.log(req.url)
         }
       }
 
       if (typeof basicAuthMiddleware == 'function') {
         if (routeConfig.noAuthPattern) {
           const methodUrlString = req.method.toUpperCase() + " " + req.url;
-          console.log(methodUrlString)
           if (!new RegExp(routeConfig.noAuthPattern).test(methodUrlString)) {
             return basicAuthMiddleware(req, res, next)
           }
@@ -90,7 +86,7 @@ export const spawnHttpsProxy = (config: { ProxyConfig: Dictionary<ProxySpec> }, 
 
   let httpsPort = defaultHttpsPort || routeConfig.listeningPort
 
-  let server = https.createServer(serverOpts, app).listen(httpsPort, () => console.log(`${name} listening on HTTPS port ${httpsPort}!`))
+  let server = https.createServer(serverOpts, app).listen(httpsPort, () => logger.info(`${name} listening on HTTPS port ${httpsPort}!`))
 
   server.on('close', () => {
     for (let proxy of proxyList) {

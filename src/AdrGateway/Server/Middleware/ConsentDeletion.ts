@@ -4,11 +4,11 @@ import { injectable, inject } from "tsyringe";
 import { IncomingMessage } from "http";
 import { Dictionary } from "../../../Common/Server/Types";
 import winston from "winston";
-import { ConsentRequestLogManager, ConsentRequestLog } from "../../Entities/ConsentRequestLog";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
 import { validationResult, matchedData, param } from "express-validator";
-import * as _ from "lodash";
+import _ from "lodash";
 import { AdrGatewayConfig } from "../../Config";
-import { DefaultConnector } from "../Connectivity/Connector.generated";
+import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
 
 @injectable()

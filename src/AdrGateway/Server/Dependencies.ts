@@ -1,21 +1,15 @@
 import winston = require("winston");
 import * as Transport from 'winston-transport';
 import { container } from "../AdrGwContainer";
-import { AdrGatewayConfig, AdrConnectivityConfig } from "../Config";
-import * as fs from "fs"
-import { JWKS } from "jose";
-import { Connection, createConnection, EntitySchema, BaseEntity } from "typeorm";
-import { ConsentRequestLog } from "../Entities/ConsentRequestLog";
-import * as _ from "lodash"
-import { DevClientCertificateInjector, DefaultClientCertificateInjector } from "../Services/ClientCertificateInjection";
-import { DataHolderRegistration } from "../Entities/DataHolderRegistration";
-import { SelfHealingDataHolderMetadataProvider } from "../Services/DataholderMetadata";
-import { InMemoryCache } from "./Connectivity/Cache/InMemoryCache";
-import { AbstractCache } from "./Connectivity/Cache/AbstractCache";
-import { DefaultCache } from "./Connectivity/Cache/DefaultCache";
-import * as http from "http"
-import { AxiosAdapter, AxiosRequestConfig, AxiosResponse } from "axios";
+import { Connection, createConnection } from "typeorm";
+import { ConsentRequestLog } from "../../Common/Entities/ConsentRequestLog";
+import _ from "lodash"
+import { DevClientCertificateInjector, DefaultClientCertificateInjector } from "../../Common/Services/ClientCertificateInjection";
+import { DataHolderRegistration } from "../../Common/Entities/DataHolderRegistration";
+import { SelfHealingDataHolderMetadataProvider } from "../../Common/Services/DataholderMetadata";
+import { DefaultCache } from "../../Common/Connectivity/Cache/DefaultCache";
 import { configReplacer, axiosReplacer, errorReplacer, combineReplacers } from "../../Common/LogReplacers";
+import { AdrConnectivityConfig } from "../../Common/Config";
 
 export const EntityDefaults = {
     type: "sqlite",
