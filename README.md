@@ -1,5 +1,5 @@
 # Introduction 
-ADR-Gateway is a set of microservices that enables a Data Recipient to interact with the Australian Consumer Data Right ecosystem without needing to develop the complexities of boiler-plate data recipient interactions. It has been built with the [Twelve-Factor App](https://12factor.net/) philosophy in mind, and is expected to be used in a containerised or serverless environment. It can easily be used in a single or multi-application scenario.
+Dr G is being used within the Australian CDR ecosystem today and includes a set of microservices that enable a Data Recipient to interact with the Australian Consumer Data Right ecosystem without needing to develop the complexities of boiler-plate data recipient interactions.  Including a mock Register, mock Data Holder and CTS, Dr G has been built with the [Twelve-Factor App](https://12factor.net/) philosophy in mind, and is expected to be used in a containerised or serverless environment. It can easily be used in a single or multi-application scenario.
 
 # Quick starts
 
