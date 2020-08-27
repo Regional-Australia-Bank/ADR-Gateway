@@ -202,7 +202,7 @@ class TestConsentRequestor {
         }>((resolve,reject) => {
     
             let oAuthResultPromise = cc.Confirm(authparams);
-            oAuthResultPromise.then(async (res) => {
+            return oAuthResultPromise.then(async (res) => {
                 if (!res?.hash?.error && !res.unredirectableError) {
                     let consent:ConsentRequestLog = await this.consentManager.GetConsent(adrConsentId); 
                     return {
@@ -214,11 +214,7 @@ class TestConsentRequestor {
                         oAuthResult: res
                     }
                 }
-            }).then(resolve,reject)
-            
-            // reject("No reason")
-
-            // resolve({oAuthResult:{unredirectableError:true}})
+            }).then(resolve,reject)          
 
         });
 

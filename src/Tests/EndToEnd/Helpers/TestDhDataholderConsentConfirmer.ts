@@ -12,7 +12,7 @@ import { logger } from "../../Logger";
 
 const PuppeteerHar = require('puppeteer-har');
 
-const MAX_CONSENT_FLOW_DURATION = 240000; // 240 seconds
+const MAX_CONSENT_FLOW_DURATION = parseInt(process.env.MAX_CONSENT_FLOW_DURATION || "10000");
 
 enum DataholderFlowErrors {
     SERVICE_UNAVAILABLE = "Service unavailable or something. Try again"
@@ -316,7 +316,7 @@ class TestDhConsentConfirmer extends ConsentConfirmer {
             if (har?.stop) {
                 await har.stop().catch(logger.error);
             }
-            await page.close().catch().then(() => this.browser.close())
+            await page.close().catch(logger.error).then(() => this.browser.close()).catch(logger.error)
         }
     
     }
