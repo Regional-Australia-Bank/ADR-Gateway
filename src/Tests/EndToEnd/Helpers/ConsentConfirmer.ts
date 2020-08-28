@@ -13,5 +13,4 @@ export interface OAuthHybridFlowResult {
 
 export abstract class ConsentConfirmer {
     abstract Confirm (params: {redirectUrl: string, consentId: number, context: TestContext}):Promise<OAuthHybridFlowResult>;
-    abstract CleanUp():Promise<void>;
 }

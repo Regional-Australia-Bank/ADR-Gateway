@@ -482,7 +482,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
             Scenario($ => it.apply(this,$('TS_042')), undefined, 'The request parameter MUST be present on requests to the OIDC Hybrid Authorisation End Point.')
                 .Given('Cold start')
                 .Precondition('Unredirectable selector is defined', async ctx => {
-                    if (typeof ctx.environment.Config.Automation?.Puppeteer.Identifiers.unredirectableMatch === 'undefined') throw 'Unredirectable selector is not defined'
+                    if (ctx.environment.Config.Automation?.Puppeteer && typeof ctx.environment.Config.Automation?.Puppeteer.Identifiers.unredirectableMatch === 'undefined') throw 'Unredirectable selector is not defined'
                 })
                 .When(NewGatewayConsent,async () => ({
                     cdrScopes: ["openid","bank:accounts.basic:read"],

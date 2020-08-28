@@ -61,32 +61,7 @@ export class InternalTestConfig {
                 }
             },
             Automation: {
-                Puppeteer: {
-                    Identifiers: {
-                        auth: {
-                            waitSelectors: ['false'],
-                            id: 'false',
-                            id_button: 'false'
-                        },
-                        accounts: {
-                            waitSelectors: ['false'],
-                            all_accounts: 'false',
-                            select_accounts_next_button: 'false'
-                        },
-                        otp: {
-                            otp: 'false',
-                            otp_button: 'false',
-                            waitSelectors: ['false']
-                        },
-                        confirmSharing: {
-                            waitSelectors: [`document.querySelector('input[type="submit"]')`],
-                            button: `document.querySelector('input[type="submit"]')`
-                        },
-                        unredirectableMatch: {
-                            waitSelectors: [`document.body.innerText == '{"errors":[{"msg":"Invalid value","param":"request","location":"query"}]}'`]
-                        }
-                    }
-                }
+                OAuthModule: "./TestDhConsentConfirmer"
             },
             SystemUnderTest: {
                 Register: (env:E2ETestEnvironment) => ({

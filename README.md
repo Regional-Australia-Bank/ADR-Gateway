@@ -1,3 +1,8 @@
+[![Build Status](https://img.shields.io/appveyor/build/pcurtisrab/ADR-Gateway)](https://ci.appveyor.com/project/pcurtisrab/adr-gateway)
+[![Testing Status](https://img.shields.io/appveyor/tests/pcurtisrab/ADR-Gateway)](https://ci.appveyor.com/project/pcurtisrab/adr-gateway)
+[![Coverage Status](https://coveralls.io/repos/github/Regional-Australia-Bank/ADR-Gateway/badge.svg?branch=master)](https://coveralls.io/github/Regional-Australia-Bank/ADR-Gateway?branch=master)
+[![MIT License](https://img.shields.io/github/license/Regional-Australia-Bank/ADR-Gateway)](./LICENSE)
+
 # Introduction 
 Dr G is being used within the Australian CDR ecosystem today and includes a set of microservices that enable a Data Recipient to interact with the Australian Consumer Data Right ecosystem without needing to develop the complexities of boiler-plate data recipient interactions.  Including a mock Register, mock Data Holder and CTS, Dr G has been built with the [Twelve-Factor App](https://12factor.net/) philosophy in mind, and is expected to be used in a containerised or serverless environment. It can easily be used in a single or multi-application scenario.
 
@@ -69,6 +74,11 @@ Include the following settings for Mocha Test Explorer. These are already config
 "mochaExplorer.files":"**/*.spec.js",
 "mochaExplorer.require": ["source-map-support/register"],
 ```
+
+## Conformance testing
+
+See [Conformance Test Suite](./doc/Conformance%20Test%20Suite.md).
+
 
 # Licence
 

@@ -1,19 +1,15 @@
-import { param } from "express-validator";
-import { stringify } from "querystring";
 import { ConsentRequestLog, ConsentRequestLogManager } from "../../../Common/Entities/ConsentRequestLog";
 
 import { TestContext } from "../Framework/TestContext";
 import { getAuthPostGetRequestUrl } from "../../../AdrGateway/Server/Helpers/HybridAuthJWS";
 import uuid from "uuid";
 import moment from "moment";
-import puppeteer, { Browser, ElementHandle } from "puppeteer"
-import { TestDhConsentConfirmer } from "./TestDhDataholderConsentConfirmer";
 import { ConsentConfirmer, OAuthHybridFlowResult } from "./ConsentConfirmer";
 import { axios } from "../../../Common/Axios/axios";
 import { NewConsentParams } from "../NewGatewayConsent";
 import { AdrGatewayConfig } from "../../../AdrGateway/Config";
-import { GenerateTestData } from "../Framework/TestData";
 import { logger } from "../../Logger";
+import urljoin from "url-join";
 
 
 class TestConsentRequestor {
@@ -181,6 +177,7 @@ class TestConsentRequestor {
         const authparams = {
             consentId: consentRequestUrlAndId.consentId,
             redirectUrl: consentRequestUrlAndId.redirectUrl,
+            consentParams: params,
             context: this.testContext
         };
 
@@ -193,8 +190,11 @@ class TestConsentRequestor {
 
         // Open the redirect URL
         logger.debug(authparams);
-        cc = new TestDhConsentConfirmer();
 
+        const oAuthModule = this.testContext.environment.Config.Automation.OAuthModule || "./BrowserConsentConfirmer"
+
+        cc = require(oAuthModule);
+        
         // Wait for the consent to be finalised
         const consentPromise = new Promise<{
             consent?:ConsentRequestLog,
@@ -204,6 +204,21 @@ class TestConsentRequestor {
             let oAuthResultPromise = cc.Confirm(authparams);
             return oAuthResultPromise.then(async (res) => {
                 if (!res?.hash?.error && !res.unredirectableError) {
+                                        
+                    let url = urljoin(this.testContext.environment.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",adrConsentId.toString())
+
+                    let response = await axios.request(this.testContext.environment.Util.TlsAgent({
+                        method:"patch",
+                        url,
+                        data: res?.hash,
+                        responseType: "json"
+                    }))
+    
+                    // if scope was not finalised properly, throw an error
+                    if (!response.data.scopesFulfilled) {
+                        throw {error: "missing scopes", response: response.data}
+                    }
+                                        
                     let consent:ConsentRequestLog = await this.consentManager.GetConsent(adrConsentId); 
                     return {
                         oAuthResult: res,
@@ -218,16 +233,7 @@ class TestConsentRequestor {
 
         });
 
-        let cleanup = consentPromise.finally(async () => {
-            try {
-                await cc.CleanUp();
-            } catch (e) {
-                logger.error(e)
-            }
-        });
-   
-        let cleanupResult = await cleanup;
-        return cleanupResult;
+        return await consentPromise;
     }
 }
 

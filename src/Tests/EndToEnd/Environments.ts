@@ -9,7 +9,6 @@ import { InternalTestConfig } from "./Helpers/InternalTestConfig";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 import { DhServerConfig } from "../../MockServices/DhServer/Server/Config";
 import { MockRegisterConfig } from "../../MockServices/Register/Server/Config";
-import { PuppeteerConfig } from "./Helpers/TestDhDataholderConsentConfirmer";
 import { MockSoftwareProductConfig } from "../../MockServices/SoftwareProduct/Server/Config";
 import { AdrJwksConfig } from "../../AdrJwks/Config";
 import { AdrConnectivityConfig, MtlsConfig } from "../../Common/Config";
@@ -58,9 +57,10 @@ export interface EndToEndTestingConfig {
         TestHttpsProxy?: true
     },
     Automation?: {
+        OAuthModule?: string
         PreOtpReceive?: string
         OtpReceive?: string
-        Puppeteer: PuppeteerConfig
+        Puppeteer?: any
     },
     TestData?: {
         Personas?: {
@@ -122,7 +122,7 @@ export const GetEnvironments = ():{liveTestEnvironments:E2ETestEnvironment[], mo
 
     const currentDir = process.cwd()
 
-    const testConfigBase = TestConfigBase();
+    const testConfigBase = process.env.TEST_CONFIG_BASE || TestConfigBase();
     try {
         process.chdir(testConfigBase)
     

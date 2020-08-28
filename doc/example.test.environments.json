@@ -1,0 +1,70 @@
+[
+    {
+        "Name": "<COMPLETE_ME>",
+        "EvidenceDir": "<COMPLETE_ME>",
+        "TestData": {
+            "Personas": {
+                "Joseph": {
+                    "NonConsentedAccountId": "<COMPLETE_ME>"
+                }
+            },
+            "DefaultCustomerId": "<COMPLETE_ME>",
+            "Boundaries": {
+                "oldest-time": "<COMPLETE_ME>",
+                "newest-time": "<COMPLETE_ME>",
+                "min-amount": "1.00",
+                "max-amount": "500.00"
+            }
+        },
+        "SystemUnderTest": {
+            "Register": {
+                "DiscoveryUri": "https://<COMPLETE_ME>/idp",
+                "SecureUri": "https://<COMPLETE_ME>/cdr-register",
+                "PublicUri": "https://<COMPLETE_ME>/cdr-register"
+            },
+            "AdrGateway": {
+                "FrontEndUrls": {
+                    "JWKSEndpoint": "https://<COMPLETE_ME>/e.g.jwks",
+                    "RevocationEndpoint": "https://<COMPLETE_ME>/revoke"
+                }
+            },
+            "Dataholder": "<COMPLETE_ME>"
+        },
+        "TestServiceDefinitions": {
+            "AdrGateway": {
+                "Jwks": "adrgw.private.jwks.json",
+                "RegisterBaseUris": {
+                    "Oidc": "https://<COMPLETE_ME>/idp",
+                    "SecureResource": "https://<COMPLETE_ME>/cdr-register"
+                },
+                "AdrClients": [
+                    {
+                        "authCallbackUri": "<COMPLETE_ME>",
+                        "systemId": "<COMPLETE_ME>"
+                    }
+                ],
+                "DataRecipientApplication": {
+                    "LegalEntityId": "<COMPLETE_ME>",
+                    "BrandId": "<COMPLETE_ME>",
+                    "ProductId": "<COMPLETE_ME>",
+                    "redirect_uris": [
+                        "https://<COMPLETE_ME>"
+                    ]
+                },
+                "mtls": {
+                    "ca": "file:root-ca.cert.pem",
+                    "cert": "file:client.cert.pem",
+                    "key": "file:client.key.pem"
+                }
+            },
+            "AdrDb": {
+                "type": "mssql",
+                "host": "<COMPLETE_ME>",
+                "database": "<COMPLETE_ME>",
+                "username": "<COMPLETE_ME>",
+                "password": "<COMPLETE_ME>"
+            }
+        },
+        "Automation": {}
+    }
+]

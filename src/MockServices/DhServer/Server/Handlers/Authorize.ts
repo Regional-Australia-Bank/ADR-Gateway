@@ -99,6 +99,8 @@ class AuthorizeMiddleware {
 
             let sharingDuration = 0
 
+            const Simulated = req.header("x-simulate") && true
+
             try {
                 let signingKeys = await (await this.ecosystemMetadata.getDataRecipient(m.client_id)).getJwks();
                 let signed = <any>JWS.verify(m.request,signingKeys);
@@ -116,14 +118,16 @@ class AuthorizeMiddleware {
 
             } catch (err) {
                 this.logger.warn("Authorize request not valid. ",err);
-                return res.json("request signature could not be validated")
-
+                if (Simulated) {
+                    return res.json({unredirectable:true}) // Do not redirect in this case
+                } else {
+                    return res.json("request signature could not be validated") // Do not redirect in this case
+                }
             }
 
             if (sharingDuration < 0) {
-                return SendOAuthError(res,m.redirect_uri,m.state,"invalid_request","sharing_duration must be at least 0")
+                return SendOAuthError(Simulated,res,m.redirect_uri,m.state,"invalid_request","sharing_duration must be at least 0")
             }
-
 
             try {
                 let requestedConsent = await this.consentManager.requestConsent({
@@ -135,14 +139,14 @@ class AuthorizeMiddleware {
                     redirect_uri:<string>m.redirect_uri
                 })
     
-                // return res.json({
-                //     id: requestedConsent.id
-                // });
-                let newUrl = urljoin((await this.config()).AuthorizeUrl,"consent-flow",requestedConsent.id.toString());
-    
-                return res.header('x-redirect-alt-location',newUrl).redirect(newUrl)
+                if (Simulated) {
+                    return res.json({dhConsentId:requestedConsent.id})
+                } else {
+                    let newUrl = urljoin((await this.config()).AuthorizeUrl,"consent-flow",requestedConsent.id.toString());
+                    return res.header('x-redirect-alt-location',newUrl).redirect(newUrl)    
+                }
             } catch (e) {
-                return SendOAuthError(res,m.redirect_uri,m.state,"server_error")
+                return SendOAuthError(Simulated,res,m.redirect_uri,m.state,"server_error")
             }
         
         };

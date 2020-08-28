@@ -119,17 +119,6 @@
             "console": "integratedTerminal"
         },
         {
-			"type": "node",
-			"request": "launch",
-			"name": "Mocha Security Profile",
-            "args": ["--colors","out/Tests/**/*SecurityProfile.spec.js"],
-            "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-			"cwd": "${workspaceRoot}",
-			"protocol": "inspector",
-            "internalConsoleOptions": "neverOpen",
-            "console": "integratedTerminal"
-        },
-        {
             "type": "node",
             "request": "launch",
             "name": "Mocha DCR",

@@ -92,7 +92,6 @@ class DhServer {
 
         app.get("/authorize", container.resolve(AuthorizeMiddleware).handler({isPost:false})); // GET, POST
         app.post("/authorize", container.resolve(AuthorizeMiddleware).handler({isPost:true})); // GET, POST
-
         app.patch('/authorize',container.resolve(GrantConsentMiddleware).handler())
 
         app.post("/register"); // POST
@@ -333,19 +332,25 @@ class DhServer {
 
         app.post('/authorize/consent-flow/:consentId', urlencoded({extended:true}), async (req, res) => {
 
+            const Simulated = req.header("x-simulate") && true
+
             let consentManager = container.resolve(ConsentManager);
             let consent = await consentManager.GetById(parseInt(req.params.consentId))
             if (typeof consent =='undefined') return res.status(404).send();
 
             if (req.body.returnError) {
-                return SendOAuthError(res,consent.redirect_uri,req.body.state,req.body.error,req.body.error_description)
+                return SendOAuthError(Simulated,res,consent.redirect_uri,req.body.state,req.body.error,req.body.error_description)
             } else {
                 let redirect_uri = await container.resolve(GrantConsentMiddleware).GrantConsent({
                     user_id: req.body.userId,
                     request_id: consent.id,
                     scopes: JSON.parse(req.body.scopes)
                 })
-                return res.header('x-redirect-alt-location',redirect_uri).redirect(redirect_uri)    
+                if (Simulated) {
+                    return res.json(redirect_uri)
+                } else {
+                    return res.header('x-redirect-alt-location',redirect_uri).redirect(redirect_uri)    
+                }
             }
 
 

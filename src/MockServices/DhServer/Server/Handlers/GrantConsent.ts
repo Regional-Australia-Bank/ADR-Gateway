@@ -20,12 +20,45 @@ const requestSchema:Schema = {
 };
 
 @injectable()
-class GrantConsentMiddleware {
+export class GrantConsentMiddleware {
     constructor(
         @inject("Logger") private logger:winston.Logger,
         private consentManager:ConsentManager,
         private tokenIssuer:TokenIssuer
-        ){}
+    ) { }
+
+    GrantConsent = async (grantOptions: {user_id:string, request_id:number, scopes: string[]}) => {
+
+            let consentRequestState = await this.consentManager.getConsentRequestState(grantOptions.request_id);
+        
+            // const ppid = uuid.v4();
+            // TODO generated based on actual customer number. Must be consistent across consents AND follow rules here: https://openid.net/specs/openid-connect-core-1_0.html#SubjectIDTypes
+            const ppid = 'fb2eac89-81a7-4b04-8db2-6c9c82c349fa'
+        
+            const authPackage = await this.tokenIssuer.AuthCodeIDTokenPair(
+                // TODO generate PPID
+                {ppid: ppid},
+                consentRequestState)
+        
+            let updatedConsent = await this.consentManager.confirmConsent(grantOptions.request_id,{
+                subjectPpid: ppid,
+                authCode: authPackage.code,
+                personId: grantOptions.user_id,
+                scopes: grantOptions.scopes
+            });
+        
+            let responseData:any = _.omitBy({
+                code: authPackage.code,
+                id_token: authPackage.id_token,
+                state: updatedConsent.state
+            }, _.isNil);
+        
+            let fragment = _.map(responseData,(v,k) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&")
+        
+            // TODO do redirect instead of merely describing one
+        
+            return updatedConsent.redirect_uri + "#" + fragment;
+        }
 
     handler = () => {
         let validationErrorMiddleware = (req:express.Request,res:express.Response,next: NextFunction) => {
@@ -55,39 +88,4 @@ class GrantConsentMiddleware {
         return _.concat([express.json()],<any>checkSchema(requestSchema,['body']),[validationErrorMiddleware,Responder])
     }
 
-    GrantConsent = async (grantOptions: {user_id:string, request_id:number, scopes: string[]}) => {
-
-        let consentRequestState = await this.consentManager.getConsentRequestState(grantOptions.request_id);
-
-        // const ppid = uuid.v4();
-        // TODO generated based on actual customer number. Must be consistent across consents AND follow rules here: https://openid.net/specs/openid-connect-core-1_0.html#SubjectIDTypes
-        const ppid = 'fb2eac89-81a7-4b04-8db2-6c9c82c349fa'
-    
-        const authPackage = await this.tokenIssuer.AuthCodeIDTokenPair(
-            // TODO generate PPID
-            {ppid: ppid},
-            consentRequestState)
-
-        let updatedConsent = await this.consentManager.confirmConsent(grantOptions.request_id,{
-            subjectPpid: ppid,
-            authCode: authPackage.code,
-            personId: grantOptions.user_id,
-            scopes: grantOptions.scopes
-        });
-    
-        let responseData:any = _.omitBy({
-            code: authPackage.code,
-            id_token: authPackage.id_token,
-            state: updatedConsent.state
-        }, _.isNil);
-    
-        let fragment = _.map(responseData,(v,k) => encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&")
-    
-        // TODO do redirect instead of merely describing one
-    
-        return updatedConsent.redirect_uri + "#" + fragment;
-    }
-
 }
-
-export {GrantConsentMiddleware}
