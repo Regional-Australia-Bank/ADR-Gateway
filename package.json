@@ -49,7 +49,7 @@
     "build-templates": "node ./src/Common/Connectivity/Dependencies.generator.js",
     "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha \"dist/Tests/**/*spec.js\"",
     "test-coverage": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 nyc --reporter text --reporter html --reporter cobertura npm run test",
-    "copy-proj": "npx rimraf examples/deployment/docker/.work && npx cpx src/** examples/deployment/docker/.work && npx cpx {package,tsconfig}.json examples/deployment/docker/.work/"
+    "copy-proj": "npx rimraf examples/deployment/docker/.work && npx cpx 'src/**' 'examples/deployment/docker/.work' && npx cpx '{package,tsconfig}.json' 'examples/deployment/docker/.work/'"
   },
   "devDependencies": {
     "@istanbuljs/nyc-config-typescript": "^1.0.1",
