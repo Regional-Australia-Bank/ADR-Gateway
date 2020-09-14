@@ -37,7 +37,7 @@ export const GetConfig = (configFile?:string):MockSoftwareProductConfig => {
         AuthCallbackUrl: {
             doc: 'Url for the OAuth2 Authorize response',
             format: "url",
-            default: "https://regaustbank.io/",
+            default: "https://raw.githubusercontent.com/Regional-Australia-Bank/ADR-Gateway/master/examples/redirect-uri.md",
             env: 'ADR_AUTH_CALLBACK'
         }
     })

@@ -43,6 +43,7 @@ class UserInfoMiddleware {
                 family_name: "Smith",
                 updated_at: moment().utc().subtract(1,'day').unix(),
                 refresh_token_expires_at: moment().utc().add(1,'day').unix(),
+                cdr_arrangement_id: consent.cdr_arrangement_id,
                 sharing_expires_at: moment().utc().add(1,'day').unix()
             });
        

@@ -64,6 +64,10 @@ class ConsentRequestLog extends BaseEntity {
     ppid!: string;
     @Column({nullable: true, length:4000})
     accessToken!: string;
+
+    @Column({nullable: true, length:255})
+    arrangementId?: string;
+
     @Column({nullable: true, length:4000})
     refreshToken?: string;
 
@@ -187,7 +191,7 @@ class ConsentRequestLog extends BaseEntity {
 
 }
 
-type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]};
+type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]} & {arrangementId?:string};
 type FindConsentParams = Partial<Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'id'|'redirectUri'>>;
 
 @injectable()
@@ -219,6 +223,7 @@ class ConsentRequestLogManager {
         j.requestedScopesJson = JSON.stringify(req.scopes)
         j.redirectUri = req.redirectUri
         j.requestedSharingDuration = req.requestedSharingDuration
+        j.arrangementId = req.arrangementId
 
         let inserted = await ((await this.connection)).manager.save(j);
         return inserted;
@@ -240,6 +245,12 @@ class ConsentRequestLogManager {
         }
     }
 
+    async GetConsentsByDeleteArrangementParams(cdr_arrangement_id:string,dataHolderBrandId:string) {
+        let connection = (await this.connection);
+        let matchingConsents = await connection.manager.find(ConsentRequestLog,{arrangementId: cdr_arrangement_id,dataHolderId: dataHolderBrandId});
+        return matchingConsents
+    }
+
     FindAuthRequest = async (params: FindConsentParams) => {
         let connection = await this.connection;
         let request = await ((await this.connection)).manager.findOneOrFail(ConsentRequestLog,params);
@@ -247,12 +258,12 @@ class ConsentRequestLogManager {
     }
 
     RevokeConsent = async (consent:ConsentRequestLog, revokedAt: "DataHolder"|"DataRecipient") => {
-        consent.revocationDate = moment.utc().toDate();
-        consent.revokedAt = revokedAt
+        // may be called multiple times, so put values only if they don't already exist
+        consent.revocationDate = consent.revocationDate || moment.utc().toDate();
+        consent.revokedAt = consent.revokedAt || revokedAt
         await consent.save();
 
         this.logger.info(`Revoked consent ${consent.id}`);
-        // TODO queue for deleting consents
     }
 
     NextRevocationToPropagate = async (cursor: ConsentRequestLog|undefined):Promise<ConsentRequestLog|undefined> => {
@@ -294,7 +305,7 @@ class ConsentRequestLogManager {
         return consents;
     }
 
-    UpdateTokens = async (
+    UpdateTokens = async ($:{
         consentId: number,
         params:{
             "access_token":string,
@@ -306,39 +317,52 @@ class ConsentRequestLogManager {
         tokenRequestTime:Date,
         sharingEndDate?:number,
         refreshTokenExpiry?:number,
-        idTokenJson?:string
-    ) => {
-        let consent = await ((await this.connection)).manager.findOneOrFail(ConsentRequestLog,{id: consentId});
+        idTokenJson?:string,
+        cdr_arrangement_id?:string,
+    }) => {
+        let consent = await ((await this.connection)).manager.findOneOrFail(ConsentRequestLog,{id: $.consentId});
 
-        consent.accessToken = params.access_token;
-        consent.refreshToken = params.refresh_token || consent.refreshToken;
-        if (idTokenJson) {
-            consent.idTokenJson = idTokenJson;
-            consent.ppid = JSON.parse(idTokenJson).sub;
+        consent.accessToken = $.params.access_token;
+        consent.refreshToken = $.params.refresh_token || consent.refreshToken;
+        if ($.idTokenJson) {
+            consent.idTokenJson = $.idTokenJson;
+            consent.ppid = JSON.parse($.idTokenJson).sub;
+        }
+
+        // Check the arrangement ID.
+        // If a cdr_arrangement_id is supplied, apply it if it is not already on the consent. Otherwise, check that it matches.
+        if ($.cdr_arrangement_id) {
+            if (consent.arrangementId) {
+                if (consent.arrangementId !== $.cdr_arrangement_id) {
+                    throw "cdr_arrangement_id mismatch"
+                }
+            } else {
+                consent.arrangementId = $.cdr_arrangement_id
+            }
         }
 
         // TODO check all date column assignments in this file and check that they are UTC
-        if (typeof sharingEndDate == 'number' && sharingEndDate > 0) {
-            consent.sharingEndDate = moment(0).add(sharingEndDate,'s').toDate()
+        if (typeof $.sharingEndDate == 'number' && $.sharingEndDate > 0) {
+            consent.sharingEndDate = moment(0).add($.sharingEndDate,'s').toDate()
         }
 
-        if (typeof refreshTokenExpiry == 'number' && refreshTokenExpiry > 0) {
-            consent.refreshTokenExpiry = moment(0).add(refreshTokenExpiry,'s').toDate()
+        if (typeof $.refreshTokenExpiry == 'number' && $.refreshTokenExpiry > 0) {
+            consent.refreshTokenExpiry = moment(0).add($.refreshTokenExpiry,'s').toDate()
         }
         
-        if (typeof params.expires_in == 'number') {
+        if (typeof $.params.expires_in == 'number') {
             try {
-                consent.accessTokenExpiry = moment(tokenRequestTime).add(Math.floor(params.expires_in),'s').toDate();
+                consent.accessTokenExpiry = moment($.tokenRequestTime).add(Math.floor($.params.expires_in),'s').toDate();
             } catch {
                 this.logger.error("Could not decode access token expiry")
             }
         }
 
         // Deal with scopes parameter if returned
-        if (typeof params.scope != 'string') {
+        if (typeof $.params.scope != 'string') {
             consent.confirmedScopesJson = consent.requestedScopesJson
         } else {
-            let tokenScopes = params.scope.split(' ');
+            let tokenScopes = $.params.scope.split(' ');
             let missingScopes = _.difference(consent.requestedScopesJson,tokenScopes);
             if (missingScopes.length == 0) {
                 consent.confirmedScopesJson = consent.requestedScopesJson

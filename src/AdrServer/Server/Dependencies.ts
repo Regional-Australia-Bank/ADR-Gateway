@@ -58,7 +58,7 @@ async function RegisterDependencies(configFn:() => Promise<AdrServerConfig>,db?:
         type: "sqlite",
         database: ":memory:",
         entityPrefix: "adr_",
-        synchronize: true,
+        synchronize: false,
         entities: [JtiLog, ConsentRequestLog]
       },config.Database);
       return createConnection(options)

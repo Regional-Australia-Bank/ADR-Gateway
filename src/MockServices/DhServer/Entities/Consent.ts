@@ -34,6 +34,9 @@ class Consent extends BaseEntity {
 
     @Column({nullable: true})
     subjectPpid?: string; // the PPID provided via the ID Token
+
+    @Column()
+    cdr_arrangement_id!: string; // the PPID provided via the ID Token
     
     @Column({nullable: true})
     secretSubjectId?: string; // the PPID provided via the ID Token
@@ -130,7 +133,7 @@ class Consent extends BaseEntity {
 
 }
 
-type ConsentRequestInitial = Pick<Consent,'state'|'drAppClientId'|'sharingDurationSeconds'|'nonce'|'redirect_uri'> & {scopes:string[]};
+type ConsentRequestInitial = Pick<Consent,'state'|'drAppClientId'|'sharingDurationSeconds'|'nonce'|'redirect_uri'> & {scopes:string[]} & {existingArrangementId?:string};
 type FindConsentParams = Partial<Pick<Consent,'state'|'drAppClientId'|'id'>>;
 
 
@@ -168,6 +171,29 @@ class ConsentManager {
         //this.accessTokenExpires = 
 
         return await (await this.connection).getRepository(Consent).save(consent);
+    }
+
+
+    revokeArrangement = async (cdr_arrangement_id:string,drAppClientId:string, accessToken:string):Promise<void> => {
+        let resolvedConnection = (await this.connection);
+
+        let matchingConsents = await resolvedConnection.manager.find(Consent,{cdr_arrangement_id, drAppClientId: drAppClientId, accessToken});
+
+        this.logger.debug({
+            action: "Revoke arrangement",
+            cdr_arrangement_id,
+            drAppClientId: drAppClientId,
+            countMatching: matchingConsents.length
+        })
+
+        for (let consent of matchingConsents) {
+            consent.refreshToken = undefined;
+            consent.tokenRevocationStatus = TokenRevocationStatus.REVOKED;
+            consent.tokenRevocationDate = moment.utc().toDate()
+            let revoked = await resolvedConnection.manager.save(consent);
+            this.logger.info({"Revoked consent": revoked});
+        }
+        return;
     }
 
     revokeRefreshToken = async (token:string,drAppClientId:string):Promise<void> => {
@@ -323,6 +349,10 @@ class ConsentManager {
         c.nonce = req.nonce
         c.sharingDurationSeconds = req.sharingDurationSeconds
         c.redirect_uri = req.redirect_uri
+
+        // Assign arrangement ID if not provided
+        c.cdr_arrangement_id = req.existingArrangementId || uuid.v4()
+
         // TODO test this
         if (typeof c.sharingDurationSeconds != 'number') c.sharingDurationSeconds = 0;
         if (c.sharingDurationSeconds > secondsInOneYear) c.sharingDurationSeconds = secondsInOneYear;

@@ -3,7 +3,7 @@ import express from "express";
 import { IncomingMessage } from "http";
 import _ from "lodash"
 
-const ExtractBearerToken = (req:IncomingMessage) => {
+export const ExtractBearerToken = (req:IncomingMessage) => {
     try {
         let auth = req.headers['authorization'];
         if (typeof auth == 'undefined') throw 'auth header is not provided';

@@ -26,6 +26,7 @@ enum ConsentType {
 export const SerializeConsentDetails = async (c:ConsentRequestLog, dataHolderMetadataProvider: DataHolderMetadataProvider<DataholderMetadata>) => {
     let rendered = {
         consentId: c.id,
+        arrangementId: c.arrangementId,
         consentType: (c.requestedSharingDuration === 0 ? ConsentType.ONE_TIME: ConsentType.TIME_BOUND),
         timeline: {
             sharingDuration: c.requestedSharingDuration,

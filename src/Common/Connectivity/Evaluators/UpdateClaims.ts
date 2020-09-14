@@ -17,8 +17,8 @@ export const UpdateClaims = async (cert:ClientCertificateInjector,consentManager
   DataHolderOidc: Types.DataholderOidcResponse,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration
 }) => {
-  let newClaims:{refresh_token_expires_at:number,sharing_expires_at?:number};
-  let idToken:{refresh_token_expires_at:number,sharing_expires_at?:number}|undefined = undefined;
+  let newClaims:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string};
+  let idToken:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string}|undefined = undefined;
 
   // Update claims using the id token if present
   if (typeof $.FetchTokens.tokenResponse.id_token == 'string') {
@@ -37,13 +37,19 @@ export const UpdateClaims = async (cert:ClientCertificateInjector,consentManager
       }
   }
 
-  let updatedConsent = await consentManager.UpdateTokens(
-      $.Consent.id,
-      _.pick($.FetchTokens.tokenResponse,['access_token','token_type','expires_in','refresh_token','scope']),
-      $.FetchTokens.tokenRequestTime,
-      newClaims.sharing_expires_at,
-      newClaims.refresh_token_expires_at,
-      idToken && JSON.stringify(idToken));
+  const cdr_arrangement_id = $.FetchTokens.tokenResponse.cdr_arrangement_id || idToken.cdr_arrangement_id;
+
+  const manifest = {
+    consentId: $.Consent.id,
+    params: _.pick($.FetchTokens.tokenResponse,['access_token','token_type','expires_in','refresh_token','scope']),
+    tokenRequestTime:$.FetchTokens.tokenRequestTime,
+    sharingEndDate:newClaims.sharing_expires_at,
+    refreshTokenExpiry:newClaims.refresh_token_expires_at,
+    idTokenJson:idToken && JSON.stringify(idToken),
+    cdr_arrangement_id:cdr_arrangement_id,
+  }
+
+  let updatedConsent = await consentManager.UpdateTokens(manifest);
   return updatedConsent;
 
 }

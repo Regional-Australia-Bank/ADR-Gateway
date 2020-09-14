@@ -12,7 +12,6 @@ import moment from "moment";
 import { GatewayRequest } from "../../../Common/Server/Types";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
-// TODO remove some repetition. Similar to DhServer\Server\Handlers\ClientAccesstoken.ts and AdrServer\Server\Handlers\Revocation.ts
 @injectable()
 class RevokeMiddleware {
     constructor(
@@ -32,8 +31,6 @@ class RevokeMiddleware {
         }
 
         let RevocationResponder = async (req:express.Request,res:express.Response,next: NextFunction) => {
-
-            // TODO create and ID Token and return it in the response
 
             let m:{
                 token: string

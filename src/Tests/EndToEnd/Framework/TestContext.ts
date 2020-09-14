@@ -305,7 +305,7 @@ class TestContext extends PartialContext {
 
     requestLog:HttpLogEntry[] = []
 
-    GetMatchingHttpRequests = (method?:"POST"|"GET"|"PUT", urlMatcher?:string | RegExp) => {
+    GetMatchingHttpRequests = (method?:"POST"|"GET"|"PUT"|"DELETE", urlMatcher?:string | RegExp) => {
         return _.filter(this.requestLog,l => {
             let url = <string>(<any>l.request).path;
 
@@ -330,7 +330,7 @@ class TestContext extends PartialContext {
         }
     }
 
-    GetLastHttpRequest = (method?:"POST"|"GET"|"PUT", urlMatcher?:string | RegExp) => {
+    GetLastHttpRequest = (method?:"POST"|"GET"|"PUT"|"DELETE", urlMatcher?:string | RegExp) => {
         let matches = this.GetMatchingHttpRequests(method,urlMatcher)
 
         let match = _.last(matches);

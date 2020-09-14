@@ -6,6 +6,7 @@ import { Client } from "../Server/server";
 import { MockRegisterConfig } from "../Server/Config";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { logger } from "../../MockLogger";
+import { GetDataRecipientBaseUri } from "../MockData/DataRecipients";
 
 export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId:string, dataRecipients:any[], signingKey: JWK.Key, pw:DefaultConnector, clientProvider:(id:string) => Promise<Client>, configFn: () => Promise<MockRegisterConfig>):Promise<string> => {
     
@@ -34,6 +35,7 @@ export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId
             policy_uri: softwareProduct.ssaParticulars.policy_uri,
             jwks_uri: softwareProduct.ssaParticulars.jwks_uri,
             revocation_uri: softwareProduct.ssaParticulars.revocation_uri,
+            recipient_base_uri: GetDataRecipientBaseUri(),
             software_id: dataRecipientProductId,
             software_roles: "data-recipient-software-product",
             scope: softwareProduct.ssaParticulars.scope

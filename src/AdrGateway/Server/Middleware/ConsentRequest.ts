@@ -8,8 +8,6 @@ import { NoneFoundError } from "../../../Common/Connectivity/Errors";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { ConsentRequestParams } from "../../../Common/Connectivity/Types";
 
-
-
 const bodySchema:Schema = {
     sharingDuration: {
         isInt: {
@@ -28,6 +26,7 @@ const bodySchema:Schema = {
     },
     additionalClaims: { },
     dataholderBrandId: { isString: { errorMessage: "dataholderBrandId must be a string" }, isLength: {options: {min: 5}, errorMessage: "dataholderBrandId must be at least length 5"} },
+    existingArrangementId: { optional: true, isString: { errorMessage: "existingArrangementId must be a string" }, isLength: {options: {min: 5}, errorMessage: "existingArrangementId must be at least length 5"} },
     productKey: { isString: { errorMessage: "productKey must be a string" }, isLength: {options: {min: 1}, errorMessage: "productKey must be at least length 1"} },
     userId: { isString: { errorMessage: "userId must be a string" }, isLength: {options: {min: 5}, errorMessage: "userId must be at least length 5"} },
     systemId: { isString: { errorMessage: "systemId must be a string" }, isLength: {options: {min: 1}, errorMessage: "systemId must be at least length 1"} },

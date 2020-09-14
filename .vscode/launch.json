@@ -6,6 +6,22 @@
     "configurations": [
         {
             "type": "node",
+            "request": "launch",
+            "name": "PM2 Database Migration",
+            "args": [
+                "-r",
+                "source-map-support/register"
+            ],
+            "env": {
+                "ADR_DATABASE_OPTIONS": "{\"database\":\"examples/deployment/pm2/adr.sqlite\"}"
+            },
+            "program": "${workspaceFolder}/dist/Common/Entities/Migrations/Migrate.js",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        },
+        {
+            "type": "node",
             "request": "attach",
             "name": "Attach AdrGateway PM2",
             "port": 9290
@@ -15,7 +31,8 @@
             "request": "attach",
             "name": "Attach MockDhServer PM2",
             "port": 9291
-        },        {
+        },
+        {
             "type": "node",
             "request": "attach",
             "name": "Attach to a process",
@@ -26,9 +43,12 @@
             "request": "launch",
             "name": "Data Holder server",
             "program": "${workspaceFolder}\\dist\\MockServices\\DhServer\\Server\\start.js",
-            "args": ["-d",".local-env\\dh-server"],
+            "args": [
+                "-d",
+                ".local-env\\dh-server"
+            ],
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
+                "NODE_TLS_REJECT_UNAUTHORIZED": "0",
             },
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
@@ -41,12 +61,12 @@
             "name": "HttpsProxy",
             "program": "${workspaceFolder}\\dist\\HttpsProxy\\\\start.js",
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+                "NODE_TLS_REJECT_UNAUTHORIZED": "0"
             },
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" 
+            "outputCapture": "std"
         },
         {
             "type": "node",
@@ -54,34 +74,40 @@
             "name": "ADR Gateway server",
             "program": "${workspaceFolder}\\dist\\AdrGateway\\Server\\start.js",
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
-                "MOCK_TLS_PKI":"1"
+                "NODE_TLS_REJECT_UNAUTHORIZED": "0",
+                "MOCK_TLS_PKI": "1"
             },
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" 
+            "outputCapture": "std"
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Housekeeper",
             "program": "${workspaceFolder}\\dist\\AdrGateway\\Housekeeper\\start.js",
-            "args": ["-d",".local-env\\adr-gateway"],
+            "args": [
+                "-d",
+                ".local-env\\adr-gateway"
+            ],
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0"
+                "NODE_TLS_REJECT_UNAUTHORIZED": "0"
             },
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
             "outputCapture": "std"
-        },        
+        },
         {
             "type": "node",
             "request": "launch",
             "name": "Mock Register server",
             "program": "${workspaceFolder}\\dist\\MockServices\\Register\\Server\\start.js",
-            "args": ["-d",".local-env\\mock-register"],
+            "args": [
+                "-d",
+                ".local-env\\mock-register"
+            ],
             "env": {
                 "NO_PROXY": "localhost"
             },
@@ -96,25 +122,28 @@
             "name": "ADR Server",
             "program": "${workspaceFolder}\\dist\\AdrServer\\Server\\start.js",
             "env": {
-                "NODE_TLS_REJECT_UNAUTHORIZED":"0",
+                "NODE_TLS_REJECT_UNAUTHORIZED": "0",
                 "LOG_LEVEL": "debug"
             },
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "outputCapture": "std" 
+            "outputCapture": "std"
         },
         {
-			"type": "node",
-			"request": "launch",
-			"name": "Mocha All",
-            "args": ["-r", "source-map-support/register", "--colors","out/Tests/**/*.spec.js"],
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha All",
+            "args": [
+                "-r",
+                "source-map-support/register",
+                "--colors",
+                "out/Tests/**/*.spec.js"
+            ],
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-			"cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}",
             "protocol": "inspector",
-            "env": {
-
-            },
+            "env": {},
             "internalConsoleOptions": "neverOpen",
             "console": "integratedTerminal"
         },
@@ -133,21 +162,24 @@
                 "'Dynamic client registration'",
                 "dist/Tests/**/*spec.js"
             ],
-			"protocol": "inspector",
+            "protocol": "inspector",
             "internalConsoleOptions": "neverOpen",
             "console": "integratedTerminal"
         },
         {
-			"type": "node",
-			"request": "launch",
-			"name": "Mocha Headless",
-            "args": ["--colors","dist/Tests/**/*spec.js"],
+            "type": "node",
+            "request": "launch",
+            "name": "Mocha Headless",
+            "args": [
+                "--colors",
+                "dist/Tests/**/*spec.js"
+            ],
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
-			"cwd": "${workspaceRoot}",
+            "cwd": "${workspaceRoot}",
             "protocol": "inspector",
             "env": {
-                "TEST_SUITE_HEADLESS":"1",
-                "TEST_SUITE_MOCK_ONLY":"1"
+                "TEST_SUITE_HEADLESS": "1",
+                "TEST_SUITE_MOCK_ONLY": "1"
             },
             "internalConsoleOptions": "neverOpen",
             "console": "integratedTerminal"

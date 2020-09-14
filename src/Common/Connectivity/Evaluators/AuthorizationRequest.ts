@@ -4,9 +4,11 @@ import uuid = require("uuid")
 import _ from "lodash"
 import { ConsentRequestLogManager } from "../../Entities/ConsentRequestLog";
 import { getAuthPostGetRequestUrl } from "../../../AdrGateway/Server/Helpers/HybridAuthJWS";
+import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
 
 export interface ConsentRequestParams {
   sharingDuration: number,
+  existingArrangementId?: string,
   state: string,
   systemId: string,
   userId: string,
@@ -16,7 +18,7 @@ export interface ConsentRequestParams {
   additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
 }
 
-export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogManager,$:{
+export const GetAuthorizationRequest = async (cert:ClientCertificateInjector,consentManager:ConsentRequestLogManager,$:{
   ConsentRequestParams: ConsentRequestParams,
   DataHolderOidc: Types.DataholderOidcResponse,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
@@ -44,11 +46,12 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
 
   let redirectUri = $.SoftwareProductConfig.redirect_uris[0];
 
-  // sign with JWT
-  let authUrl = getAuthPostGetRequestUrl({
+  // Get a request URL
+  let authUrl = await getAuthPostGetRequestUrl(cert,{
       clientId: $.CheckAndUpdateClientRegistration.clientId,
       callbackUrl: redirectUri,
       sharingDuration: p.sharingDuration || 0,
+      existingArrangementId: p.existingArrangementId,
       issuer: $.DataHolderOidc.issuer,
       authorizeEndpointUrl: $.DataHolderOidc.authorization_endpoint,
       scopes: requestedScopes,
@@ -56,7 +59,7 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
       nonce: stateParams.nonce,
       state: stateParams.state,
       additionalClaims
-  });
+  },$);
 
   // log to the DB
   let logManager = consentManager;
@@ -67,6 +70,7 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
       productKey: p.productKey,
       softwareProductId: $.SoftwareProductConfig.ProductId,
       requestedSharingDuration: p.sharingDuration || 0,
+      arrangementId: p.existingArrangementId,
       nonce: stateParams.nonce,
       state: stateParams.state,
       scopes: requestedScopes,

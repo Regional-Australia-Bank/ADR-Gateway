@@ -15,7 +15,7 @@ export const EntityDefaults = {
     type: "sqlite",
     database: ":memory:",
     entityPrefix: "adr_",
-    synchronize: true,
+    synchronize: false,
     entities: [ConsentRequestLog, DataHolderRegistration]
 };
 

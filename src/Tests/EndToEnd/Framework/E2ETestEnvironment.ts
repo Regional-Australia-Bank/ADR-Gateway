@@ -27,11 +27,18 @@ import { DefaultClientCertificateInjector, TLSInject } from "../../../Common/Ser
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../Common/Config";
 import { logger } from "../../Logger";
+import { BootstrapTempDb } from "../../../Common/Entities/Migrations/Bootstrap";
+import moment from "moment";
+import { SetDataRecipientBaseUri } from "../../../MockServices/Register/MockData/DataRecipients";
 
 const getPort = require('get-port');
 
 export class E2ETestEnvironment {
     private persistanceDb?: any;
+
+    switches = {
+        UseDhArrangementEndpoint: true
+    }
 
     PersistValue = async (key:string,value:string):Promise<void> => {
         let db = (await this.GetPersistedState()) || {}
@@ -212,7 +219,12 @@ export class E2ETestEnvironment {
         // Start AdrDb
         if (serviceDefinitions.AdrDb) {
             if (serviceDefinitions.AdrDb === true) {
-                this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>EntityDefaults))
+                // delete previous temporary dbs
+                const rimraf = require("rimraf")
+                rimraf.sync("tmp.*.sqlite")
+                const tempFileName = "tmp."+moment().unix()+".sqlite"
+
+                this.TestServices.adrDbConn = Promise.resolve(BootstrapTempDb(tempFileName))
             } else {
                 this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>_.merge(EntityDefaults, serviceDefinitions.AdrDb)))
             }
@@ -290,6 +302,7 @@ export class E2ETestEnvironment {
             if (this.TestServices.adrServer) {
                 // TODO add configuration point for front end TLS server cert
                 this.TestServices.httpsProxy.adrServer = await TestHttpsProxy.Start(this.TestServices.adrServer,tlsConfig)
+                SetDataRecipientBaseUri(`https://localhost:${this.TestServices.httpsProxy.adrServer.port}`)
             }
             if (this.TestServices.mockDhServer) {
                 this.TestServices.httpsProxy.mockDhServer = await TestHttpsProxy.Start(this.TestServices.mockDhServer,tlsConfig)

@@ -26,6 +26,8 @@ const TestAdrConnectivityConfig = async (env:E2ETestEnvironment):Promise<AdrConn
     Jwks: `http://localhost:${env.TestServices.adrJwks.port}/private.jwks`,
     LegalEntityId: TestDataRecipientApplication.LegalEntityId,
     BrandId: TestDataRecipientApplication.BrandId,
+    UsePushedAuthorizationRequest: false, // This way we cover PAR and non-PAR scenarios
+    UseDhArrangementEndpoint: env.switches.UseDhArrangementEndpoint,
     RegisterBaseUris: {
         Oidc: env.SystemUnderTest.Register().DiscoveryUri,
         Resource: env.SystemUnderTest.Register().PublicUri,
@@ -76,7 +78,8 @@ export class InternalTestConfig {
                         RevocationEndpoint: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}/revoke`
                     }
                 }),
-                Dataholder: "test-data-holder-1"
+                Dataholder: "test-data-holder-1",
+                DhRevokePrivateJwks: DoOnce(GenerateDhJwks) // Needed for direct testing against DR protected endpoints
             },
             TestServiceDefinitions: { // Service Definition paramaterized by 
                 // AdrGateway: true,
@@ -114,6 +117,8 @@ export class InternalTestConfig {
                         "authorization_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServer?.port}/authorize`,
                         "token_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token`,
                         "introspection_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token/introspect`,
+                        "pushed_authorization_request_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/par`,
+                        "cdr_arrangement_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/arrangement`,
                         "revocation_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token/revoke`,
                         "userinfo_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/userinfo`,
                         "registration_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/register`,
@@ -147,7 +152,7 @@ export class InternalTestConfig {
                     let softwareProductConfig:MockSoftwareProductConfig = {
                         Port: await getPort(),
                         ProductId: TestDataRecipientApplication.ProductId,
-                        redirect_uris: ["https://regaustbank.io","https://regaustbank.io/redirect2"],
+                        redirect_uris: ["https://raw.githubusercontent.com/Regional-Australia-Bank/ADR-Gateway/master/examples/redirect-uri.md","https://regaustbank.io/redirect2"],
                         standardsVersion: 1,
                         standardsVersionMinimum: 1,
                         uris: {

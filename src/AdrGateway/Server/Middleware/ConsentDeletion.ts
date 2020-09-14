@@ -64,7 +64,9 @@ class ConsentDeletionMiddleware {
 
             try {
                 // this is purposely not awaited. It should not block the sending of a 200 response.
-                this.connector.PropagateRevokeConsent(status.consent).GetWithHealing().catch(e => this.connector.logger.error({message:"Could not propagate consent revocation", meta: status.consent}))
+                this.connector.PropagateRevokeConsent(status.consent).GetWithHealing().catch(err => {
+                    this.connector.logger.error(err,{message:"Could not propagate consent revocation", meta: status.consent})
+                })
             } finally {
                 return res.status(200).send();
             }
