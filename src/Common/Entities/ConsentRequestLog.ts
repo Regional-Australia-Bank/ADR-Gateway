@@ -64,6 +64,10 @@ class ConsentRequestLog extends BaseEntity {
     ppid!: string;
     @Column({nullable: true, length:4000})
     accessToken!: string;
+
+    @Column({nullable: true, length:255})
+    arrangementId?: string;
+
     @Column({nullable: true, length:4000})
     refreshToken?: string;
 
