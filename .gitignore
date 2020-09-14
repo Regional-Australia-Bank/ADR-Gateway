@@ -3,6 +3,7 @@ node_modules
 dist
 log.txt
 tmp
+tmp.*
 mochawesome-report
 *.zip
 .evidence

@@ -1,20 +1,38 @@
 import { configure } from "./Config";
 import { doMigrations } from "./MigrationSequence";
+import { Connection, createConnection } from "typeorm";
+import { MigrationDbConfig } from "./Config";
+import _ from "lodash"
+import { Version1EntityDefaults } from "./Bootstrap";
+import { logger } from "./Logger";
+
 
 const getTargetVersion = async () => {
   return process.env.ADR_GATEWAY_MIGRATION_TARGET_VERSION;
 }
 
+const connect = async (config:MigrationDbConfig, db?: Promise<Connection>) => {
+  const connectionPromise = db || (() => {
+    let options = _.merge(Version1EntityDefaults, config.Database);
+    return createConnection(options)
+
+  })()
+
+  return await connectionPromise;
+}
+
 const main = async () => {
 
   const config = configure();
+  let db = await connect(config);
 
   const targetVersion = await getTargetVersion();
-  console.log(`Target version: ${targetVersion || "LATEST"}`)
+  logger.info(`Target version: ${targetVersion || "LATEST"}`)
 
-  await doMigrations(config,targetVersion);
+  await doMigrations(db,targetVersion);
 
-  console.log(`Migration done.`)
+  logger.info(`Migration done.`)
+  await db.close();
 
 }
 

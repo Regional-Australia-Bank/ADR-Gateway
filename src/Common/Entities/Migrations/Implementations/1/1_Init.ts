@@ -6,8 +6,6 @@ import { ConsentRequestLog } from "./ConsentRequestLog";
 import { MigrationDbConfig } from "../../Config";
 import _ from "lodash"
 
-export const Version1Entities = [ConsentRequestLog, DataHolderRegistration, JtiLog];
-
 export class InitMigration extends Migration {
   GetId = () => "1_Init";
   IsApplied = async (connection:Connection) => {

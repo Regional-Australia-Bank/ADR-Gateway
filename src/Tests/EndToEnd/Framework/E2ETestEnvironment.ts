@@ -27,6 +27,7 @@ import { DefaultClientCertificateInjector, TLSInject } from "../../../Common/Ser
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../Common/Config";
 import { logger } from "../../Logger";
+import { BootstrapTempDb } from "../../../Common/Entities/Migrations/Bootstrap";
 
 const getPort = require('get-port');
 
@@ -212,7 +213,7 @@ export class E2ETestEnvironment {
         // Start AdrDb
         if (serviceDefinitions.AdrDb) {
             if (serviceDefinitions.AdrDb === true) {
-                this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>EntityDefaults))
+                this.TestServices.adrDbConn = Promise.resolve(BootstrapTempDb())
             } else {
                 this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>_.merge(EntityDefaults, serviceDefinitions.AdrDb)))
             }
