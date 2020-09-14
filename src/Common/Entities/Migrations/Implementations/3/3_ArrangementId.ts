@@ -1,29 +1,7 @@
 import { Migration } from "../../Migration";
-import { Connection, createConnection, TableColumn } from "typeorm";
-import { MigrationDbConfig } from "../../Config";
+import { Connection, TableColumn } from "typeorm";
 import _ from "lodash"
-import { MigrationLog } from "../../../MigrationLog";
-import { ConsentRequestLog } from "../../../ConsentRequestLog";
 import moment from "moment";
-
-const EntityDefaults = {
-  type: "sqlite",
-  database: ":memory:",
-  entityPrefix: "adr_",
-  synchronize: false,
-  logging: ["query","error","warn"],
-  entities: [MigrationLog,ConsentRequestLog]
-};
-
-const connect = async (config:MigrationDbConfig, db?: Promise<Connection>) => {
-  const connectionPromise = db || (() => {
-    let options = _.merge(EntityDefaults, config.Database);
-    return createConnection(options)
-
-  })()
-
-  return await connectionPromise;
-}
 
 export class AddArrangementIdMigration extends Migration {
   GetId = () => "3_AddArrangementIdMigration";

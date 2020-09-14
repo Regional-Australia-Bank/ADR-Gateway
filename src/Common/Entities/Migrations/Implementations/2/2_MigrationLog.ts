@@ -1,5 +1,5 @@
 import { Migration } from "../../Migration";
-import { Connection, createConnection, Table } from "typeorm";
+import { Connection, Table } from "typeorm";
 import _ from "lodash"
 
 export class MigrationLogMigration extends Migration {

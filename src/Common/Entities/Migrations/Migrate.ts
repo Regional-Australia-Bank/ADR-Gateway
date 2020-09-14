@@ -8,8 +8,6 @@ const getTargetVersion = async () => {
 const main = async () => {
 
   const config = configure();
-  console.log("Database config")
-  console.log(config)
 
   const targetVersion = await getTargetVersion();
   console.log(`Target version: ${targetVersion || "LATEST"}`)
