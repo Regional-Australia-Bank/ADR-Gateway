@@ -28,6 +28,7 @@ import { DefaultConnector } from "../../../Common/Connectivity/Connector.generat
 import { SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../Common/Config";
 import { logger } from "../../Logger";
 import { BootstrapTempDb } from "../../../Common/Entities/Migrations/Bootstrap";
+import moment from "moment";
 
 const getPort = require('get-port');
 
@@ -213,7 +214,12 @@ export class E2ETestEnvironment {
         // Start AdrDb
         if (serviceDefinitions.AdrDb) {
             if (serviceDefinitions.AdrDb === true) {
-                this.TestServices.adrDbConn = Promise.resolve(BootstrapTempDb())
+                // delete previous temporary dbs
+                const rimraf = require("rimraf")
+                rimraf.sync("tmp.*.sqlite")
+                const tempFileName = "tmp."+moment().unix()+".sqlite"
+
+                this.TestServices.adrDbConn = Promise.resolve(BootstrapTempDb(tempFileName))
             } else {
                 this.TestServices.adrDbConn = Promise.resolve(await createConnection(<any>_.merge(EntityDefaults, serviceDefinitions.AdrDb)))
             }

@@ -8,9 +8,11 @@ export class AddArrangementIdMigration extends Migration {
   IsApplied = async (connection: Connection) => {
     const tableName = `${connection.options.entityPrefix || ""}MigrationLog`;
 
+    let [q,p] = connection.driver.escapeQueryWithParameters(`SELECT performed FROM ${connection.driver.escape(tableName)} where id = :id;`,{id:this.GetId()},{})
+
     const results = await connection
       .createQueryRunner()
-      .query(`SELECT performed FROM ${connection.driver.escape(tableName)} where id = ${connection.driver.escape(this.GetId())}`)
+      .query(q,p);
 
     if (results.length !== 1) {
       return false

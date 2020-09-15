@@ -9,6 +9,12 @@ services:
             - 8402:8402
         env_file:
             - sandbox.env
+    adr-db-migrate:
+        image: adr-gateway
+        command: node ./Common/Entities/Migrations/Migrate.js
+        restart: "no"
+        env_file:
+            - sandbox.env
     software-product:
         image: adr-gateway
         command: node ./MockServices/SoftwareProduct/Server/start.js
