@@ -59,3 +59,13 @@ export const TestDataRecipientApplication = {
         tos_uri: DataRecipients[0].dataRecipientBrands[0].softwareProducts[0].ssaParticulars.tos_uri
     }
 }
+
+let dataRecipientBase:string = "";
+
+export const SetDataRecipientBaseUri = (recipient_base_uri:string) => {
+    dataRecipientBase = recipient_base_uri
+}
+
+export const GetDataRecipientBaseUri = () => {
+    return dataRecipientBase
+}

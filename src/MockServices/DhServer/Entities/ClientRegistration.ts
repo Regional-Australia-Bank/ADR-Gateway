@@ -136,7 +136,7 @@ class ClientRegistrationManager {
         reg.scopesJson = JSON.stringify(_.uniq(scope.split(" ")))
         reg.requestPartsJson = JSON.stringify(requestParts)
         reg.softwareStatement = ssa
-        return await reg.save()
+        return await repo.save(reg);
     }
 
     GetRegistration = async(clientId:string): Promise<ClientRegistration|undefined> => {

@@ -173,6 +173,29 @@ class ConsentManager {
         return await (await this.connection).getRepository(Consent).save(consent);
     }
 
+
+    revokeArrangement = async (cdr_arrangement_id:string,drAppClientId:string, accessToken:string):Promise<void> => {
+        let resolvedConnection = (await this.connection);
+
+        let matchingConsents = await resolvedConnection.manager.find(Consent,{cdr_arrangement_id, drAppClientId: drAppClientId, accessToken});
+
+        this.logger.debug({
+            action: "Revoke arrangement",
+            cdr_arrangement_id,
+            drAppClientId: drAppClientId,
+            countMatching: matchingConsents.length
+        })
+
+        for (let consent of matchingConsents) {
+            consent.refreshToken = undefined;
+            consent.tokenRevocationStatus = TokenRevocationStatus.REVOKED;
+            consent.tokenRevocationDate = moment.utc().toDate()
+            let revoked = await resolvedConnection.manager.save(consent);
+            this.logger.info({"Revoked consent": revoked});
+        }
+        return;
+    }
+
     revokeRefreshToken = async (token:string,drAppClientId:string):Promise<void> => {
         let resolvedConnection = (await this.connection);
 

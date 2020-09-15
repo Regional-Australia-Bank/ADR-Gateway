@@ -29,6 +29,7 @@ export interface RegistrationRequestParts {
         'client_description':string,
         'client_uri':string,
         'redirect_uris':string[],
+        'recipient_base_uri':string
         'logo_uri':string,
         'tos_uri'?:string,
         'policy_uri'?:string,
@@ -58,6 +59,7 @@ export const StandardSerializeDrRegistration = (reg: ClientRegistration) => {
         org_id: regParts.ssa.org_id,
         org_name: regParts.ssa.org_name,
         redirect_uris: reg.redirectUris(),
+        recipient_base_uri: regParts.ssa.recipient_base_uri,
         logo_uri: regParts.ssa.logo_uri,
         tos_uri: regParts.ssa.tos_uri,
         policy_uri: regParts.ssa.policy_uri,
@@ -153,6 +155,7 @@ class ClientRegistrationMiddleware {
                         'client_description',
                         'client_uri',
                         'redirect_uris',
+                        'recipient_base_uri',
                         'logo_uri',
                         'tos_uri',
                         'policy_uri',

@@ -8,6 +8,7 @@ import { ClientBearerJwtVerificationMiddleware } from "../../Common/Server/Middl
 import uuid from "uuid"
 import http from "http"
 import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
+import { DeleteArrangementMiddleware } from "./Handlers/DeleteArrangement";
 
 const requestCorrelationMiddleware = (req,res:http.ServerResponse,next) => {
     req.correlationId = uuid.v4()
@@ -20,6 +21,7 @@ export class AdrServer {
     constructor(
         @inject("Logger") private logger:winston.Logger,
         private revocationMiddleware: RevokeMiddleware,
+        private deleteArrangementMiddleware: DeleteArrangementMiddleware,
         private connector: DefaultConnector,
         private clientBearerJwtVerificationMiddleware: ClientBearerJwtVerificationMiddleware
     ) {}
@@ -45,7 +47,15 @@ export class AdrServer {
             }),
             this.revocationMiddleware.handler()
         );
-        
+
+        app.delete( "/arrangements/:cdr_arrangement_id",
+            this.clientBearerJwtVerificationMiddleware.handler((assumedClientId:string) => {
+                return this.connector.DataHolderRevocationJwks(assumedClientId)
+            }),
+            this.deleteArrangementMiddleware.handler()
+        );
+
+
         return app;
        
     }

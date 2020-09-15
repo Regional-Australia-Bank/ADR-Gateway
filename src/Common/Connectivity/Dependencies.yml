@@ -160,7 +160,7 @@ DataHolderRevocationJwks:
     - DataHolderBrandMetadata
   output: Types.JWKS.KeyStore
   serializer: Serial.JWKS
-  evaluator: util.GetDataHolderRevocationJwks
+  evaluator: util.GetDataHolderRevocationJwks.bind(undefined,factory.cert)
   validator: util.Validation.DataHolderRevocationJwks
   cache: {minAge: 300}
 
@@ -270,6 +270,22 @@ GetAuthorizationRequest:
   evaluator: util.GetAuthorizationRequest.bind(undefined,factory.cert,factory.consentManager)
   cache: {noCache: true}
 
+SyncRefreshTokenStatus:
+  parameters:
+    Consent: Types.ConsentRequestLog
+  project:
+    SoftwareProductId: $ => $.Consent.softwareProductId
+    DataHolderBrandId: $ => $.Consent.dataHolderId
+  preassertions:
+    - AssertSoftwareProductStatusIsActive
+  dependencies:
+    - DataRecipientJwks
+    - DataHolderOidc
+    - CheckAndUpdateClientRegistration
+  output: Types.RefreshTokenStatus
+  evaluator: util.SyncRefreshTokenStatus.bind(undefined,factory.consentManager,factory.logger,factory.cert)
+  cache: {maxAge: 3600}
+
 FetchTokens:
   parameters:
     Consent: Types.ConsentRequestLog
@@ -282,6 +298,7 @@ FetchTokens:
     - DataRecipientJwks
     - DataHolderOidc
     - CheckAndUpdateClientRegistration
+    - SyncRefreshTokenStatus # ensures that evaluation does not proceed if we do not have a current refresh token
   output: "{tokenResponse:Types.TokenResponse, tokenRequestTime:Date}"
   evaluator: util.FetchTokens.bind(undefined,factory.logger,factory.cert)
   cache: {noCache: true}
@@ -414,6 +431,12 @@ FinaliseConsent:
   evaluator: $ => $.FetchTokensAndUpdateClaims
   cache: {noCache: true}
 
+# This has the potential to get complicated with the arrangement ID needing an access token.
+# If a refresh token has expired, getting tokens will fail. Consents could get stuck in a state
+# where revocation is supposed to be propagated, but it can't because an access token cannot be aquired.
+# The ConsentCurrentAccessToken could introspect the refresh token, and internally update the propagation date
+# to remove the need for further attempts. The worst case is that somewhere down the line we will end up with
+# recurring retries, and we'll need some kind of intervention to stop them.
 PropagateRevokeConsent:
   parameters:
     Consent: Types.ConsentRequestLog
@@ -421,9 +444,11 @@ PropagateRevokeConsent:
     SoftwareProductId: $ => $.Consent.softwareProductId
     DataHolderBrandId: $ => $.Consent.dataHolderId
   dependencies:
+    - AdrConnectivityConfig
     - DataRecipientJwks
     - DataHolderOidc
     - CheckAndUpdateClientRegistration
+    - FetchTokens
   output: Types.ConsentRequestLog
-  evaluator: util.PropagateRevokedConsent.bind(undefined,factory.cert)
+  evaluator: util.PropagateRevokedConsent.bind(undefined,factory.logger,factory.cert,factory.consentManager)
   cache: {noCache: true}

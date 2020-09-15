@@ -245,6 +245,12 @@ class ConsentRequestLogManager {
         }
     }
 
+    async GetConsentsByDeleteArrangementParams(cdr_arrangement_id:string,dataHolderBrandId:string) {
+        let connection = (await this.connection);
+        let matchingConsents = await connection.manager.find(ConsentRequestLog,{arrangementId: cdr_arrangement_id,dataHolderId: dataHolderBrandId});
+        return matchingConsents
+    }
+
     FindAuthRequest = async (params: FindConsentParams) => {
         let connection = await this.connection;
         let request = await ((await this.connection)).manager.findOneOrFail(ConsentRequestLog,params);
@@ -252,12 +258,12 @@ class ConsentRequestLogManager {
     }
 
     RevokeConsent = async (consent:ConsentRequestLog, revokedAt: "DataHolder"|"DataRecipient") => {
-        consent.revocationDate = moment.utc().toDate();
-        consent.revokedAt = revokedAt
+        // may be called multiple times, so put values only if they don't already exist
+        consent.revocationDate = consent.revocationDate || moment.utc().toDate();
+        consent.revokedAt = consent.revokedAt || revokedAt
         await consent.save();
 
         this.logger.info(`Revoked consent ${consent.id}`);
-        // TODO queue for deleting consents
     }
 
     NextRevocationToPropagate = async (cursor: ConsentRequestLog|undefined):Promise<ConsentRequestLog|undefined> => {

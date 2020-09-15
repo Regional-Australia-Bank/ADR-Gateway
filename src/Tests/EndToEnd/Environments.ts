@@ -13,6 +13,7 @@ import { MockSoftwareProductConfig } from "../../MockServices/SoftwareProduct/Se
 import { AdrJwksConfig } from "../../AdrJwks/Config";
 import { AdrConnectivityConfig, MtlsConfig } from "../../Common/Config";
 import { logger } from "../Logger";
+import { JWKS } from "jose";
 
 const path = require('path');
 
@@ -43,6 +44,7 @@ export interface EndToEndTestingConfig {
                 RevocationEndpoint: string
             }
         }>
+        DhRevokePrivateJwks?: JWKS.KeyStore
     }
 
     TestServiceDefinitions: {

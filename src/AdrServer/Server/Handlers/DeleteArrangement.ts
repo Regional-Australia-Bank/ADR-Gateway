@@ -2,30 +2,28 @@ import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 
-import {check, validationResult, query, ValidationChain, body, matchedData} from 'express-validator'
+import {check, validationResult, query, ValidationChain, body, matchedData, param} from 'express-validator'
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
 import bodyParser, { urlencoded } from "body-parser";
-import { ConsentRequestLogManager } from "../../../Common/Entities/ConsentRequestLog";
+import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
 import { AdrServerConfig } from "../Config";
 import moment from "moment";
 import { GatewayRequest } from "../../../Common/Server/Types";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
 @injectable()
-class RevokeMiddleware {
+export class DeleteArrangementMiddleware {
     constructor(
         @inject("Logger") private logger:winston.Logger,
         private consentManager:ConsentRequestLogManager,
-        private connector:DefaultConnector,
-        @inject("AdrServerConfig") private config:AdrServerConfig
     ){}
     
     handler = () => {
         let validationErrorMiddleware = (req:express.Request,res:express.Response,next: NextFunction) => {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-            return res.status(400).json({ error:"invalid_request", errors: errors.array() });
+                return res.status(400).json({ error:"invalid_request", errors: errors.array() });
             }
             next();
         }
@@ -33,47 +31,47 @@ class RevokeMiddleware {
         let RevocationResponder = async (req:express.Request,res:express.Response,next: NextFunction) => {
 
             let m:{
-                token: string
+                cdr_arrangement_id: string
             } = <any>matchedData(req);
 
             let verifiedClientId = (req as GatewayRequest)?.gatewayContext?.verifiedBearerJwtClientId
 
             this.logger.debug({
-                message: "Received token revocation request",
-                meta: {token: m.token, verifiedClientId},
+                message: "Received arrangement revocation request",
+                meta: {token: m.cdr_arrangement_id, verifiedClientId},
                 date: moment().toISOString()
             });
 
             try {
-                if (typeof m.token == 'undefined' ) {
-                    res.statusCode = 400;
-                    res.json({error:"invalid_request"})
-                    return;
-                }
     
                 let consentManager = this.consentManager;
-                let isAccessToken = await consentManager.IsAccessToken(m.token,verifiedClientId);
-                if (isAccessToken || ((typeof req.body.token_type_hint != 'undefined') && (req.body.token_type_hint != "refresh_token"))) {
-                    res.statusCode = 400;
-                    res.json({error:"unsupported_token_type"})
-                    return;
+                let consents:ConsentRequestLog[] = await consentManager.GetConsentsByDeleteArrangementParams(m.cdr_arrangement_id,verifiedClientId);
+
+                // only revoke current consents
+                consents = consents.filter(c => c.IsCurrent());
+                
+                if (consents.length < 1) {
+                    return res.sendStatus(422);
                 }
-            
-                await consentManager.RevokeByRefreshToken(m.token,verifiedClientId);                
-                this.logger.info({
-                    message: "Revoked token",
-                    correlationId:(<any>req).correlationId,
-                    meta: {token: m.token},
-                    date: moment().toISOString()
-                });
-       
-                res.sendStatus(200);
+
+                for (let consent of consents) {
+                    await consentManager.RevokeConsent(consent,"DataHolder");
+                    this.logger.info({
+                        message: "Revoked consent",
+                        correlationId:(<any>req).correlationId,
+                        meta: {cdr_arrangement_id: m.cdr_arrangement_id},
+                        date: moment().toISOString()
+                    });
+    
+                }
+      
+                return res.sendStatus(204);
     
             } catch (e) {
                 this.logger.error({
                     message: "Failed token revocation request",
                     correlationId:(<any>req).correlationId,
-                    meta: {token: m.token},
+                    meta: {token: m.cdr_arrangement_id},
                     error: e,
                     date: moment().toISOString()
                 });
@@ -85,14 +83,9 @@ class RevokeMiddleware {
         // decide whether to validate based on body or query parameters
 
         return [
-            urlencoded({extended:true}),
-            body('token').isString(),
-            body('token_type').isString().equals("refresh_token").optional(),
-
+            param('cdr_arrangement_id').isString(),
             validationErrorMiddleware,
             RevocationResponder
         ];
     }
 } 
-
-export {RevokeMiddleware}

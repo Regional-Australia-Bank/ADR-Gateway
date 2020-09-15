@@ -97,6 +97,7 @@ class UpdateClientRegistrationMiddleware {
                         'client_description',
                         'client_uri',
                         'redirect_uris',
+                        'recipient_base_uri',
                         'logo_uri',
                         'tos_uri',
                         'policy_uri',

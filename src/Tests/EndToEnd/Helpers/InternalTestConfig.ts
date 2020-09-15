@@ -27,6 +27,7 @@ const TestAdrConnectivityConfig = async (env:E2ETestEnvironment):Promise<AdrConn
     LegalEntityId: TestDataRecipientApplication.LegalEntityId,
     BrandId: TestDataRecipientApplication.BrandId,
     UsePushedAuthorizationRequest: false, // This way we cover PAR and non-PAR scenarios
+    UseDhArrangementEndpoint: env.switches.UseDhArrangementEndpoint,
     RegisterBaseUris: {
         Oidc: env.SystemUnderTest.Register().DiscoveryUri,
         Resource: env.SystemUnderTest.Register().PublicUri,
@@ -77,7 +78,8 @@ export class InternalTestConfig {
                         RevocationEndpoint: `https://localhost:${env.TestServices.httpsProxy?.adrServer?.port}/revoke`
                     }
                 }),
-                Dataholder: "test-data-holder-1"
+                Dataholder: "test-data-holder-1",
+                DhRevokePrivateJwks: DoOnce(GenerateDhJwks) // Needed for direct testing against DR protected endpoints
             },
             TestServiceDefinitions: { // Service Definition paramaterized by 
                 // AdrGateway: true,
@@ -116,6 +118,7 @@ export class InternalTestConfig {
                         "token_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token`,
                         "introspection_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token/introspect`,
                         "pushed_authorization_request_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/par`,
+                        "cdr_arrangement_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/arrangement`,
                         "revocation_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token/revoke`,
                         "userinfo_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/userinfo`,
                         "registration_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/register`,

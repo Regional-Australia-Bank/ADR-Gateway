@@ -38,6 +38,7 @@ import { TokenRevocationMiddleware } from "./Handlers/TokenRevocation";
 import { DhGatewayRequest } from "./Types";
 import urljoin from "url-join";
 import { PushedAuthorizationRequestMiddleware } from "./Handlers/PushedAuthorizationRequest";
+import { DeleteArrangementMiddleware } from "./Handlers/DeleteArrangement";
 
 @injectable()
 class DhServer {
@@ -85,6 +86,11 @@ class DhServer {
         app.post("/idp/token/introspect",
             container.resolve(MTLSVerificationMiddleware).handle,
             container.resolve(TokenIntrospectionMiddleware).handler()
+        );
+
+        app.delete("/idp/arrangement/:cdr_arrangement_id",
+            container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate
+            container.resolve(DeleteArrangementMiddleware).handler()
         );
 
         app.post("/idp/token/revoke",
@@ -458,8 +464,8 @@ class DhServer {
                 },
                 "authDetails": [
                     {
-                        "registerUType": "HYBRIDFLOW-JWKS",
-                        "jwksEndpoint": "string"
+                        "registerUType": "SIGNED-JWT",
+                        "jwksEndpoint": urljoin(config.FrontEndUrl,"jwks")
                     }
                 ],
                 "lastUpdated": "2019-10-24T03:51:44Z"

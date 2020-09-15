@@ -52,10 +52,10 @@ export class ClientBearerJwtVerificationMiddleware {
                     if (typeof applicationBase == 'undefined') throw new Error("JoseApplicationBaseUrl is not configured");
                     if (typeof req?.route?.path == 'undefined') throw new Error("Request cannot be parsed")
                     
-                    if (config.SecurityProfile.AudienceRewriteRules && config.SecurityProfile.AudienceRewriteRules[req.route.path]) {
-                        audienceBaseUri = urljoin(applicationBase,config.SecurityProfile.AudienceRewriteRules[req.route.path]);
+                    if (config.SecurityProfile.AudienceRewriteRules && config.SecurityProfile.AudienceRewriteRules[req.path]) {
+                        audienceBaseUri = urljoin(applicationBase,config.SecurityProfile.AudienceRewriteRules[req.path]);
                     } else {
-                        audienceBaseUri = urljoin(applicationBase,req.route.path);    
+                        audienceBaseUri = urljoin(applicationBase,req.path);    
                     }
                 }
                 catch (err) {

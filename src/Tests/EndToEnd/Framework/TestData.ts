@@ -205,6 +205,27 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
 
             return params;
         }
+
+        const CreateDhBearerAuthJwt = async (endpoint:string) => {
+            const clientId = env.Config.SystemUnderTest.Dataholder
+            // "test-data-holder-1";
+
+            let claims = {
+                iss: clientId,
+                sub: clientId,
+                aud: endpoint,
+                jti: uuid.v4(),
+                exp: moment.utc().add(30,'s').unix(),
+                iat: moment.utc().format()
+            }
+    
+            let jwks = env.Config.SystemUnderTest.DhRevokePrivateJwks
+            let jwk = jwks.get({use:'sig',alg:"PS256"});
+    
+            let assertion = JWT.sign(claims,jwk);    
+
+            return assertion;
+        }
         
         const CreateAssertionWithoutKey = async (endpoint:string, excludedKey:string) => {
             const clientId = await TestData.dataRecipient.clientId();
@@ -238,6 +259,7 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
         return {
             TestData,
             CreateAssertion,
+            CreateDhBearerAuthJwt,
             CreateAssertionWithoutKey,
             CreateAssertionDirty,
             AdrGatewayConfig

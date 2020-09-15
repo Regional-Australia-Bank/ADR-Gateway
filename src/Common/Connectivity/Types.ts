@@ -1,6 +1,6 @@
 import * as Config from "../Config"
 import * as CommonTypes from "../Server/Types"
-import { IsUrl } from "class-validator"
+import { IsUrl, IsOptional } from "class-validator"
 import { JWKS } from "jose";
 import { ConsentRequestLog } from "../Entities/ConsentRequestLog";
 import { DataHolderRegistration } from "../Entities/DataHolderRegistration";
@@ -20,6 +20,7 @@ export type DependencyEvaluator<Params,Output> = {
 export type DataHolderStatus = "OK" | "PARTIAL_FAILURE" | "UNAVAILABLE" | "SCHEDULED_OUTAGE"
 
 type StringOrUndefined = string | undefined;
+type RefreshTokenStatus = undefined | {active:boolean}
 
 export {
   JWKS,
@@ -27,7 +28,8 @@ export {
   DataHolderRegistration,
   ConsentRequestParams,
   IndexedSoftwareProductConfigs,
-  StringOrUndefined
+  StringOrUndefined,
+  RefreshTokenStatus
 }
 
 export interface DataholderRegistrationResponse {
@@ -132,14 +134,19 @@ export class DataholderOidcResponse {
   @IsUrl({require_tld:false}) // TODO change to https only/remove since this is default.
   token_endpoint: string;
 
-  @IsUrl({require_tld:false}) // TODO change to https only/remove since this is default.
+  @IsUrl({require_tld:false})
   userinfo_endpoint: string;
 
   @IsUrl({require_tld:false}) 
   registration_endpoint: string;
 
   @IsUrl({require_tld:false}) 
+  @IsOptional()
   pushed_authorization_request_endpoint: string;
+
+  @IsUrl({require_tld:false}) 
+  @IsOptional()
+  cdr_arrangement_endpoint: string;
 
   @IsUrl({require_tld:false})
   jwks_uri: string;
@@ -180,6 +187,7 @@ export class DataholderOidcResponse {
       this.userinfo_endpoint = data.userinfo_endpoint;
       this.authorization_endpoint = data.authorization_endpoint;
       this.pushed_authorization_request_endpoint = data.pushed_authorization_request_endpoint
+      this.cdr_arrangement_endpoint = data.cdr_arrangement_endpoint
       this.registration_endpoint = data.registration_endpoint;
       this.introspection_endpoint = data.introspection_endpoint;
       this.revocation_endpoint = data.revocation_endpoint;

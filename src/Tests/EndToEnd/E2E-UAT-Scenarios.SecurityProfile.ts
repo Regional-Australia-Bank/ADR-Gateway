@@ -1,4 +1,4 @@
-import { Scenario as ScenarioBase, TestContext } from "./Framework/TestContext";
+import { Scenario as ScenarioBase, TestContext, HttpLogEntry } from "./Framework/TestContext";
 import { DoRequest } from "./Framework/DoRequest";
 import { expect } from "chai";
 import _ from "lodash"
@@ -47,6 +47,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
     const TestData = async () => (await GenerateTestData(env)).TestData
     const AdrGatewayConfig = async () => (await GenerateTestData(env)).AdrGatewayConfig
     const CreateAssertion = async (...args:any[]) => (await GenerateTestData(env)).CreateAssertion.apply(undefined,<any>args)
+    const CreateDhBearerAuthJwt = async (...args:any[]) => (await GenerateTestData(env)).CreateDhBearerAuthJwt.apply(undefined,<any>args)
     const CreateAssertionWithoutKey = async (...args:any[]) => (await GenerateTestData(env)).CreateAssertionWithoutKey.apply(undefined,<any>args)
 
 
@@ -223,6 +224,104 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                 },240)
 
+            Scenario($ => it.apply(this,$('DELETE consent')), undefined, 'Delete consent using the Dr. G API (at DH arrangement endpoint)')
+                .Given('New Authorization')
+                .Precondition("ConnectivityConfig does uses Arrangement Management endpoint", async ctx => {
+                    ctx.environment.switches.UseDhArrangementEndpoint = true;
+                })
+                // Get a new consent
+                .PreTask(NewGatewayConsent, async ctx => ({
+                    cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                    sharingDuration: 86400,
+                    systemId: "sandbox",
+                    userId: "revoking-user",
+                    dataholderBrandId: (await TestData()).dataHolder.id
+                }))
+                // Call introspection endpoint and check "active:true"
+                .PreTask(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.introspectionEndpoint,
+                        data:qs.stringify(_.merge(
+                            {token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken},
+                            await CreateAssertion((await TestData()).dataHolder.introspectionEndpoint) // TODO change back to introspection endpoint
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Introspection1")
+                // Revoke the consent
+                .PreTask(SetValue, async (ctx) => {
+
+                    let consent = (await ctx.GetResult(NewGatewayConsent)).consent;
+
+                    await ctx.environment.TestServices.adrGateway.connectivity.consentManager.MarkRevoked(consent);
+
+                    await ctx.environment.TestServices.adrGateway.connectivity.PropagateRevokeConsent(consent).GetWithHealing().catch(err => {
+                        throw err;
+                    });
+
+                    let result = ctx.GetLastHttpRequest("DELETE",/.*/)
+                    return result;
+    
+                },"Revocation")
+                // Call introspection endpoint again and check "active:false"
+                .PreTask(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.introspectionEndpoint,
+                        data:qs.stringify(_.merge(
+                            {token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken},
+                            await CreateAssertion((await TestData()).dataHolder.introspectionEndpoint) // TODO change back to introspection endpoint
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Introspection2")
+                .When(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.tokenEndpoint,
+                        data:qs.stringify(_.merge(
+                            {
+                                refresh_token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken,
+                                grant_type: 'refresh_token'
+                            },
+                            await CreateAssertion((await TestData()).dataHolder.tokenEndpoint) // TODO change back to introspection endpoint
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Refresh")
+                // Attempt to get a new token and assert that this returns with 401/403
+                .Then(async ctx => {
+                    let introspection1Result = await ctx.GetResult(DoRequest,"Introspection1");
+                    expect(introspection1Result.response.status).to.equal(200);
+                    expect(introspection1Result.body.active).to.be.true
+                    let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
+
+                    expect(revocationResult.response.status).to.equal(204);
+
+                    let introspection2Result = await ctx.GetResult(DoRequest,"Introspection2")
+                    expect(introspection2Result.response.status).to.equal(200);
+                    expect(introspection2Result.body.active).to.be.false
+                    let refreshResult = await ctx.GetResult(DoRequest,"Refresh")
+                    expect(refreshResult.response.status).to.equal(400);
+                    expect(refreshResult.body.error).to.equal("invalid_grant");
+                },600)
+
         })
 
         describe('Endpoints - Token Endpoint', async () => {
@@ -351,6 +450,105 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     expect(refreshResult.body.error).to.equal("invalid_grant");
                 },600)
 
+            Scenario($ => it.apply(this,$('DELETE consent')), undefined, 'Delete consent using the Dr. G API')
+                .Given('New Authorization')
+                .Precondition("ConnectivityConfig does not use Arrangement Management endpoint", async ctx => {
+                    ctx.environment.switches.UseDhArrangementEndpoint = false;
+                })
+                // Get a new consent
+                .PreTask(NewGatewayConsent, async ctx => ({
+                    cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                    sharingDuration: 86400,
+                    systemId: "sandbox",
+                    userId: "revoking-user",
+                    dataholderBrandId: (await TestData()).dataHolder.id
+                }))
+                // Call introspection endpoint and check "active:true"
+                .PreTask(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.introspectionEndpoint,
+                        data:qs.stringify(_.merge(
+                            {token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken},
+                            await CreateAssertion((await TestData()).dataHolder.introspectionEndpoint) // TODO change back to introspection endpoint
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Introspection1")
+                // Revoke the consent
+                .PreTask(SetValue, async (ctx) => {
+
+                    let consent = (await ctx.GetResult(NewGatewayConsent)).consent;
+
+                    await ctx.environment.TestServices.adrGateway.connectivity.consentManager.MarkRevoked(consent);
+
+                    await ctx.environment.TestServices.adrGateway.connectivity.PropagateRevokeConsent(consent).GetWithHealing().catch(err => {
+                        throw err;
+                    });
+
+                    let result = ctx.GetLastHttpRequest("POST",/.*/)
+                    return result;
+    
+                },"Revocation")
+                // Call introspection endpoint again and check "active:false"
+                .PreTask(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.introspectionEndpoint,
+                        data:qs.stringify(_.merge(
+                            {token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken},
+                            await CreateAssertion((await TestData()).dataHolder.introspectionEndpoint) // TODO change back to introspection endpoint
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Introspection2")
+                .When(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.tokenEndpoint,
+                        data:qs.stringify(_.merge(
+                            {
+                                refresh_token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken,
+                                grant_type: 'refresh_token'
+                            },
+                            await CreateAssertion((await TestData()).dataHolder.tokenEndpoint) // TODO change back to introspection endpoint
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Refresh")
+                // Attempt to get a new token and assert that this returns with 401/403
+                .Then(async ctx => {
+                    let introspection1Result = await ctx.GetResult(DoRequest,"Introspection1");
+                    expect(introspection1Result.response.status).to.equal(200);
+                    expect(introspection1Result.body.active).to.be.true
+                    let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
+
+                    expect(revocationResult.response.status).to.equal(200);
+
+                    let introspection2Result = await ctx.GetResult(DoRequest,"Introspection2")
+                    expect(introspection2Result.response.status).to.equal(200);
+                    expect(introspection2Result.body.active).to.be.false
+                    let refreshResult = await ctx.GetResult(DoRequest,"Refresh")
+                    expect(refreshResult.response.status).to.equal(400);
+                    expect(refreshResult.body.error).to.equal("invalid_grant");
+                },600)
+
+
             Scenario($ => it.apply(this,$('TS_058 - Access Token')), undefined, 'Dataholder revokes access tokens')
                 .Given('New Authorization')
                 // Get a new consent
@@ -426,8 +624,183 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
         })
 
-        describe('Request Sharing Duration', async () => {
+        describe('Data Recipient Endpoints', async () => {
 
+            Scenario($ => it.apply(this,$('Revocation (legacy)')), undefined, 'Data recipient honours valid revocation request')
+                .Given('New Authorization')
+                .Precondition("DH private JWKS available", ctx => {
+                    if (!ctx.environment.Config.SystemUnderTest.DhRevokePrivateJwks) {
+                        throw "No Dh Private JWKS"
+                    }
+                })
+                // Get a new consent
+                .PreTask(NewGatewayConsent, async ctx => ({
+                    cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                    sharingDuration: 86400,
+                    systemId: "sandbox",
+                    userId: "revoking-user",
+                    dataholderBrandId: (await TestData()).dataHolder.id
+                }))
+                // Call introspection endpoint and check "active:true"
+                .PreTask(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.introspectionEndpoint,
+                        data:qs.stringify(_.merge(
+                            {token: (await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken},
+                            await CreateAssertion((await TestData()).dataHolder.introspectionEndpoint)
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"                    })
+                    return options
+                },"Introspection1")
+                // Call the DR recovaction endpoint with manually constructed request
+                .When(DoRequest, async (ctx) => {
+
+                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"revoke");
+
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url,
+                        headers: {
+                            "Authorization": "Bearer "+await CreateDhBearerAuthJwt(url)
+                        },
+                        data:qs.stringify({
+                            token:(await ctx.GetResult(NewGatewayConsent)).consent!.refreshToken
+                        }),  
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                    });
+
+                    return options;
+                },"Revocation")
+                // Expect:
+                .Then(async ctx => {
+                    let introspection1Result = await ctx.GetResult(DoRequest,"Introspection1");
+                    expect(introspection1Result.response.status).to.equal(200);
+                    expect(introspection1Result.body.active).to.be.true
+
+                    let revocationResult = await ctx.GetResult(DoRequest,"Revocation")
+                    expect(revocationResult.response.status).to.equal(200);
+
+                    const consent = (await ctx.GetResult(NewGatewayConsent)).consent!;
+                    await consent.reload()
+                    expect(consent.revokedAt).to.eq("DataHolder")
+                    expect(consent.IsCurrent()).to.be.false
+
+                },600)
+
+            Scenario($ => it.apply(this,$('Revocation (cdr_arrangement_id)')), undefined, 'Data recipient honours valid revocation request')
+                .Given('New Authorization')
+                .Precondition("DH private JWKS available", ctx => {
+                    if (!ctx.environment.Config.SystemUnderTest.DhRevokePrivateJwks) {
+                        throw "No Dh Private JWKS"
+                    }
+                })
+                // Get a new consent
+                .PreTask(NewGatewayConsent, async ctx => ({
+                    cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                    sharingDuration: 86400,
+                    systemId: "sandbox",
+                    userId: "revoking-user",
+                    dataholderBrandId: (await TestData()).dataHolder.id
+                }),"Consent1")
+                .PreTask(NewGatewayConsent, async ctx => ({
+                    cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                    sharingDuration: 86400,
+                    arrangementId: (await ctx.GetResult(NewGatewayConsent,"Consent1")).consent.arrangementId,
+                    systemId: "sandbox",
+                    userId: "revoking-user",
+                    dataholderBrandId: (await TestData()).dataHolder.id
+                }),"Consent2")
+                // Call introspection endpoint and check "active:true"
+                .PreTask(DoRequest,async ctx => {
+                    ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
+                    let options = DoRequest.Options({
+                        method: "POST",
+                        url: (await TestData()).dataHolder.introspectionEndpoint,
+                        data:qs.stringify(_.merge(
+                            {token: (await ctx.GetResult(NewGatewayConsent,"Consent2")).consent!.refreshToken},
+                            await CreateAssertion((await TestData()).dataHolder.introspectionEndpoint)
+                            )),
+                        key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
+                        cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                        passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
+                        responseType:"json"
+                    })
+                    return options
+                },"Introspection1")
+                // Call the DR recovaction endpoint with manually constructed request
+                .When(DoRequest, async (ctx) => {
+
+                    const arrangementId = (await ctx.GetResult(NewGatewayConsent,"Consent2")).consent!.arrangementId
+                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements",arrangementId);
+
+                    let options = DoRequest.Options({
+                        method: "DELETE",
+                        url,
+                        headers: {
+                            "Authorization": "Bearer "+await CreateDhBearerAuthJwt(url)
+                        },
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                    });
+
+                    return options;
+                },"Revocation")
+                // Expect:
+                .Then(async ctx => {
+                    let introspection1Result = await ctx.GetResult(DoRequest,"Introspection1");
+                    expect(introspection1Result.response.status).to.equal(200);
+                    expect(introspection1Result.body.active).to.be.true
+
+                    let revocationResult = await ctx.GetResult(DoRequest,"Revocation")
+                    expect(revocationResult.response.status).to.equal(204);
+                    
+                    const consent = (await ctx.GetResult(NewGatewayConsent)).consent!;
+                    await consent.reload()
+                    expect(consent.revokedAt).to.eq("DataHolder")
+                    expect(consent.IsCurrent()).to.be.false
+
+                },600)
+
+            Scenario($ => it.apply(this,$('Unknown cdr_arrangement_id')), undefined, 'Get 422 for unknown cdr_arrangement_id')
+                .Given('New Authorization')
+                .Precondition("DH private JWKS available", ctx => {
+                    if (!ctx.environment.Config.SystemUnderTest.DhRevokePrivateJwks) {
+                        throw "No Dh Private JWKS"
+                    }
+                })
+                .When(DoRequest, async (ctx) => {
+
+                    const arrangementId = "unknown_cdr_arrangement_id"
+                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements",arrangementId);
+
+                    let options = DoRequest.Options({
+                        method: "DELETE",
+                        url,
+                        headers: {
+                            "Authorization": "Bearer "+await CreateDhBearerAuthJwt(url)
+                        },
+                        ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
+                    });
+
+                    return options;
+                },"Revocation")
+                // Expect:
+                .Then(async ctx => {
+                    let revocationResult = await ctx.GetResult(DoRequest,"Revocation")
+                    expect(revocationResult.response.status).to.equal(422);
+
+                },600)
+
+        })
+
+        describe('Request Sharing Duration', async () => {
+    
             Scenario($ => it.apply(this,$('TS_043')), undefined, 'The DR MUST provide a mechanism for specifying the sharing_duration to the DH.')
                 .Given('Cold start')
                 .When(SetValue,async (ctx) => (await ctx.GetTestContext(SecurityProfileSymbols.Context.MainAuthorizationFlow).GetResult(NewGatewayConsent)).consent,"consent")
