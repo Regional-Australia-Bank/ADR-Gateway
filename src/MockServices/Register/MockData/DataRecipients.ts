@@ -21,7 +21,7 @@ const OriginalDataRecipients = [
                             "client_description": "A mock software product for testing SSA",
                             "client_uri": "https://regaustbank.io",
                             "redirect_uris": [
-                                "https://regaustbank.io",
+                                "https://raw.githubusercontent.com/Regional-Australia-Bank/ADR-Gateway/master/examples/redirect-uri.html",
                                 "https://regaustbank.io/redirect2"
                             ],
                             "tos_uri": "https://regaustbank.io/tos.html",

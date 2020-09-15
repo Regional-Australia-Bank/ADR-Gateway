@@ -6,12 +6,12 @@ export class MigrationLogMigration extends Migration {
   GetId = () => "2_MigrationLog";
   IsApplied = async (db: Connection) => {
     const connection = db;
-    try {
-      await connection.createQueryRunner().getTable(`${db.options.entityPrefix || ""}MigrationLog`);
-    } catch {
-      return false;
+    const allTables = await connection.createQueryRunner().getTables([connection.options.entityPrefix+"MigrationLog"]);
+    if (allTables.length == 1) {
+      return true
+    } else {
+      return false
     }
-    return true;
   }
 
   Perform = async (db: Connection) => {

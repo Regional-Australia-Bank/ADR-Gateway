@@ -9,12 +9,12 @@ import _ from "lodash"
 export class InitMigration extends Migration {
   GetId = () => "1_Init";
   IsApplied = async (connection:Connection) => {
-    try {
-      await connection.manager.count(ConsentRequestLog)
-    } catch {
-      return false;
+    const allTables = await connection.createQueryRunner().getTables([connection.options.entityPrefix+"consent_request_log"]);
+    if (allTables.length == 1) {
+      return true
+    } else {
+      return false
     }
-    return true;
   }
 
   Perform = async (connection: Connection) => {

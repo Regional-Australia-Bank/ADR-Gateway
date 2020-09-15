@@ -6,13 +6,17 @@ import moment from "moment";
 export class AddArrangementIdMigration extends Migration {
   GetId = () => "3_AddArrangementIdMigration";
   IsApplied = async (connection: Connection) => {
-    try {
-      const applicationCount = await connection.createQueryBuilder().from(`${connection.options.entityPrefix || ""}MigrationLog`,"ml").where({id:"3_AddArrangementIdMigration"}).getCount()
-      if (applicationCount !== 1) throw "No matching log entry"
-    } catch {
-      return false;
+    const tableName = `${connection.options.entityPrefix || ""}MigrationLog`;
+
+    const results = await connection
+      .createQueryRunner()
+      .query(`SELECT performed FROM ${connection.driver.escape(tableName)} where id = ${connection.driver.escape(this.GetId())}`)
+
+    if (results.length !== 1) {
+      return false
+    } else {
+      return true
     }
-    return true;
   }
 
   Perform = async (connection:Connection) => {

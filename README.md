@@ -17,7 +17,7 @@ npm run start:docker
 
 ## PM2
 
-You must have Node 14. This method is not recommended except for the most basic verifications, because the component services do not share the same database. This may lead to strange behaviours.
+You must have Node 14. This s historically not considered as robust as the Docker example, which is much closer to a production deployment.
 
 ```
 npm i 

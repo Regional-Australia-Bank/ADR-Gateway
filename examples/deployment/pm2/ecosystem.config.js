@@ -4,7 +4,8 @@ const env = {
   /** Common config */
   NODE_ENV: 'development',
   MOCK_TLS_PKI:"1",
-  
+  ADR_DATABASE_OPTIONS: '{"database":"examples/deployment/pm2/adr.sqlite"}',
+  DH_DATABASE_OPTIONS: '{"database":"examples/deployment/pm2/mock-dh.sqlite"}',
   // HTTP_PROXY: 'http://...',
   // HTTPS_PROXY: 'http://...',
   // NO_PROXY: "localhost",
@@ -75,6 +76,15 @@ module.exports = {
   apps : [{
     name: 'AdrJwks',
     script: 'dist/AdrJwks/start.js',
+    autorestart: false,
+    watch: false,
+    max_memory_restart: '1G',
+    env,
+    env_production
+  },
+  {
+    name: 'AdrDbMigrate',
+    script: 'dist/Common/Entities/Migrations/Migrate.js',
     autorestart: false,
     watch: false,
     max_memory_restart: '1G',

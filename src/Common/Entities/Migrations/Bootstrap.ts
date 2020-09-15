@@ -31,11 +31,11 @@ export const LatestEntityDefaults = {
   entities: [ConsentRequestLog, DataHolderRegistration, JtiLog]
 };
 
-// delete previous temporary dbs
-rimraf.sync("tmp.*.sqlite")
-const tempFileName = "tmp."+moment().unix()+".sqlite"
-
 export const BootstrapTempDb = async () => {
+  // delete previous temporary dbs
+  rimraf.sync("tmp.*.sqlite")
+  const tempFileName = "tmp."+moment().unix()+".sqlite"
+
   const initConnection = await createConnection(_.merge(<any>{},Version1EntityDefaults,{database:tempFileName}));
   await doMigrations(initConnection)
   await initConnection.close()

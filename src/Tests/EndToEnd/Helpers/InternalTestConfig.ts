@@ -147,7 +147,7 @@ export class InternalTestConfig {
                     let softwareProductConfig:MockSoftwareProductConfig = {
                         Port: await getPort(),
                         ProductId: TestDataRecipientApplication.ProductId,
-                        redirect_uris: ["https://regaustbank.io","https://regaustbank.io/redirect2"],
+                        redirect_uris: ["https://raw.githubusercontent.com/Regional-Australia-Bank/ADR-Gateway/master/examples/redirect-uri.html","https://regaustbank.io/redirect2"],
                         standardsVersion: 1,
                         standardsVersionMinimum: 1,
                         uris: {
