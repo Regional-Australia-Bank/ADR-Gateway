@@ -37,6 +37,7 @@ import { EcosystemMetadata } from "./Helpers/EcosystemMetadata";
 import { TokenRevocationMiddleware } from "./Handlers/TokenRevocation";
 import { DhGatewayRequest } from "./Types";
 import urljoin from "url-join";
+import { PushedAuthorizationRequestMiddleware } from "./Handlers/PushedAuthorizationRequest";
 
 @injectable()
 class DhServer {
@@ -80,6 +81,7 @@ class DhServer {
             container.resolve(MTLSVerificationMiddleware).handle,
             container.resolve(ClientAccessTokenMiddleware).handler()
         );
+
         app.post("/idp/token/introspect",
             container.resolve(MTLSVerificationMiddleware).handle,
             container.resolve(TokenIntrospectionMiddleware).handler()
@@ -90,6 +92,11 @@ class DhServer {
             container.resolve(TokenRevocationMiddleware).handler()
         );
 
+        app.post("/par",
+            container.resolve(MTLSVerificationMiddleware).handle,
+            container.resolve(PushedAuthorizationRequestMiddleware).handler()
+        );
+        
         app.get("/authorize", container.resolve(AuthorizeMiddleware).handler({isPost:false})); // GET, POST
         app.post("/authorize", container.resolve(AuthorizeMiddleware).handler({isPost:true})); // GET, POST
         app.patch('/authorize',container.resolve(GrantConsentMiddleware).handler())

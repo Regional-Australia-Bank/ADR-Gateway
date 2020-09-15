@@ -267,7 +267,7 @@ GetAuthorizationRequest:
     # than 1 hour. This requirement is honourd by the cache expiry on the DataHolderBrandMetadata Dependency below
     - DataHolderBrandMetadata
   output: "{redirectUrl: string, consentId: number, softwareProductId: string}"
-  evaluator: util.GetAuthorizationRequest.bind(undefined,this.consentManager)
+  evaluator: util.GetAuthorizationRequest.bind(undefined,factory.cert,factory.consentManager)
   cache: {noCache: true}
 
 FetchTokens:
@@ -425,5 +425,5 @@ PropagateRevokeConsent:
     - DataHolderOidc
     - CheckAndUpdateClientRegistration
   output: Types.ConsentRequestLog
-  evaluator: util.PropagateRevokedConsent.bind(undefined,this.cert)
+  evaluator: util.PropagateRevokedConsent.bind(undefined,factory.cert)
   cache: {noCache: true}

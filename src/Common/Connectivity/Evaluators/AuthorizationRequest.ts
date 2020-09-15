@@ -4,6 +4,7 @@ import uuid = require("uuid")
 import _ from "lodash"
 import { ConsentRequestLogManager } from "../../Entities/ConsentRequestLog";
 import { getAuthPostGetRequestUrl } from "../../../AdrGateway/Server/Helpers/HybridAuthJWS";
+import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
 
 export interface ConsentRequestParams {
   sharingDuration: number,
@@ -17,7 +18,7 @@ export interface ConsentRequestParams {
   additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
 }
 
-export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogManager,$:{
+export const GetAuthorizationRequest = async (cert:ClientCertificateInjector,consentManager:ConsentRequestLogManager,$:{
   ConsentRequestParams: ConsentRequestParams,
   DataHolderOidc: Types.DataholderOidcResponse,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
@@ -45,8 +46,8 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
 
   let redirectUri = $.SoftwareProductConfig.redirect_uris[0];
 
-  // sign with JWT
-  let authUrl = getAuthPostGetRequestUrl({
+  // Get a request URL
+  let authUrl = await getAuthPostGetRequestUrl(cert,{
       clientId: $.CheckAndUpdateClientRegistration.clientId,
       callbackUrl: redirectUri,
       sharingDuration: p.sharingDuration || 0,

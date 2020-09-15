@@ -15,6 +15,7 @@ import { EcosystemMetadata } from "../Helpers/EcosystemMetadata";
 import urljoin from "url-join"
 import { DhServerConfig } from "../Config";
 import { SendOAuthError } from "../Helpers/OAuthFlowError";
+import { GetStagedRequestById } from "./PushedAuthorizationRequest";
 
 function Authorize(params: Dictionary<string>) {
     // pluck
@@ -81,7 +82,7 @@ class AuthorizeMiddleware {
         let validationErrorMiddleware = (req:express.Request,res:express.Response,next: NextFunction) => {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+                return res.status(400).json({ errors: errors.array() });
             }
             next();
         }
@@ -94,7 +95,8 @@ class AuthorizeMiddleware {
                 redirect_uri: string,
                 state: string,
                 nonce: string,
-                request:string
+                request?:string,
+                request_uri?:string
             } = <any>matchedData(req);
 
             let sharingDuration = 0
@@ -104,7 +106,17 @@ class AuthorizeMiddleware {
 
             try {
                 let signingKeys = await (await this.ecosystemMetadata.getDataRecipient(m.client_id)).getJwks();
-                let signed = <any>JWS.verify(m.request,signingKeys);
+
+                let signed:any;
+                
+                if (typeof m.request == "string") {
+                    signed = <any>JWS.verify(m.request,signingKeys);
+                } else if (typeof m.request_uri == "string") {
+                    signed = GetStagedRequestById(m.request_uri)
+                } else {
+                    throw "no valid request or request_uri supplied"
+                }
+
                 if (typeof signed != 'object') throw 'Signed is not an object';
 
                 // TODO validate that the auth_token parameters match the request parameters
@@ -181,8 +193,8 @@ class AuthorizeMiddleware {
             par('prompt').isString().optional(),
             par('max_age').isInt().optional().toInt(),
             par(['ui_locales','id_token_hint','login_hint','acr_values']).optional(),
-            par('request').isString(), // contains the signed authorization request
-            par('request_uri').not().exists().withMessage('the request_uri is not supported'),
+            par('request').isString().optional(), // contains the signed authorization request
+            par('request_uri').isString().optional(),
 
             // TODO Implememen the full suite of validation (i.e. to validate the JWT signature)
 
