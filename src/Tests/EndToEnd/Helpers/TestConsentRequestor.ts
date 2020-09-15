@@ -118,7 +118,8 @@ class TestConsentRequestor {
     }
 
     GetNewConsentRequestUrlAndId = async (params: {
-        dataholderBrandId: string
+        dataholderBrandId: string,
+        arrangementId?: string,
         cdrScopes: string[],
         userId: string,
         systemId: string,
@@ -132,9 +133,10 @@ class TestConsentRequestor {
             url: `${config.adrGateway.path}/cdr/consents`,
             responseType:"json",
             data: {
-                userId: params.userId,
                 productKey: "sandbox",
+                userId: params.userId,
                 systemId: params.systemId,
+                existingArrangementId: params.arrangementId,
                 scopes: params.cdrScopes,
                 sharingDuration: params.sharingDuration,
                 state: `${params.systemId}:${params.userId}`,
@@ -145,26 +147,6 @@ class TestConsentRequestor {
         }));
 
         return <{redirectUrl:string,consentId:number}>res.data;
-    }
-
-    GetTestingNewConsentRequestUrl = async (params: {
-        dataholderBrandId: string
-        cdrScopes: string[],
-        userId: string,
-        systemId: string,
-        sharingDuration: number
-    }):Promise<string> => {
-        return await getAuthPostGetRequestUrl({
-            clientId: await (await this.testContext.TestData()).dataRecipient.clientId(),
-            callbackUrl: await (await this.testContext.TestData()).dataRecipient.authCallbackUri(),
-            sharingDuration: params.sharingDuration || 0,
-            authorizeEndpointUrl: (await this.testContext.TestData()).dataHolder.authorizeEndpoint,
-            scopes: params.cdrScopes,
-            adrSigningJwk: (await (await this.testContext.TestData()).dataRecipient.jwks()).get({use:'sig'}),
-            nonce: uuid.v4(),
-            state: params.systemId+":"+params.userId,
-            issuer: (await this.testContext.TestData()).dataHolder.issuer
-        });
     }
 
     GetNewConsent = async (params: NewConsentParams):Promise<{

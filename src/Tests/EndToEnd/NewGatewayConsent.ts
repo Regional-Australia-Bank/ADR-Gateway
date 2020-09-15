@@ -18,6 +18,7 @@ export interface NewConsentParams {
     cdrScopes: string[],
     userId: string,
     systemId: string,
+    arrangementId?: string,
     sharingDuration: number,
     additionalClaims?: AdrGatewayConfig["DefaultClaims"]
     urlFilter?: (u:string) => string

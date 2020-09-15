@@ -75,7 +75,7 @@ const getAuthPostGetRequestUrl = (req: AuthSignatureRequest) => {
 
     // add the existing arrangement ID if supplied
     if (req.existingArrangementId) {
-      (<any>claimsPart).cdr_arrangement_id = req.existingArrangementId
+      (<any>claimsPart).claims.cdr_arrangement_id = req.existingArrangementId
     }
 
     let payload = _.merge(queryParams,claimsPart);

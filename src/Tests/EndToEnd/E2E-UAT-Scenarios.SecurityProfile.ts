@@ -178,7 +178,50 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
 
                 },240)
-                .Keep(SecurityProfileSymbols.Context.MainAuthorizationFlow)         
+                .Keep(SecurityProfileSymbols.Context.MainAuthorizationFlow)     
+        })
+
+        describe('Arrangement management', async () => {    
+            Scenario($ => it.apply(this,$('Update arrangement')), undefined, 'The cdr_arrangement_id provided in the request object for the first consent must be played back at the token endpoint for the following consent')
+                .Given('Cold start')
+                // TODO change to NewGatewayConsent
+                .PreTask(NewGatewayConsent,async (ctx) => {
+
+                    let params = {
+                        cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                        sharingDuration: 86400,
+                        systemId: "sandbox",
+                        userId: "arrangement-tester",
+
+                        dataholderBrandId: (await TestData()).dataHolder.id
+                    }            
+                    
+                    return params;
+                },"firstConsent")
+                .PreTask(SetValue,async ctx => {
+                    let consentResult  = (await (ctx.GetResult(NewGatewayConsent,"firstConsent")));
+                    return consentResult.consent.arrangementId
+                },"original_cdr_arrangement_id")
+                .When(NewGatewayConsent,async (ctx) => {
+
+                    let params = {
+                        cdrScopes: ["bank:accounts.basic:read","bank:transactions:read"],
+                        sharingDuration: 86400,
+                        systemId: "sandbox",
+                        userId: "arrangement-tester",
+                        arrangementId: await ctx.GetValue("original_cdr_arrangement_id"),
+                        dataholderBrandId: (await TestData()).dataHolder.id
+                    }            
+                    
+                    return params;
+                },"secondConsent")
+                .Then(async ctx => {
+                    let firstConsentResult = (await (ctx.GetResult(NewGatewayConsent,"firstConsent")));
+                    let secondConsentResult = (await (ctx.GetResult(NewGatewayConsent,"secondConsent")));
+                    expect(firstConsentResult.consent.arrangementId).to.be.a("string").and.not.be.empty;
+                    expect(firstConsentResult.consent.arrangementId).to.eq(secondConsentResult.consent.arrangementId)
+
+                },240)
 
         })
 
@@ -192,7 +235,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     expect(consent.accessToken).to.be.a('string').and.lengthOf.at.least(5);
                 },120)
 
-            Scenario($ => it.apply(this,$('Arrangment Id')), undefined, 'The Token Endpoint returns an arrangement id')
+            Scenario($ => it.apply(this,$('Arrangement ID')), undefined, 'The Token Endpoint returns an arrangement id')
                 .Given('New Authorization')
                 .When()
                 .Then(async ctx => {
