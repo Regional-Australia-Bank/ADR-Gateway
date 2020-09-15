@@ -190,7 +190,18 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let consent = (await (ctx.GetTestContext(SecurityProfileSymbols.Context.MainAuthorizationFlow).GetResult(NewGatewayConsent))).consent;
                     if (typeof consent == 'undefined') throw 'Consent is undefined'
                     expect(consent.accessToken).to.be.a('string').and.lengthOf.at.least(5);
-                },120)  
+                },120)
+
+            Scenario($ => it.apply(this,$('Arrangment Id')), undefined, 'The Token Endpoint returns an arrangement id')
+                .Given('New Authorization')
+                .When()
+                .Then(async ctx => {
+                    let consent = (await (ctx.GetTestContext(SecurityProfileSymbols.Context.MainAuthorizationFlow).GetResult(NewGatewayConsent))).consent;
+                    if (typeof consent == 'undefined') throw 'Consent is undefined'
+                    expect(consent.arrangementId).to.be.a('string').and.lengthOf.at.least(5);
+                },120)
+
+
         })
 
 

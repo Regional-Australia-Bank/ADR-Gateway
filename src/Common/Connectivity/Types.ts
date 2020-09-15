@@ -57,6 +57,7 @@ export type UserInfoResponse = object & {refresh_token_expires_at:number,sharing
 export interface TokenResponse {
   "access_token":string,
   "token_type":string,
+  "cdr_arrangement_id"?:string,
   "expires_in":number
   "refresh_token"?:string
   "scope"?:string,
