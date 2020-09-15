@@ -50,6 +50,7 @@ export interface AdrConnectivityConfig {
       SecureResource: string
   },
   SoftwareProductConfigUris: Dictionary<string>,
+  UsePushedAuthorizationRequest: Boolean,
   Crypto?: {
       IDTokenSignedResponseAlg?: string
       PreferredAlgorithms?: {
@@ -95,6 +96,7 @@ export const ConnectivityConvictOptions = () => {
           default: undefined,
           env: 'ADR_DEFAULT_CLAIMS'
       },
+      UsePushedAuthorizationRequest: {env: 'ADR_USE_PAR', format:'Boolean', default: true},
       LegalEntityId: {env: 'ADR_LEGAL_ENTITY_ID', format:'String', default: TestDataRecipientApplication.LegalEntityId},
       BrandId: {env: 'ADR_BRAND_ID', format:'String', default: TestDataRecipientApplication.BrandId},
       SoftwareProductConfigUris: {

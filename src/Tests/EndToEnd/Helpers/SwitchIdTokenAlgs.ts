@@ -40,6 +40,7 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
             BrandId: origConfig.BrandId,
             LegalEntityId: origConfig.LegalEntityId,
             SoftwareProductConfigUris: origConfig.SoftwareProductConfigUris,
+            UsePushedAuthorizationRequest: origConfig.UsePushedAuthorizationRequest,
             RegisterBaseUris: origConfig.RegisterBaseUris,
             Jwks: origConfig.Jwks,
             mtls: origConfig.mtls,

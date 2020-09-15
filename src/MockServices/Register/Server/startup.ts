@@ -28,7 +28,7 @@ export namespace MockRegisterServerStartup {
             const config = await configFn();
 
             // A stub configuration to enable the Mock Register to connect to a live register
-            let adrConnectivityConfig:AdrConnectivityConfig = config.LiveRegisterProxy
+            let adrConnectivityConfig:AdrConnectivityConfig = <any>config.LiveRegisterProxy
             return adrConnectivityConfig
         }
         let logger = <winston.Logger>winston.createLogger({

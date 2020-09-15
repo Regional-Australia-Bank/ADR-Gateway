@@ -474,6 +474,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                             LegalEntityId: origConfig.LegalEntityId,
                             SoftwareProductConfigUris: origConfig.SoftwareProductConfigUris,
                             DefaultClaims: origConfig.DefaultClaims,
+                            UsePushedAuthorizationRequest: origConfig.UsePushedAuthorizationRequest,
                             Database: origConfig.Database,                            
                             RegisterBaseUris: origConfig.RegisterBaseUris,
                             Jwks: origConfig.Jwks,

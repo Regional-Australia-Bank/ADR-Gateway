@@ -26,6 +26,7 @@ const TestAdrConnectivityConfig = async (env:E2ETestEnvironment):Promise<AdrConn
     Jwks: `http://localhost:${env.TestServices.adrJwks.port}/private.jwks`,
     LegalEntityId: TestDataRecipientApplication.LegalEntityId,
     BrandId: TestDataRecipientApplication.BrandId,
+    UsePushedAuthorizationRequest: false, // This way we cover PAR and non-PAR scenarios
     RegisterBaseUris: {
         Oidc: env.SystemUnderTest.Register().DiscoveryUri,
         Resource: env.SystemUnderTest.Register().PublicUri,
