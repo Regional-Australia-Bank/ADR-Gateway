@@ -15,6 +15,7 @@ interface BaseJwt {
 interface AuthSignatureRequest {
     adrSigningJwk: JWK.Key,
     clientId: string,
+    existingArrangementId?: string,
     callbackUrl: string,
     scopes: string[],
     additionalClaims?: {
@@ -57,11 +58,13 @@ const getAuthPostGetRequestUrl = (req: AuthSignatureRequest) => {
           "sharing_duration": req.sharingDuration, 
           "userinfo": {
             "acr": acrSpec,
-            "refresh_token_expires_at": {"essential": true}
+            "refresh_token_expires_at": {"essential": true},
+            "cdr_arrangement_id": {"essential": true}
           },
           "id_token": {
             "acr": acrSpec,
-            "refresh_token_expires_at": {"essential": true}
+            "refresh_token_expires_at": {"essential": true},
+            "cdr_arrangement_id": {"essential": true}
           }
         }
       };
@@ -69,6 +72,11 @@ const getAuthPostGetRequestUrl = (req: AuthSignatureRequest) => {
     // merge in once-off additional claims
     _.merge(claimsPart.claims.userinfo,req.additionalClaims?.userinfo)
     _.merge(claimsPart.claims.id_token,req.additionalClaims?.id_token)
+
+    // add the existing arrangement ID if supplied
+    if (req.existingArrangementId) {
+      (<any>claimsPart).cdr_arrangement_id = req.existingArrangementId
+    }
 
     let payload = _.merge(queryParams,claimsPart);
 

@@ -92,6 +92,7 @@ class TokenIssuer {
         return {
             access_token: consent.accessToken,
             refresh_token: consent.refreshToken,
+            cdr_arrangement_id: consent.cdr_arrangement_id,
             id_token: encrypted_id_token,
             expires_in: this.issuer.accessTokenExpirySeconds, // TODO clarify expires_in time ilmit
             scopes: consent.scopesArray().join(" ")
@@ -119,7 +120,8 @@ class TokenIssuer {
             acr: "urn:cds.au:cdr:3", // TODO clarify levels and determine the appropriate response: https://consumerdatastandardsaustralia.github.io/standards/#levels-of-assurance-loas
             at_hash: oidc_fapi_hash(<string>params.consent.accessToken),
             refresh_token_expires_at: params.consent.refreshTokenExpiresNumericDate(),
-            sharing_expires_at: params.consent.SharingExpiresNumericDate()
+            sharing_expires_at: params.consent.SharingExpiresNumericDate(),
+            cdr_arrangement_id: params.consent.cdr_arrangement_id
         }
 
         if (includePIClaims) {

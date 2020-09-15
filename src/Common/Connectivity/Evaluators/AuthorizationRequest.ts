@@ -7,6 +7,7 @@ import { getAuthPostGetRequestUrl } from "../../../AdrGateway/Server/Helpers/Hyb
 
 export interface ConsentRequestParams {
   sharingDuration: number,
+  existingArrangementId?: string,
   state: string,
   systemId: string,
   userId: string,
@@ -49,6 +50,7 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
       clientId: $.CheckAndUpdateClientRegistration.clientId,
       callbackUrl: redirectUri,
       sharingDuration: p.sharingDuration || 0,
+      existingArrangementId: p.existingArrangementId,
       issuer: $.DataHolderOidc.issuer,
       authorizeEndpointUrl: $.DataHolderOidc.authorization_endpoint,
       scopes: requestedScopes,
@@ -67,6 +69,7 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
       productKey: p.productKey,
       softwareProductId: $.SoftwareProductConfig.ProductId,
       requestedSharingDuration: p.sharingDuration || 0,
+      arrangementId: p.existingArrangementId,
       nonce: stateParams.nonce,
       state: stateParams.state,
       scopes: requestedScopes,

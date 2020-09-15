@@ -191,7 +191,7 @@ class ConsentRequestLog extends BaseEntity {
 
 }
 
-type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]};
+type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]} & {arrangementId?:string};
 type FindConsentParams = Partial<Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'id'|'redirectUri'>>;
 
 @injectable()
@@ -223,6 +223,7 @@ class ConsentRequestLogManager {
         j.requestedScopesJson = JSON.stringify(req.scopes)
         j.redirectUri = req.redirectUri
         j.requestedSharingDuration = req.requestedSharingDuration
+        j.arrangementId = req.arrangementId
 
         let inserted = await ((await this.connection)).manager.save(j);
         return inserted;

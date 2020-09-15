@@ -71,7 +71,8 @@ export class TokenIntrospectionMiddleware {
                 Consent.AssertValidAndCurrent(consent)
                 let responseBody = {
                     active: true,
-                    exp: consent!.refreshTokenExpiresNumericDate()
+                    exp: consent!.refreshTokenExpiresNumericDate(),
+                    cdr_arrangement_id: consent!.cdr_arrangement_id
                 }
                 return res.json(responseBody)
             } catch (e) {

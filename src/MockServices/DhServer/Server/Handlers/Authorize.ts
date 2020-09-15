@@ -98,6 +98,7 @@ class AuthorizeMiddleware {
             } = <any>matchedData(req);
 
             let sharingDuration = 0
+            let existingArrangementId: string | undefined = undefined;
 
             const Simulated = req.header("x-simulate") && true
 
@@ -115,6 +116,14 @@ class AuthorizeMiddleware {
                     // TODO limit sharingDuration to one year in seconds
                     // TODO return appropriate status code (not 500)
                 }
+
+                if (signed.claims && signed.claims.cdr_arrangement_id) {
+                    if (typeof signed.claims.cdr_arrangement_id !== 'string') throw 'sharing_duration is not a string'
+                    existingArrangementId = signed.claims.cdr_arrangement_id;
+                    // TODO limit sharingDuration to one year in seconds
+                    // TODO return appropriate status code (not 500)
+                }
+
 
             } catch (err) {
                 this.logger.warn("Authorize request not valid. ",err);
@@ -136,6 +145,7 @@ class AuthorizeMiddleware {
                     state:m.state,
                     nonce: m.nonce,
                     sharingDurationSeconds: sharingDuration,
+                    existingArrangementId,
                     redirect_uri:<string>m.redirect_uri
                 })
     
