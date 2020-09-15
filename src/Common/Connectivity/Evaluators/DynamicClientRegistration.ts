@@ -13,6 +13,7 @@ import { CreateAssertion } from "../../Connectivity/Assertions";
 export interface DataholderRegistrationResponse {
   client_id: string,
   software_id: string,
+  recipient_base_uri: string,
   client_id_issued_at?: number,
   redirect_uris:string[]
   scope:string,
@@ -75,9 +76,10 @@ export const DhRegistrationMatchesExpectation = (registration:DataholderRegistra
       policy_uri?: string
       jwks_uri?: string
       revocation_uri?: string
+      recipient_base_uri?:string
   } = JWT.decode($.SoftwareStatementAssertion)
 
-  const stringPropertieKeys = ['org_name','client_name','client_description','client_uri','logo_uri','tos_uri','policy_uri','jwks_uri','revocation_uri']
+  const stringPropertieKeys = ['org_name','client_name','client_description','client_uri','logo_uri','tos_uri','policy_uri','jwks_uri','revocation_uri','recipient_base_uri']
 
   // Check that data holders have the most recent metadata from the register about us
 
