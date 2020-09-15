@@ -45,6 +45,7 @@ interface DataholderTestingSpec {
     jwksEndpoint: string,
     tokenEndpoint: string,
     introspectionEndpoint: string
+    parEndpoint: string
     revocationEndpoint: string,
     userInfoEndpoint: string,
     authorizeEndpoint: string
@@ -130,6 +131,7 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
             oidcEndpoint: dhBrandMeta.endpointDetail.infosecBaseUri,
             authorizeEndpoint: dhOidc.authorization_endpoint,
             introspectionEndpoint: dhOidc.introspection_endpoint,
+            parEndpoint: dhOidc.pushed_authorization_request_endpoint,
             issuer: dhOidc.issuer,
             jwksEndpoint: dhOidc.jwks_uri,
             resourceEndpoint: dhBrandMeta.endpointDetail.resourceBaseUri,

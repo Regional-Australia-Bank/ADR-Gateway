@@ -58,7 +58,7 @@ export const GetAuthorizationRequest = async (consentManager:ConsentRequestLogMa
       nonce: stateParams.nonce,
       state: stateParams.state,
       additionalClaims
-  });
+  },$);
 
   // log to the DB
   let logManager = consentManager;

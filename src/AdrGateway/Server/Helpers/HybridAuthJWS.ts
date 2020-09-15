@@ -1,16 +1,9 @@
-import { JWKS, JWT, JWK } from "jose";
+import { JWT, JWK } from "jose";
 import _ from "lodash"
 import { Dictionary } from "../../../Common/Server/Types";
 import { URL } from "url";
-
-interface BaseJwt {
-    iss: string;
-    sub: string;
-    aud: string;
-    exp: Date
-    jti: string;
-    iat: Date
-}
+import * as Types from "../../../Common/Connectivity/Types"
+import { ConsentRequestParams } from "../../../Common/Connectivity/Types";
 
 interface AuthSignatureRequest {
     adrSigningJwk: JWK.Key,
@@ -29,7 +22,15 @@ interface AuthSignatureRequest {
     issuer: string
 }
 
-const getAuthPostGetRequestUrl = (req: AuthSignatureRequest) => {
+export const getAuthPostGetRequestUrl = (req: AuthSignatureRequest, $:{
+  ConsentRequestParams: ConsentRequestParams,
+  DataHolderOidc: Types.DataholderOidcResponse,
+  CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
+  AdrConnectivityConfig: Types.AdrConnectivityConfig,
+  SoftwareProductConfig: Types.SoftwareProductConnectivityConfig,
+  DataRecipientJwks: Types.JWKS.KeyStore,
+  DataHolderBrandMetadata: Types.DataHolderRegisterMetadata
+}) => {
 
     let url = new URL(req.authorizeEndpointUrl);
 
@@ -96,10 +97,22 @@ const getAuthPostGetRequestUrl = (req: AuthSignatureRequest) => {
       signingOptions
     )
 
-    url.searchParams.append('request',signature);
+    let usePar:boolean = false;
+    if ($.DataHolderOidc.pushed_authorization_request_endpoint) {
+      if ($.AdrConnectivityConfig.UsePushedAuthorizationRequest || req.existingArrangementId) {
+        usePar = true;
+      }
+    }
+
+    if (usePar) {
+      // request_uri from MTLS at PAR
+      // url.searchParams.append('request_uri',request_uri);
+      // TODO change
+      url.searchParams.append('request',signature);
+    } else {
+      url.searchParams.append('request',signature);
+    }
 
     return url.toString();
 
 }
-
-export {getAuthPostGetRequestUrl}

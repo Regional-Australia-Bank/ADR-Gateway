@@ -1,8 +1,6 @@
 import { ConsentRequestLog, ConsentRequestLogManager } from "../../../Common/Entities/ConsentRequestLog";
 
 import { TestContext } from "../Framework/TestContext";
-import { getAuthPostGetRequestUrl } from "../../../AdrGateway/Server/Helpers/HybridAuthJWS";
-import uuid from "uuid";
 import moment from "moment";
 import { ConsentConfirmer, OAuthHybridFlowResult } from "./ConsentConfirmer";
 import { axios } from "../../../Common/Axios/axios";
