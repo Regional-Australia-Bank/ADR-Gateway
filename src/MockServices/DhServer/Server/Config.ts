@@ -108,7 +108,7 @@ export const GetConfig = async (configFile?:string):Promise<DhServerConfig> => {
         oidcConfiguration: {
             "authorization_endpoint": {env: 'DH_OIDC_AUTHORIZATION_ENDPOINT', default: 'https://localhost:10201/authorize',format:'url', doc: 'Where the authorization_endpoint is served to the ecosystem'},
             "pushed_authorization_request_endpoint": {env: 'DH_OIDC_PAR_ENDPOINT', default: 'https://localhost:10202/par',format:'url', doc: 'Where the pushed_authorization_request_endpoint is served to the ecosystem'},
-            "cdr_arrangement_endpoint": {env: 'DH_OIDC_ARRANGEMENT_ENDPOINT', default: 'https://localhost:10202/idp/arrangement',format:'url', doc: 'Where the cdr_arrangement_endpoint is served to the ecosystem'},
+            "cdr_arrangement_revocation_endpoint": {env: 'DH_OIDC_ARRANGEMENT_ENDPOINT', default: 'https://localhost:10202/idp/arrangement',format:'url', doc: 'Where the cdr_arrangement_revocation_endpoint is served to the ecosystem'},
             "token_endpoint": {env: 'DH_OIDC_TOKEN_ENDPOINT', default: 'https://localhost:10202/idp/token',format:'url', doc: 'Where the token_endpoint is served to the ecosystem'},
             "introspection_endpoint": {env: 'DH_OIDC_INTROSPECTION_ENDPOINT', default: 'https://localhost:10202/idp/token/introspect',format:'url', doc: 'Where the introspection_endpoint is served to the ecosystem'},
             "revocation_endpoint": {env: 'DH_OIDC_REVOKE_ENDPOINT', default: 'https://localhost:10202/idp/token/revoke',format:'url', doc: 'Where the revocation_endpoint is served to the ecosystem'},
@@ -165,7 +165,7 @@ let DefaultOIDCConfiguration: (cfg: DhServerConfig) => OIDCConfiguration = (cfg:
         "authorization_endpoint": urljoin(cfg.AuthorizeUrl, "authorize"),       
         "token_endpoint": urljoin(cfg.FrontEndMtlsUrl, "idp/token"),
         "introspection_endpoint": urljoin(cfg.FrontEndMtlsUrl, "idp/token/introspect"),
-        "cdr_arrangement_endpoint": urljoin(cfg.FrontEndMtlsUrl, "idp/arrangement"),
+        "cdr_arrangement_revocation_endpoint": urljoin(cfg.FrontEndMtlsUrl, "idp/arrangement"),
         "pushed_authorization_request_endpoint": urljoin(cfg.FrontEndMtlsUrl, "par"),
         "revocation_endpoint": urljoin(cfg.FrontEndMtlsUrl, "idp/token/revoke"),
         "userinfo_endpoint": urljoin(cfg.FrontEndMtlsUrl, "userinfo"),

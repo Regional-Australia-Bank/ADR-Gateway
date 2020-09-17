@@ -2,19 +2,15 @@ import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
 
-import { validationResult, matchedData, check, body, param} from 'express-validator'
+import { validationResult, matchedData, body, param} from 'express-validator'
 import { inject, injectable } from "tsyringe";
 import winston from "winston";
-import { JWT, JWKS, JSONWebKeySet } from "jose";
+import { JWT, JWKS } from "jose";
 import bodyParser from "body-parser";
 import { ClientRegistrationManager } from "../../Entities/ClientRegistration";
-import moment from "moment";
-import { OIDCConfiguration, DhServerConfig } from "../Config";
-import { ConsentManager, Consent } from "../../Entities/Consent";
-import { TokenIssuer } from "../Helpers/TokenIssuer";
+import { ConsentManager } from "../../Entities/Consent";
 import { axios } from "../../../../Common/Axios/axios";
 import { ClientCertificateInjector } from "../../../../Common/Services/ClientCertificateInjection";
-import { ExtractBearerToken } from "../../../../Common/Server/Middleware/TokenVerification";
 
 @injectable()
 export class DeleteArrangementMiddleware {
@@ -46,14 +42,6 @@ export class DeleteArrangementMiddleware {
                 client_id: string
             } = <any>matchedData(req)
 
-            let accessToken:string;
-            let realm = "mock-dh";
-            try {
-                accessToken = ExtractBearerToken(req);
-            } catch {
-                return res.status(400).header('WWW-Authenticate',`Bearer realm="${realm}", error="invalid_request"`).json({error:"Bearer token not supplied"})
-            }
-
             // TODO move this client credntial check to an auth middleware
             let client = await this.clientRegistrationManager.GetRegistration(params.client_id);
 
@@ -83,7 +71,7 @@ export class DeleteArrangementMiddleware {
                 return;
             }
 
-            await this.consentManager.revokeArrangement(params.cdr_arrangement_id, dataRecipientId, accessToken);
+            await this.consentManager.revokeArrangement(params.cdr_arrangement_id, dataRecipientId);
 
             this.logger.info("Revoked arrangement: " + params.cdr_arrangement_id);
 
@@ -95,7 +83,7 @@ export class DeleteArrangementMiddleware {
         // TODO add client authorization
         return _.concat([
             bodyParser.urlencoded({extended:true}),
-            param('cdr_arrangement_id').isString(),
+            body('cdr_arrangement_id').isString(),
             body("client_id").isString(),
             body('client_assertion_type').isString().equals("urn:ietf:params:oauth:client-assertion-type:jwt-bearer").withMessage("invalid client_assertion_type"),
             body("client_assertion").isJWT()            

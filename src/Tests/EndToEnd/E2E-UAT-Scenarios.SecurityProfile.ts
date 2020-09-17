@@ -265,7 +265,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         throw err;
                     });
 
-                    let result = ctx.GetLastHttpRequest("DELETE",/.*/)
+                    let result = ctx.GetLastHttpRequest("POST",/.*/)
                     return result;
     
                 },"Revocation")
@@ -310,8 +310,9 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let introspection1Result = await ctx.GetResult(DoRequest,"Introspection1");
                     expect(introspection1Result.response.status).to.equal(200);
                     expect(introspection1Result.body.active).to.be.true
-                    let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
 
+                    let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
+                    expect(revocationResult.config.data).to.match(/cdr_arrangement_id=/);
                     expect(revocationResult.response.status).to.equal(204);
 
                     let introspection2Result = await ctx.GetResult(DoRequest,"Introspection2")
@@ -536,8 +537,9 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let introspection1Result = await ctx.GetResult(DoRequest,"Introspection1");
                     expect(introspection1Result.response.status).to.equal(200);
                     expect(introspection1Result.body.active).to.be.true
-                    let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
 
+                    let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
+                    expect(revocationResult.config.data).to.match(/token_type_hint=refresh_token&token=/);
                     expect(revocationResult.response.status).to.equal(200);
 
                     let introspection2Result = await ctx.GetResult(DoRequest,"Introspection2")
@@ -738,11 +740,14 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(DoRequest, async (ctx) => {
 
                     const arrangementId = (await ctx.GetResult(NewGatewayConsent,"Consent2")).consent!.arrangementId
-                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements",arrangementId);
+                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements/revoke");
 
                     let options = DoRequest.Options({
-                        method: "DELETE",
+                        method: "POST",
                         url,
+                        data: qs.stringify({
+                            cdr_arrangement_id: arrangementId
+                        }),
                         headers: {
                             "Authorization": "Bearer "+await CreateDhBearerAuthJwt(url)
                         },
@@ -777,10 +782,13 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(DoRequest, async (ctx) => {
 
                     const arrangementId = "unknown_cdr_arrangement_id"
-                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements",arrangementId);
+                    let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements/revoke");
 
                     let options = DoRequest.Options({
-                        method: "DELETE",
+                        method: "POST",
+                        data: qs.stringify({
+                            cdr_arrangement_id: arrangementId
+                        }),
                         url,
                         headers: {
                             "Authorization": "Bearer "+await CreateDhBearerAuthJwt(url)

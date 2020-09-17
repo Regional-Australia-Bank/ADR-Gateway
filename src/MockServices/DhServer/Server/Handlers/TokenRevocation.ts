@@ -90,11 +90,11 @@ export class TokenRevocationMiddleware {
         // TODO add client authorization
         return _.concat([
             bodyParser.urlencoded({extended:true}),
-            check("token_type_hint").isIn(['refresh_token','access_token']).withMessage("token_type_hint must be refresh_token or authorization_code").optional().bail(),
+            body("token_type_hint").isIn(['refresh_token','access_token']).withMessage("token_type_hint must be refresh_token or authorization_code").optional().bail(),
             body('token').isString(),
-            check("client_id").isString(),
+            body("client_id").isString(),
             body('client_assertion_type').isString().equals("urn:ietf:params:oauth:client-assertion-type:jwt-bearer").withMessage("invalid client_assertion_type"),
-            check("client_assertion").isJWT()            
+            body("client_assertion").isJWT()            
         ],[
             <any>validationErrorMiddleware,
             Responder

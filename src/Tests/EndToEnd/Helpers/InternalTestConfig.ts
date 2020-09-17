@@ -118,7 +118,7 @@ export class InternalTestConfig {
                         "token_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token`,
                         "introspection_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token/introspect`,
                         "pushed_authorization_request_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/par`,
-                        "cdr_arrangement_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/arrangement`,
+                        "cdr_arrangement_revocation_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/arrangement`,
                         "revocation_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/token/revoke`,
                         "userinfo_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/userinfo`,
                         "registration_endpoint": `https://localhost:${env.TestServices.httpsProxy?.mockDhServerMTLS?.port}/idp/register`,

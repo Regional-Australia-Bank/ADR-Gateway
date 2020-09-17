@@ -146,7 +146,7 @@ export class DataholderOidcResponse {
 
   @IsUrl({require_tld:false}) 
   @IsOptional()
-  cdr_arrangement_endpoint: string;
+  cdr_arrangement_revocation_endpoint: string;
 
   @IsUrl({require_tld:false})
   jwks_uri: string;
@@ -187,7 +187,7 @@ export class DataholderOidcResponse {
       this.userinfo_endpoint = data.userinfo_endpoint;
       this.authorization_endpoint = data.authorization_endpoint;
       this.pushed_authorization_request_endpoint = data.pushed_authorization_request_endpoint
-      this.cdr_arrangement_endpoint = data.cdr_arrangement_endpoint
+      this.cdr_arrangement_revocation_endpoint = data.cdr_arrangement_revocation_endpoint
       this.registration_endpoint = data.registration_endpoint;
       this.introspection_endpoint = data.introspection_endpoint;
       this.revocation_endpoint = data.revocation_endpoint;

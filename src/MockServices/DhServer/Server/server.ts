@@ -88,7 +88,7 @@ class DhServer {
             container.resolve(TokenIntrospectionMiddleware).handler()
         );
 
-        app.delete("/idp/arrangement/:cdr_arrangement_id",
+        app.post("/idp/arrangement",
             container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate
             container.resolve(DeleteArrangementMiddleware).handler()
         );

@@ -174,10 +174,10 @@ class ConsentManager {
     }
 
 
-    revokeArrangement = async (cdr_arrangement_id:string,drAppClientId:string, accessToken:string):Promise<void> => {
+    revokeArrangement = async (cdr_arrangement_id:string,drAppClientId:string):Promise<void> => {
         let resolvedConnection = (await this.connection);
 
-        let matchingConsents = await resolvedConnection.manager.find(Consent,{cdr_arrangement_id, drAppClientId: drAppClientId, accessToken});
+        let matchingConsents = await resolvedConnection.manager.find(Consent,{cdr_arrangement_id, drAppClientId: drAppClientId});
 
         this.logger.debug({
             action: "Revoke arrangement",

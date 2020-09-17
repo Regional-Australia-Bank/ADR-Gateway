@@ -8,6 +8,7 @@ import { AxiosRequestConfig } from "axios";
 import { axios } from "../../../Common/Axios/axios";
 import qs from "qs"
 import { ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
+import { CreateAssertion } from "../../../Common/Connectivity/Assertions";
 
 interface AuthSignatureRequest {
   adrSigningJwk: JWK.Key,
@@ -28,14 +29,25 @@ interface AuthSignatureRequest {
 
 const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $: {
   DataHolderOidc: Types.DataholderOidcResponse,
+  CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
+  DataRecipientJwks: Types.JWKS.KeyStore
 }) => {
+
+  const url = $.DataHolderOidc.pushed_authorization_request_endpoint;
+
+  const data = qs.stringify(_.merge({
+    request: signed
+  },{
+    "client_id": $.CheckAndUpdateClientRegistration.clientId,
+    "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+    "client_assertion": CreateAssertion($.CheckAndUpdateClientRegistration.clientId, url, $.DataRecipientJwks),
+  }))
+
   let options: AxiosRequestConfig = {
     method: 'POST',
-    url: $.DataHolderOidc.pushed_authorization_request_endpoint,
+    url,
+    data,
     responseType: "json",
-    data: qs.stringify({
-      request: signed
-    })
   }
 
   cert.inject(options);

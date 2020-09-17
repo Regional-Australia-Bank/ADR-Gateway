@@ -1,16 +1,13 @@
 import _ from "lodash";
-import express from "express";
+import express, { urlencoded } from "express";
 import { NextFunction } from "connect";
 
-import {check, validationResult, query, ValidationChain, body, matchedData, param} from 'express-validator'
+import { validationResult, matchedData, body} from 'express-validator'
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
-import bodyParser, { urlencoded } from "body-parser";
 import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
-import { AdrServerConfig } from "../Config";
 import moment from "moment";
 import { GatewayRequest } from "../../../Common/Server/Types";
-import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 
 @injectable()
 export class DeleteArrangementMiddleware {
@@ -80,10 +77,9 @@ export class DeleteArrangementMiddleware {
 
         };
 
-        // decide whether to validate based on body or query parameters
-
         return [
-            param('cdr_arrangement_id').isString(),
+            urlencoded({extended:true}),
+            body('cdr_arrangement_id').isString(),
             validationErrorMiddleware,
             RevocationResponder
         ];

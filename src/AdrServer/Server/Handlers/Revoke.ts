@@ -82,8 +82,6 @@ class RevokeMiddleware {
 
         };
 
-        // decide whether to validate based on body or query parameters
-
         return [
             urlencoded({extended:true}),
             body('token').isString(),

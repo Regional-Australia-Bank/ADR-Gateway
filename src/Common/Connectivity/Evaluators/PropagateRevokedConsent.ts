@@ -14,27 +14,23 @@ export const PropagateRevokedConsent = async (logger: winston.Logger, cert: Clie
   Consent: Types.ConsentRequestLog,
   DataRecipientJwks: Types.JWKS.KeyStore,
   DataHolderOidc: Types.DataholderOidcResponse,
-  CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
-  FetchTokens: {tokenResponse:Types.TokenResponse, tokenRequestTime:Date}
+  CheckAndUpdateClientRegistration: Types.DataHolderRegistration
 }) => {
 
   if (!$.Consent.refreshToken) throw 'ConsentRevocation: consent has no refreshToken';
 
-  const useArrangementManagement = $.DataHolderOidc.cdr_arrangement_endpoint && $.Consent.arrangementId && $.AdrConnectivityConfig.UseDhArrangementEndpoint
+  const useArrangementManagement = $.DataHolderOidc.cdr_arrangement_revocation_endpoint && $.Consent.arrangementId && $.AdrConnectivityConfig.UseDhArrangementEndpoint
 
   if (useArrangementManagement) {
     
-    let url = urljoin($.DataHolderOidc.cdr_arrangement_endpoint,$.Consent.arrangementId)
+    let url = $.DataHolderOidc.cdr_arrangement_revocation_endpoint
 
     let options: AxiosRequestConfig = {
-      method: 'DELETE',
+      method: 'POST',
       url,
-      headers: {
-        "Authorization": "Bearer " + $.FetchTokens.tokenResponse.access_token,
-        "content-type": "application/x-www-form-urlencoded"
-      },
       responseType: "json",
       data: qs.stringify({
+        "cdr_arrangement_id": $.Consent.arrangementId,
         "client_id": $.CheckAndUpdateClientRegistration.clientId,
         "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         "client_assertion": CreateAssertion($.CheckAndUpdateClientRegistration.clientId, url, $.DataRecipientJwks),

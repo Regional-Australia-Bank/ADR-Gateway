@@ -270,6 +270,7 @@ GetAuthorizationRequest:
   evaluator: util.GetAuthorizationRequest.bind(undefined,factory.cert,factory.consentManager)
   cache: {noCache: true}
 
+# This enables synchronisation of consent status in the case that all refresh tokens have expired or unknowingly revoked
 SyncRefreshTokenStatus:
   parameters:
     Consent: Types.ConsentRequestLog
@@ -431,12 +432,6 @@ FinaliseConsent:
   evaluator: $ => $.FetchTokensAndUpdateClaims
   cache: {noCache: true}
 
-# This has the potential to get complicated with the arrangement ID needing an access token.
-# If a refresh token has expired, getting tokens will fail. Consents could get stuck in a state
-# where revocation is supposed to be propagated, but it can't because an access token cannot be aquired.
-# The ConsentCurrentAccessToken could introspect the refresh token, and internally update the propagation date
-# to remove the need for further attempts. The worst case is that somewhere down the line we will end up with
-# recurring retries, and we'll need some kind of intervention to stop them.
 PropagateRevokeConsent:
   parameters:
     Consent: Types.ConsentRequestLog
@@ -448,7 +443,6 @@ PropagateRevokeConsent:
     - DataRecipientJwks
     - DataHolderOidc
     - CheckAndUpdateClientRegistration
-    - FetchTokens
   output: Types.ConsentRequestLog
   evaluator: util.PropagateRevokedConsent.bind(undefined,factory.logger,factory.cert,factory.consentManager)
   cache: {noCache: true}

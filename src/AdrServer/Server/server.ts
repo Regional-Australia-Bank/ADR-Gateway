@@ -48,7 +48,7 @@ export class AdrServer {
             this.revocationMiddleware.handler()
         );
 
-        app.delete( "/arrangements/:cdr_arrangement_id",
+        app.post( "/arrangements/revoke",
             this.clientBearerJwtVerificationMiddleware.handler((assumedClientId:string) => {
                 return this.connector.DataHolderRevocationJwks(assumedClientId)
             }),
