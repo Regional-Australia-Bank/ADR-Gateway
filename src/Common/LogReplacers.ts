@@ -44,6 +44,10 @@ export const axiosReplacer = (k,v) => {
 export const configReplacer = (k,v) => {
   if (k == "mtls" && v && v.key) {
     return "<MTLS configuration>"
+  } else if (typeof k == "string" && k.toLowerCase() == "password") {
+    return "<Password>"
+  } else if (typeof k == "string" && k.toLowerCase() == "keys") {
+    return "<JWK[]>"
   } else {
     return v
   }

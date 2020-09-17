@@ -147,7 +147,15 @@ export class CommsDependencyEvaluator {
     const cacheResult = await this.fromCache(node,parameters);
     if (cacheResult.disabledInConfig === false) {
       if (cacheResult.inCache) {
-        let outputIsValid = ((!node.spec.validator) || await node.spec.validator(cacheResult.value))
+
+        let outputIsValid = true;
+        try {
+          if (node.spec.validator) {
+            outputIsValid = await Promise.resolve(node.spec.validator(cacheResult.value))
+          }
+        } catch {
+          outputIsValid = false;
+        }
 
         if (outputIsValid) {
           if (cacheResult.tooFreshToUpdate) {

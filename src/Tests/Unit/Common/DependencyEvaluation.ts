@@ -353,12 +353,44 @@ export const Tests = (() => {
 
         })
 
-        it('Invalid value from the cache causes evalution', async () => {
+        it('Invalid value from the cache causes evaluation', async () => {
 
             const cache:any = {};
             const cachingImplementation = inMemoryCache(cache);
 
             const validator = chai.spy($ => $ === 6);
+            const six = chai.spy($ => 6)
+
+            const number6 = new Dependency<{},{},number>({
+                name: "number6",
+                parameters: {},
+                evaluator: six,
+                validator,
+                cacheTrail: [],
+            })
+
+            const ctx1 = new CommsDependencyEvaluator(cachingImplementation,silent)
+
+            const r1 = await ctx1.get(number6,{})
+            expect(six).to.have.been.called.exactly(1)
+            expect(validator).to.have.been.called.exactly(1)
+            expect(validator).on.nth(1).be.called.with(6);
+
+            cache.number6 = InMemoryCache.Serialize(number6,7)
+
+            const r2_fromCache = await ctx1.get(number6,{})
+            expect(six).to.have.been.called.exactly(2)
+            expect(validator).to.have.been.called.exactly(3)
+            expect(validator).on.nth(2).be.called.with(7);
+            expect(validator).on.nth(3).be.called.with(6);
+        })
+
+        it('Throwing validator on cached value causes evaluation', async () => {
+
+            const cache:any = {};
+            const cachingImplementation = inMemoryCache(cache);
+
+            const validator = chai.spy($ => {if ($ !== 6) {throw 'Validation error'} else return true;});
             const six = chai.spy($ => 6)
 
             const number6 = new Dependency<{},{},number>({
