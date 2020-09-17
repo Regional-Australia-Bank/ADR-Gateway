@@ -32,9 +32,9 @@ export const DataRecipientStatus = async (cert:ClientCertificateInjector,$:{
     dataRecipientStatus: string
   }[] = result.data.dataRecipients;
 
-  const thisProductStatus = _.filter(statusus, s => s.dataRecipientId == $.AdrConnectivityConfig.BrandId);
+  const thisProductStatus = _.filter(statusus, s => s.dataRecipientId == $.AdrConnectivityConfig.LegalEntityId);
   if (thisProductStatus.length !== 1) {
-    throw `Cannot uniquely identify status of software product ${$.AdrConnectivityConfig.BrandId}`;
+    throw `Cannot uniquely identify status of data recipient ${$.AdrConnectivityConfig.LegalEntityId}`;
   }
   const status = thisProductStatus[0];
   return status.dataRecipientStatus;
