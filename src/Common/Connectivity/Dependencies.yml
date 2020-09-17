@@ -108,6 +108,7 @@ DataHolderStatus:
     DataHolderBrandId: string
   output: Types.DataHolderStatus
   dependencies:
+    - AdrConnectivityConfig
     - DataHolderBrandMetadata
   evaluator: util.DataHolderStatus.bind(undefined,factory.cert)
   cache: {maxAge: 300}

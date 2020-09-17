@@ -51,7 +51,8 @@ export interface AdrConnectivityConfig {
   },
   SoftwareProductConfigUris: Dictionary<string>,
   UsePushedAuthorizationRequest: Boolean,
-  UseDhArrangementEndpoint: boolean
+  UseDhArrangementEndpoint: boolean,
+  CheckDataholderStatusEndpoint: boolean,
   Crypto?: {
       IDTokenSignedResponseAlg?: string
       PreferredAlgorithms?: {
@@ -99,6 +100,7 @@ export const ConnectivityConvictOptions = () => {
       },
       UsePushedAuthorizationRequest: {env: 'ADR_USE_PAR', format:'Boolean', default: true},
       UseDhArrangementEndpoint: {env: 'ADR_USE_DH_ARRANGEMENT_REVOKE', format:'Boolean', default: true},
+      CheckDataholderStatusEndpoint: {env: 'ADR_CHECK_DH_IS_UP', format:'Boolean', default: true},
       LegalEntityId: {env: 'ADR_LEGAL_ENTITY_ID', format:'String', default: TestDataRecipientApplication.LegalEntityId},
       BrandId: {env: 'ADR_BRAND_ID', format:'String', default: TestDataRecipientApplication.BrandId},
       SoftwareProductConfigUris: {

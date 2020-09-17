@@ -50,7 +50,12 @@ export const AssertDataHolderActiveAtRegister = async ($:{
 
 export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
     DataHolderBrandMetadata:DataHolderRegisterMetadata,
+    AdrConnectivityConfig:Types.AdrConnectivityConfig
 }) => {
+
+    if (!$.AdrConnectivityConfig.CheckDataholderStatusEndpoint) {
+        return "OK"
+    }
 
     let options = cert.injectCa({responseType:"json", headers:{"x-v":1}});
     let url = urljoin($.DataHolderBrandMetadata.endpointDetail.publicBaseUri,'cds-au/v1/discovery/status')
