@@ -36,4 +36,4 @@ const main = async () => {
 
 }
 
-main();
+main().catch(() => process.exit(1));

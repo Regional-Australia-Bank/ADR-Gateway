@@ -12,7 +12,7 @@ services:
     adr-db-migrate:
         image: adr-gateway
         command: node ./Common/Entities/Migrations/Migrate.js
-        restart: "no"
+        restart: "on-failure"
         env_file:
             - sandbox.env
     software-product:
