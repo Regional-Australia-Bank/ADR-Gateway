@@ -1,0 +1,84 @@
+---
+- hosts: all
+  connection: local
+  
+  tasks:
+  - name: Install postgres
+    block: 
+      - name: Install postgres signing key
+        become: true
+        apt_key:
+          url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          state: present
+      - name: Add postgres repo
+        become: true
+        apt_repository:
+          repo: deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main
+          state: present
+      - name: Install postgres
+        become: true
+        apt:
+          name:
+            - postgresql
+            - postgresql-contrib
+      - name: Setup sandbox database and user
+        become: true
+        become_user: postgres
+        shell: |
+          psql -c "CREATE DATABASE sandbox;"
+          psql -c "CREATE USER sandbox WITH ENCRYPTED PASSWORD 'sandbox';"
+          psql -c "GRANT ALL PRIVILEGES ON DATABASE sandbox TO sandbox;"
+
+
+  # - name: Add postgres user
+  #   become: true
+  #   user:
+  #     name: postgres
+  #     shell: /bin/false
+  #     system: true
+  #     append: yes
+  #     home: /etc/config-bot.d/
+  # - name: Create config-bot bin folder
+  #   file:
+  #     path: /var/opt/config-bot/
+  #     state: directory
+  #     mode: '0755'
+  #     owner: config-bot
+  #     group: config-bot
+  #   become: true
+  # - name: Copy scripts
+  #   copy:
+  #     src: config-bootstrap.tar.gz
+  #     dest: /var/opt/config-bot/
+  #     owner: config-bot
+  #     group: config-bot
+  #     mode: '0700'
+  #   become: true
+  # - name: Install scripts
+  #   command: bash -c 'cd /var/opt/config-bot && tar -zvxf config-bootstrap.tar.gz --strip 1 && rm config-bootstrap.tar.gz && npm i'
+  #   become: true
+  #   become_user: config-bot
+  # - name: Configure config-bot service
+  #   block:
+  #     - name: Install and configure systemd service
+  #       become: true
+  #       template:
+  #         src: config-bot.service.j2
+  #         dest: /etc/systemd/system/config-bot.service
+  #         owner: config-bot
+  #         group: config-bot
+  #         mode: '0640'
+  #     - name: Install and configure systemd timer
+  #       become: true
+  #       template:
+  #         src: config-bot.timer.j2
+  #         dest: /etc/systemd/system/config-bot.timer
+  #         owner: config-bot
+  #         group: config-bot
+  #         mode: '0640'
+  #     - name: Enable config-bot service
+  #       become: true
+  #       command: bash -c 'systemctl enable config-bot.{service,timer}'
+  # - name: Bring up services
+  #   become: true
+  #   command: bash -c 'systemctl default'

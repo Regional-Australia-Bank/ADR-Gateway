@@ -1,0 +1,22 @@
+[Unit]
+Description="ADR DB Migration"
+Requires=network-online.target
+Requires=postgresql.service
+After=network-online.target
+After=postgresql.service
+
+[Service]
+Type=oneshot
+User=adr-gateway
+Group=adr-gateway
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ExecStart=/usr/bin/node /var/opt/adr-gateway/dist/Common/Entities/Migrations/Migrate.js
+EnvironmentFile=/etc/adr-gateway.d/sandbox.env
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,133 @@
+---
+- hosts: all
+  connection: local
+  
+  tasks:
+  - name: Install node
+    block: 
+      - name: Setup repository for nodejs 14
+        command: bash -c 'curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -'
+        become: yes
+      - name: Install nodejs
+        command: bash -c 'apt-get install -y nodejs'
+        become: yes
+  - name: Add adr-gateway user
+    become: true
+    user:
+      name: adr-gateway
+      shell: /bin/false
+      system: true
+      append: yes
+      home: /etc/adr-gateway.d/
+  - name: Create adr-gateway bin folder
+    file:
+      path: /var/opt/adr-gateway/
+      state: directory
+      mode: '0755'
+      owner: adr-gateway
+      group: adr-gateway
+    become: true
+  - name: Copy scripts
+    copy:
+      src: adr-gateway.tar.gz
+      dest: /var/opt/adr-gateway/
+      owner: adr-gateway
+      group: adr-gateway
+      mode: '0700'
+    become: true
+  - name: Install scripts
+    command: bash -c 'cd /var/opt/adr-gateway && tar -zvxf adr-gateway.tar.gz && rm adr-gateway.tar.gz && npm i pg'
+    become: true
+    become_user: adr-gateway
+  - name: Build scripts
+    command: bash -c 'cd /var/opt/adr-gateway && npm run build'
+    become: true
+    become_user: adr-gateway
+  - name: Configure adr-gateway services
+    block:
+      - name: Install adr-backend
+        become: true
+        template:
+          src: adr-backend.service.j2
+          dest: /etc/systemd/system/adr-backend.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install adr-frontend
+        become: true
+        template:
+          src: adr-frontend.service.j2
+          dest: /etc/systemd/system/adr-frontend.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install adr-software-product
+        become: true
+        template:
+          src: adr-software-product.service.j2
+          dest: /etc/systemd/system/adr-software-product.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install mock-dh
+        become: true
+        template:
+          src: adr-mock-dh.service.j2
+          dest: /etc/systemd/system/adr-mock-dh.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install mock-infra
+        become: true
+        template:
+          src: adr-mock-infra.service.j2
+          dest: /etc/systemd/system/adr-mock-infra.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install mock-register
+        become: true
+        template:
+          src: adr-mock-register.service.j2
+          dest: /etc/systemd/system/adr-mock-register.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install db-migrate
+        become: true
+        template:
+          src:  adr-db-migrate.service.j2
+          dest: /etc/systemd/system/adr-db-migrate.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install jwks
+        become: true
+        template:
+          src: adr-jwks.service.j2
+          dest: /etc/systemd/system/adr-jwks.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install housekeeper
+        become: true
+        template:
+          src: adr-housekeeper.service.j2
+          dest: /etc/systemd/system/adr-housekeeper.service
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0640'
+      - name: Install sandbox configuration
+        become: true
+        template:
+          src: sandbox.env.j2
+          dest: /etc/adr-gateway.d/sandbox.env
+          owner: adr-gateway
+          group: adr-gateway
+          mode: '0600'
+      - name: Enable adr-gateway services
+        become: true
+        command: bash -c 'systemctl enable adr-backend adr-frontend adr-software-product adr-mock-dh adr-mock-infra adr-mock-register adr-db-migrate adr-jwks adr-housekeeper'
+  - name: Bring up services
+    become: true
+    command: bash -c 'systemctl default'

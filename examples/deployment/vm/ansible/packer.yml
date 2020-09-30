@@ -1,0 +1,28 @@
+---
+- hosts: all
+  connection: local
+  
+  tasks:
+  - name: Install dependencies
+    block: 
+      - name: Ensure zip command is present
+        apt:
+          name: zip
+          state: present
+        become: yes
+
+  - name: Download and install packer binary
+    block:
+      - name: Download packer with check (sha256)
+        get_url:
+          url: https://releases.hashicorp.com/packer/1.6.0/packer_1.6.0_linux_amd64.zip
+          dest: /tmp/packer.zip
+          checksum: sha256:https://releases.hashicorp.com/packer/1.6.0/packer_1.6.0_SHA256SUMS
+      - name: Extract packer binary
+        unarchive:
+          src: /tmp/packer.zip
+          dest: /tmp/
+          remote_src: yes
+      - name: Place packer in /usr/local/bin
+        become: true
+        command: bash -c 'chown root:root /tmp/packer && mv /tmp/packer /usr/local/bin/'

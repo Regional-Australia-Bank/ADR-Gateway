@@ -32,7 +32,7 @@ const main = async () => {
   await doMigrations(db,targetVersion);
 
   logger.info(`Migration done.`)
-  await db.close();
+  process.exit(0); // Looks like await db.close() is not working in some places.
 
 }
 

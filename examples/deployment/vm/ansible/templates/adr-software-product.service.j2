@@ -1,0 +1,24 @@
+[Unit]
+Description="ADR Software Product"
+Requires=network-online.target
+Requires=postgresql.service
+After=network-online.target
+After=postgresql.service
+
+[Service]
+User=adr-gateway
+Group=adr-gateway
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+NoNewPrivileges=yes
+ExecStart=/usr/bin/node /var/opt/adr-gateway/dist/MockServices/SoftwareProduct/Server/start.js
+ExecReload=/bin/kill --signal HUP $MAINPID
+KillMode=process
+KillSignal=SIGINT
+Restart=on-failure
+EnvironmentFile=/etc/adr-gateway.d/sandbox.env
+
+[Install]
+WantedBy=multi-user.target

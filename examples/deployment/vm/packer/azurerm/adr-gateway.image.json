@@ -1,0 +1,37 @@
+{
+  "variables":{
+    "client_id": "{{env `client_id`}}",
+    "client_secret": "{{env `client_secret`}}",
+    "tenant_id": "{{env `tenant_id`}}",
+    "subscription_id": "{{env `subscription_id`}}",
+    "resource_group": "{{env `resource_group`}}"
+  },
+  "builders": [
+    {
+      "type": "azure-arm",
+      "client_id": "{{user `client_id`}}",
+      "client_secret": "{{user `client_secret`}}",
+      "tenant_id": "{{user `tenant_id`}}",
+      "subscription_id": "{{user `subscription_id`}}",
+      "managed_image_name": "adr-gateway-{{isotime | clean_resource_name}}",
+      "os_type": "Linux",
+      "image_publisher": "Canonical",
+      "image_offer": "UbuntuServer",
+      "image_sku": "18.04-LTS",
+      "communicator": "ssh",
+      "vm_size": "Standard_B1s",
+      "build_resource_group_name":"{{user `resource_group`}}",
+      "managed_image_resource_group_name":"{{user `resource_group`}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "ansible",
+      "playbook_file": "./ansible/postgres.yml"
+    },
+    {
+      "type": "ansible",
+      "playbook_file": "./ansible/adr-gateway.yml"
+    }
+  ]
+}

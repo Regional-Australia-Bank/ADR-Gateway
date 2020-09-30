@@ -13,3 +13,6 @@ FileWriter.log
 .nyc_output
 coverage
 .work
+.vagrant
+*.log
+*.tar.gz
