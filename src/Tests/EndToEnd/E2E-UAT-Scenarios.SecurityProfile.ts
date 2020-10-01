@@ -971,7 +971,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         }    
                     }
                 }))
-                .When(DoRequest,async ctx => (DoRequest.Options(env.Util.TlsAgent({
+                .When(DoRequest,async ctx => (DoRequest.Options(env.Util.MtlsAgent({
                     method: "GET",
                     url: `${(await AdrGatewayConfig()).adrGateway.path}/cdr/consents/${(await ctx.GetResult(NewGatewayConsent)).consent!.id}/userInfo`,
                     responseType:"json"
@@ -1047,12 +1047,12 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     userId: "user-12345",
                     dataholderBrandId: (await TestData()).dataHolder.id
                 }))
-                .PreTask(DoRequest,async ctx => DoRequest.Options(env.Util.TlsAgent({
+                .PreTask(DoRequest,async ctx => DoRequest.Options(env.Util.MtlsAgent({
                     method: "GET",
                     url: `${(await AdrGatewayConfig()).adrGateway.path}/cdr/consents/${(await ctx.GetResult(GatewayConsentWithCurrentAccessToken)).consent!.id}/userInfo`,
                     responseType:"json"
                 })),"Consent1")
-                .When(DoRequest,async ctx => DoRequest.Options(env.Util.TlsAgent({
+                .When(DoRequest,async ctx => DoRequest.Options(env.Util.MtlsAgent({
                     method: "GET",
                     url: `${(await AdrGatewayConfig()).adrGateway.path}/cdr/consents/${(await ctx.GetResult(NewGatewayConsent)).consent!.id}/userInfo`,
                     responseType:"json"

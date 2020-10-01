@@ -50,14 +50,14 @@ const Execute = async (params: { redirectUrl: string, consentId: number, context
         let finalisedConsent = Promise.resolve().then(async () => {
             let dhEnv = params.context.environment.TestServices.mockDhServer;
 
-            let TlsAgent = params.context.environment.Util.TlsAgent;
+            let MtlsAgent = params.context.environment.Util.MtlsAgent;
 
             let oAuthResult: string | {
                 unredirectable: true
             }
 
             try {
-                const response = await axios.request(TlsAgent({
+                const response = await axios.request(MtlsAgent({
                     method: "GET",
                     url: params.redirectUrl,
                     responseType: "json",

@@ -97,7 +97,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             .PreTask(DoRequest,async () => {
                 logger.debug(environment.SystemUnderTest.Register())
                 return ({
-                    requestOptions:await environment.Mtls({
+                    requestOptions:await environment.Tls({
                         method: "GET",
                         url: environment.SystemUnderTest.Register().DiscoveryUri+"/.well-known/openid-configuration",
                         responseType:"json"
@@ -380,7 +380,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let requestResult = await (ctx.GetResult(DoRequest));
     
                     if (typeof requestResult.response.headers['content-type'] == 'undefined' || /^application\/json(; ?charset=utf-8)?$/.test(requestResult.response.headers['content-type']) == false) {
-                        throw `GetSoftwareStatementAssertion response type is not 'application/json', but '${requestResult.response.headers['content-type']}'`;
+                        throw `GetDataHolderBrands response type is not 'application/json', but '${requestResult.response.headers['content-type']}'`;
                     }
     
                     let dataHolders = requestResult.body.data;

@@ -20,10 +20,16 @@ class DevClientCertificateInjector implements ClientCertificateInjector{
     injectCa = (options: AxiosRequestConfig):AxiosRequestConfig => options
 }
 
-export const TLSInject = (request:AxiosRequestConfig,options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) => {
+export const MTLSInject = (request:AxiosRequestConfig,options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) => {
     let inj = new DefaultClientCertificateInjector(options);
     return inj.inject(request)
 }
+
+export const TLSInject = (request:AxiosRequestConfig,options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) => {
+    let inj = new DefaultClientCertificateInjector(options);
+    return inj.injectCa(request)
+}
+
 
 @injectable()
 class DefaultClientCertificateInjector implements ClientCertificateInjector{

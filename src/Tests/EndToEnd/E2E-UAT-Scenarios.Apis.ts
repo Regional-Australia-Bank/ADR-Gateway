@@ -1437,7 +1437,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             }))
             .When(DoRequest, async ctx => {
                 let consent = await ctx.GetResult(GatewayConsentWithCurrentAccessToken);
-                return DoRequest.Options(env.Util.TlsAgent({
+                return DoRequest.Options(env.Util.MtlsAgent({
                     responseType:"json",
                     headers: customerNotPresentHeaders,
                     url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",consent.consent!.id.toString(),"accounts")
@@ -1446,7 +1446,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let result = await ctx.GetResult(DoRequest);
                 let selfUrl:string = result.body.links.self;
-                let selfResponse = await axios.request(env.Util.TlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
+                let selfResponse = await axios.request(env.Util.MtlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
                 expect(selfResponse.status).to.equal(200)
                 expect(selfResponse.data.data.accounts).to.not.be.undefined;
                 expect(_.isEqual(selfResponse.data,result.body)).to.be.true;
@@ -1464,7 +1464,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             }))
             .When(DoRequest, async ctx => {
                 let consent = await ctx.GetResult(GatewayConsentWithCurrentAccessToken);
-                return DoRequest.Options(env.Util.TlsAgent({
+                return DoRequest.Options(env.Util.MtlsAgent({
                     responseType:"json",
                     headers: customerNotPresentHeaders,
                     url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",consent.consent!.id.toString(),"accounts/balances")
@@ -1473,7 +1473,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let result = await ctx.GetResult(DoRequest);
                 let selfUrl:string = result.body.links.self;
-                let selfResponse = await axios.request(env.Util.TlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
+                let selfResponse = await axios.request(env.Util.MtlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
                 expect(selfResponse.status).to.equal(200)
                 expect(selfResponse.data.data.balances).to.not.be.undefined;
                 expect(_.isEqual(selfResponse.data,result.body)).to.be.true;
@@ -1488,7 +1488,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 if (!firstAccount) throw 'No accounts for which to receive transactions'
 
                 let consent = await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken);
-                return DoRequest.Options(env.Util.TlsAgent({
+                return DoRequest.Options(env.Util.MtlsAgent({
                     responseType:"json",
                     headers: customerNotPresentHeaders,
                     url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",consent.consent!.id.toString(),"accounts",firstAccount.accountId,"transactions")
@@ -1497,7 +1497,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let result = await ctx.GetResult(DoRequest);
                 let selfUrl:string = result.body.links.self;
-                let selfResponse = await axios.request(env.Util.TlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
+                let selfResponse = await axios.request(env.Util.MtlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
                 expect(selfResponse.status).to.equal(200)
                 expect(selfResponse.data.data.transactions).to.not.be.undefined;
                 expect(_.isEqual(selfResponse.data,result.body)).to.be.true;
@@ -1512,7 +1512,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 if (!firstAccount) throw 'No accounts for which to receive balance'
 
                 let consent = await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken);
-                return DoRequest.Options(env.Util.TlsAgent({
+                return DoRequest.Options(env.Util.MtlsAgent({
                     responseType:"json",
                     headers: customerNotPresentHeaders,
                     url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",consent.consent!.id.toString(),"accounts",firstAccount.accountId,"balance")
@@ -1521,7 +1521,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let result = await ctx.GetResult(DoRequest);
                 let selfUrl:string = result.body.links.self;
-                let selfResponse = await axios.request(env.Util.TlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
+                let selfResponse = await axios.request(env.Util.MtlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
                 expect(selfResponse.status).to.equal(200)
                 expect(selfResponse.data.data).to.not.be.undefined;
                 expect(_.isEqual(selfResponse.data,result.body)).to.be.true;
@@ -1536,7 +1536,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 if (!firstAccount) throw 'No accounts for which to receive details'
 
                 let consent = await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken);
-                return DoRequest.Options(env.Util.TlsAgent({
+                return DoRequest.Options(env.Util.MtlsAgent({
                     responseType:"json",
                     headers: customerNotPresentHeaders,
                     url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",consent.consent!.id.toString(),"accounts",firstAccount.accountId)
@@ -1545,7 +1545,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let result = await ctx.GetResult(DoRequest);
                 let selfUrl:string = result.body.links.self;
-                let selfResponse = await axios.request(env.Util.TlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
+                let selfResponse = await axios.request(env.Util.MtlsAgent({url:selfUrl,headers:customerNotPresentHeaders,responseType:"json"}));
                 expect(selfResponse.status).to.equal(200)
                 expect(selfResponse.data.data).to.not.be.undefined;
                 expect(_.isEqual(selfResponse.data,result.body)).to.be.true;

@@ -64,6 +64,7 @@ const GenerateTests = (environment:E2ETestEnvironment) => {
                 return await environment.Start();
             } catch (e) {
                 logger.error(e)
+                throw e;
             }
         })
 

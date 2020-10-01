@@ -74,7 +74,7 @@ class TestConsentRequestor {
             if (consent.HasCurrentRefreshToken()) {
                 // Call userInfo through AdrGateway which will refresh tokens
 
-                let userInfoResult = await axios.request(this.testContext.environment.Util.TlsAgent({
+                let userInfoResult = await axios.request(this.testContext.environment.Util.MtlsAgent({
                     method:"GET",
                     url: `${config.adrGateway.path}/cdr/consents/${consent.id}/userInfo`,
                     responseType: "json",
@@ -101,7 +101,7 @@ class TestConsentRequestor {
             // let connection = (await this.consentManager.connection);
             // await connection.manager.save(consent);
             // Call userInfo through AdrGateway which will refresh tokens
-            let userInfoResult = await axios.request(this.testContext.environment.Util.TlsAgent({
+            let userInfoResult = await axios.request(this.testContext.environment.Util.MtlsAgent({
                 method:"GET",
                 url: `${config.adrGateway.path}/cdr/consents/${consent.id}/userInfo`,
                 responseType: "json",
@@ -126,7 +126,7 @@ class TestConsentRequestor {
     }):Promise<{redirectUrl:string,consentId:number}> => {
         let config = await this.testContext.AdrGatewayConfig()
 
-        const res = await axios.request(this.testContext.environment.Util.TlsAgent({
+        const res = await axios.request(this.testContext.environment.Util.MtlsAgent({
             method: "POST",
             url: `${config.adrGateway.path}/cdr/consents`,
             responseType:"json",
@@ -187,7 +187,7 @@ class TestConsentRequestor {
                                         
                     let url = urljoin(this.testContext.environment.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",adrConsentId.toString())
 
-                    let response = await axios.request(this.testContext.environment.Util.TlsAgent({
+                    let response = await axios.request(this.testContext.environment.Util.MtlsAgent({
                         method:"patch",
                         url,
                         data: res?.hash,

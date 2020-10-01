@@ -106,6 +106,7 @@ const axiosClient = (() => {
     let client = axios.create(<any>defaultOptions)
 
     client.interceptors.response.use(response => response,error => {
+        if ((!error) || (!error.toJSON)) throw error;
         let toj = error.toJSON
         error.toJSON = () => {
             let r = toj.call(error);

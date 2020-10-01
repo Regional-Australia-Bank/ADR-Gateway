@@ -23,7 +23,7 @@ import { MockSoftwareProductConfig } from "../../../MockServices/SoftwareProduct
 import { AdrJwksStartup } from "../../../AdrJwks/startup";
 import { AdrJwksConfig } from "../../../AdrJwks/Config";
 import { AxiosRequestConfig } from "axios";
-import { DefaultClientCertificateInjector, TLSInject } from "../../../Common/Services/ClientCertificateInjection";
+import { DefaultClientCertificateInjector, MTLSInject, TLSInject } from "../../../Common/Services/ClientCertificateInjection";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { SoftwareProductConnectivityConfig, AdrConnectivityConfig } from "../../../Common/Config";
 import { logger } from "../../Logger";
@@ -176,7 +176,7 @@ export class E2ETestEnvironment {
                 }
                 
                 config.SoftwareProductConfigUris = config.SoftwareProductConfigUris || {
-                    sandbox: `http://localhost:${this.TestServices.softwareProduct.port}/software.product.config`
+                    sandbox: `http://localhost:${this.TestServices.softwareProduct?.port}/software.product.config`
                 }
 
                 return config;
@@ -380,7 +380,19 @@ export class E2ETestEnvironment {
         })
     }
 
+    async Tls(o:any) {
+        return await InTestConfigBase(async () => {
+            let mtls = (await this.GetServiceDefinition.Connectivity()).mtls
+            let inj = new DefaultClientCertificateInjector(mtls);
+            o = inj.injectCa(o);
+            return o                
+        })
+    }
+
     Util = {        
+        MtlsAgent: (request:AxiosRequestConfig) => {
+            return MTLSInject(request,this._clientCert)
+        },
         TlsAgent: (request:AxiosRequestConfig) => {
             return TLSInject(request,this._clientCert)
         }
