@@ -4,7 +4,7 @@ import moment from "moment";
 
 export const ValidAndCurrentSSA = (ssa: string) => {
   if (! new Validator().isJWT(ssa) ) {
-    throw `SSA is not a valid JWK`
+    throw `SSA is not a valid JWT`
   }
 
   let decoded = <any>JWT.decode(ssa,{complete:true});
