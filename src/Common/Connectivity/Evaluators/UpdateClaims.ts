@@ -37,7 +37,7 @@ export const UpdateClaims = async (cert:ClientCertificateInjector,consentManager
       }
   }
 
-  const cdr_arrangement_id = $.FetchTokens.tokenResponse.cdr_arrangement_id || idToken.cdr_arrangement_id;
+  const cdr_arrangement_id = ($.FetchTokens.tokenResponse.cdr_arrangement_id || idToken?.cdr_arrangement_id) || undefined;
 
   const manifest = {
     consentId: $.Consent.id,
