@@ -5,10 +5,12 @@
     "lib": ["es2017"],
     "sourceMap": true,
     "outDir": "dist",
+    "rootDir": "src",
     "strictBindCallApply": true,
     "noImplicitThis": false,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
-  }
+  },
+  "include": ["src/**/*"]
 }

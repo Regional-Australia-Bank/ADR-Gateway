@@ -179,6 +179,12 @@ export class E2ETestEnvironment {
                     sandbox: `http://localhost:${this.TestServices.softwareProduct?.port}/software.product.config`
                 }
 
+                config.RegisterBaseUris = config.RegisterBaseUris || {
+                    Oidc: this.SystemUnderTest.Register().DiscoveryUri,
+                    Resource: this.SystemUnderTest.Register().PublicUri,
+                    SecureResource: this.SystemUnderTest.Register().SecureUri
+                }
+
                 return config;
             }),
             AdrGateway: <() => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>> this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrGateway,async (config) => {
@@ -341,10 +347,10 @@ export class E2ETestEnvironment {
         let dbClosed = new Promise((resolve,reject) => {
             if (typeof this.TestServices.adrDbConn != 'undefined') {
                 this.TestServices.adrDbConn.then(conn => conn.close().then(() => {
-                    logger.debug("Closed temporary database")
+                    logger.debug("Closed database")
                     resolve()
                 },(err) => {
-                    logger.debug("Error closing temporary database")
+                    logger.debug("Error closing database")
                     reject(err)
                 }))
             } else {

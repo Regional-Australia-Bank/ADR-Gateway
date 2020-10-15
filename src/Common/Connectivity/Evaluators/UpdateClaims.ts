@@ -17,8 +17,8 @@ export const UpdateClaims = async (cert:ClientCertificateInjector,consentManager
   DataHolderOidc: Types.DataholderOidcResponse,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration
 }) => {
-  let newClaims:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string};
-  let idToken:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string}|undefined = undefined;
+  let newClaims:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string,sub?:string};
+  let idToken:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string,sub?:string}|undefined = undefined;
 
   // Update claims using the id token if present
   if (typeof $.FetchTokens.tokenResponse.id_token == 'string') {
@@ -46,6 +46,7 @@ export const UpdateClaims = async (cert:ClientCertificateInjector,consentManager
     sharingEndDate:newClaims.sharing_expires_at,
     refreshTokenExpiry:newClaims.refresh_token_expires_at,
     idTokenJson:idToken && JSON.stringify(idToken),
+    newClaims,
     cdr_arrangement_id:cdr_arrangement_id,
   }
 

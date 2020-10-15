@@ -315,6 +315,7 @@ class ConsentRequestLogManager {
             "scope"?:string
         },
         tokenRequestTime:Date,
+        newClaims:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string,sub?:string},
         sharingEndDate?:number,
         refreshTokenExpiry?:number,
         idTokenJson?:string,
@@ -327,6 +328,10 @@ class ConsentRequestLogManager {
         if ($.idTokenJson) {
             consent.idTokenJson = $.idTokenJson;
             consent.ppid = JSON.parse($.idTokenJson).sub;
+        }
+
+        if (typeof $.newClaims?.sub == "string") {
+            consent.ppid = $.newClaims.sub
         }
 
         // Check the arrangement ID.

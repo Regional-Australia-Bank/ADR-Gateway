@@ -92,19 +92,13 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .PreTask(DoRequest, async ctx => DoRequest.Options({
                     method: "GET",
                     url: (await TestData()).dataHolder.oidcEndpoint+"/.well-known/openid-configuration",
-                    key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
-                    cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
                     ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
-                    passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
                     responseType:"json"
                 }),"oidc")
                 .When(DoRequest, async ctx => DoRequest.Options({
                     method: "GET",
                     url: (await ctx.GetResult(DoRequest,"oidc")).body.jwks_uri,
-                    key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
-                    cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
                     ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
-                    passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
                     responseType:"json"
                 }),"jwks")
                 .Then(async ctx => {
@@ -122,10 +116,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(DoRequest,async () => DoRequest.Options({
                     method: "GET",
                     responseType: "json",
-                    key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
-                    cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
                     ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
-                    passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
                     url: (await TestData()).dataHolder.oidcEndpoint+"/.well-known/openid-configuration"
                 }))
                 .Then(async ctx => {

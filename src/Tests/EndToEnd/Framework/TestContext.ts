@@ -416,7 +416,7 @@ class TestContext extends PartialContext {
                     _.last(currentlyExecutingContextStack)?.requestLog.push(newLogEntry);
         
                     logger.debug("Successful request:")
-                    logger.debug(res.request._requestBody);
+                    logger.debug(res.config);
                     logger.debug("Response:")
                     logger.debug(JSON.stringify(_.pick(res,'headers','status','statusText','data')))
                     return res;
@@ -431,8 +431,8 @@ class TestContext extends PartialContext {
                     _.last(currentlyExecutingContextStack)?.requestLog.push(newLogEntry);
         
                     logger.error("Failed request:")
-                    let request = err.request?._currentRequest || err.request || err
-                    logger.debug(request._requestBody);
+                    let request = err.config || err
+                    logger.debug(request);
                     logger.debug("Response:")
                     logger.debug(JSON.stringify(_.pick(err.response,'headers','status','statusText','data')))
                     logger.error(err);
