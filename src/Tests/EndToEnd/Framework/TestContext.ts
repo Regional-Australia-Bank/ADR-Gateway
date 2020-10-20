@@ -354,7 +354,7 @@ class TestContext extends PartialContext {
         try {
             await this._doTestPromise
         } catch (e) {
-            logger.error(e.stack)
+            logger.error(e)
         } finally {
             QueueTestCleanup({
                 _doTestPromise: this._doTestPromise,

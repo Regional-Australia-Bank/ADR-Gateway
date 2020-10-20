@@ -4,6 +4,7 @@ import "reflect-metadata";
 import winston = require("winston");
 import moment = require("moment");
 import _ from "lodash"
+import { Dictionary } from "../Connectivity/Types";
 
 enum LifeCycleStatus {
     PENDING = "PENDING",
@@ -189,6 +190,14 @@ class ConsentRequestLog extends BaseEntity {
         return missingScopes;
     }
 
+    ExistingClaims = () => {
+        let existingClaims = <Dictionary<any>>{};
+        if (typeof this.idTokenJson == "string") {
+            existingClaims = JSON.parse(this.idTokenJson)
+        }
+        return existingClaims;
+    }
+
 }
 
 type ConsentRequestInitial = Pick<ConsentRequestLog,'state'|'nonce'|'adrSystemId'|'adrSystemUserId'|'dataHolderId'|'productKey'|'softwareProductId'|'redirectUri'|'requestedSharingDuration'> & {scopes:string[]} & {arrangementId?:string};
@@ -315,23 +324,25 @@ class ConsentRequestLogManager {
             "scope"?:string
         },
         tokenRequestTime:Date,
-        newClaims:{refresh_token_expires_at:number,sharing_expires_at?:number,cdr_arrangement_id?:string,sub?:string},
+        claims:{refresh_token_expires_at?:number,sharing_expires_at?:number,cdr_arrangement_id?:string,sub?:string},
         sharingEndDate?:number,
         refreshTokenExpiry?:number,
-        idTokenJson?:string,
         cdr_arrangement_id?:string,
     }) => {
         let consent = await ((await this.connection)).manager.findOneOrFail(ConsentRequestLog,{id: $.consentId});
 
         consent.accessToken = $.params.access_token;
         consent.refreshToken = $.params.refresh_token || consent.refreshToken;
-        if ($.idTokenJson) {
-            consent.idTokenJson = $.idTokenJson;
-            consent.ppid = JSON.parse($.idTokenJson).sub;
+
+        const existingClaims = consent.ExistingClaims();
+
+        if ($.claims) {
+            consent.idTokenJson = JSON.stringify(_.merge(existingClaims,$.claims));
+            consent.ppid = $.claims.sub;
         }
 
-        if (typeof $.newClaims?.sub == "string") {
-            consent.ppid = $.newClaims.sub
+        if (typeof $.claims?.sub == "string") {
+            consent.ppid = $.claims.sub
         }
 
         // Check the arrangement ID.

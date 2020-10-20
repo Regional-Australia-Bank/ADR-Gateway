@@ -176,7 +176,7 @@ export class DataholderOidcResponse {
   id_token_signing_alg_values_supported: string[]
   request_object_signing_alg_values_supported: string[]
   token_endpoint_auth_methods_supported: string[]
-  mutual_tls_sender_constrained_access_tokens: any
+  tls_client_certificate_bound_access_tokens: any
   claims_supported: string
 
   constructor(data:any) {
@@ -205,7 +205,7 @@ export class DataholderOidcResponse {
 
       this.request_object_signing_alg_values_supported = data.request_object_signing_alg_values_supported
       this.token_endpoint_auth_methods_supported = data.token_endpoint_auth_methods_supported
-      this.mutual_tls_sender_constrained_access_tokens = data.mutual_tls_sender_constrained_access_tokens
+      this.tls_client_certificate_bound_access_tokens = data.tls_client_certificate_bound_access_tokens
       this.claims_supported = data.claims_supported
 
   }

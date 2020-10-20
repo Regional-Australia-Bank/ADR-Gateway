@@ -185,6 +185,9 @@ export class E2ETestEnvironment {
                     SecureResource: this.SystemUnderTest.Register().SecureUri
                 }
 
+                config.UsePushedAuthorizationRequest = false;
+                config.UseDhArrangementEndpoint = this.switches.UseDhArrangementEndpoint;         
+
                 return config;
             }),
             AdrGateway: <() => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>> this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrGateway,async (config) => {

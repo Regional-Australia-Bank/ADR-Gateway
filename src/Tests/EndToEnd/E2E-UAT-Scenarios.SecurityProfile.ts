@@ -66,7 +66,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let oidcConfig:DataholderOidcResponse = <any>(await (ctx.GetResult(SetValue))).value;
                     logger.debug(oidcConfig);
                     // Expect the result of the "Do/Measure" to error code
-                    for (let key of ["issuer","authorization_endpoint","token_endpoint","introspection_endpoint","revocation_endpoint","userinfo_endpoint","registration_endpoint","scopes_supported","response_types_supported","response_modes_supported","grant_types_supported","acr_values_supported","subject_types_supported","id_token_signing_alg_values_supported","request_object_signing_alg_values_supported","token_endpoint_auth_methods_supported","mutual_tls_sender_constrained_access_tokens","claims_supported"]) {
+                    for (let key of ["issuer","authorization_endpoint","token_endpoint","introspection_endpoint","revocation_endpoint","userinfo_endpoint","registration_endpoint","scopes_supported","response_types_supported","response_modes_supported","grant_types_supported","acr_values_supported","subject_types_supported","id_token_signing_alg_values_supported","request_object_signing_alg_values_supported","token_endpoint_auth_methods_supported","tls_client_certificate_bound_access_tokens","claims_supported"]) {
                         expect(_.keys(oidcConfig)).to.contain(key);
                     }
                     let claims_supported:string[] = (<any>oidcConfig).claims_supported;
@@ -166,7 +166,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                     expect(consent.accessToken).to.be.a('string').and.lengthOf.at.least(5);
                     expect(consent.refreshToken).to.be.a('string').and.lengthOf.at.least(5);
-                    expect(consent.refreshTokenExpiry).to.not.be.undefined;
+                    expect(consent.ExistingClaims().refresh_token_expires_at).to.not.be.undefined.and.not.be.null;
 
 
                 },240)
@@ -262,6 +262,10 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 },"Revocation")
                 // Call introspection endpoint again and check "active:false"
                 .PreTask(DoRequest,async ctx => {
+
+                    // wait 3 seconds before introspections
+                    await new Promise(resolve => setTimeout(resolve,3000));
+
                     ctx.kv.dhOidc = (await env.TestServices.adrGateway.connectivity.DataHolderOidc((await TestData()).dataHolder.id).GetWithHealing());
                     let options = DoRequest.Options({
                         method: "POST",
@@ -808,7 +812,6 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     const id_token = JSON.parse(consent.idTokenJson)
 
                     expect(id_token.sharing_expires_at).to.be.a('number');
-                    expect(id_token.refresh_token_expires_at).to.be.a('number');
 
                     let predictedExpiryDifference = Math.abs(moment(id_token.sharing_expires_at * 1000).utc().diff(moment(consent.requestDate).utc().add(86400,'s'),'s'))
 
@@ -868,19 +871,12 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                     expect(consent.refreshToken).to.not.be.a('string');
                     expect(id_token.sharing_expires_at).to.equal(0);
-                    expect(consent.refreshTokenExpiry).to.be.null;
+                    expect(id_token.refresh_token_expires_at).to.be.null;
 
                 },120)
 
             Scenario($ => it.apply(this,$('TS_048')), undefined, 'Authorization fails if "sharing_duration" value is negative')
                 .Given('Cold start')
-                .PreTask(NewGatewayConsent,async () => ({
-                    cdrScopes: ["openid","bank:accounts.basic:read"],
-                    sharingDuration: 0,
-                    systemId: "sandbox",
-                    userId: "user-12345",
-                    dataholderBrandId: (await TestData()).dataHolder.id
-                }),"working")
                 .When(NewGatewayConsent,async () => {
                     process.env.TEST_HARNESS_MIN_SHARING_DURATION = "-10"
                     return {
@@ -1123,7 +1119,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
         describe('Transaction Security - HoK', async () => {
 
-            Scenario($ => it.apply(this,$('TS_039')), undefined, 'Following value should be present in response: "mutual_tls_sender_constrained_access_tokens": "true"')
+            Scenario($ => it.apply(this,$('TS_039')), undefined, 'Following value should be present in response: "tls_client_certificate_bound_access_tokens": "true"')
                 .Given('Cold start')
                 .When()
                 .Then(async ctx => {
@@ -1134,7 +1130,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     // Expect the result of the "Do/Measure" to error code
                     expect(result.response?.status).to.equal(200);
                     let oidcConfig = result.response?.data;
-                    expect (oidcConfig.mutual_tls_sender_constrained_access_tokens).to.equal(true);
+                    expect(oidcConfig.tls_client_certificate_bound_access_tokens).to.equal(true);
                 })
 
             Scenario($ => it.apply(this,$('TS_040')), undefined, 'The protected resource MUST obtain the client certificate used for mutual TLS authentication and MUST verify that the certificate matches the certificate associated with the access token')
@@ -1291,10 +1287,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .Given('Cold start')
                 .When(DoRequest,async () => DoRequest.Options({
                     method: "GET",
-                    key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
-                    cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
                     ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
-                    passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
                     url: (await TestData()).dataHolder.oidcEndpoint+"/.well-known/openid-configuration"
                 }))
                 .Then(async ctx => {
@@ -1313,10 +1306,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .Given('Cold start')
                 .When(DoRequest,async () => DoRequest.Options({
                     method: "GET",
-                    key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
-                    cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
                     ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
-                    passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
                     url: (await TestData()).dataHolder.oidcEndpoint+"/.well-known/openid-configuration"
                 }))
                 .Then(async ctx => {
@@ -1398,10 +1388,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 .When(DoRequest,async () => DoRequest.Options({
                     method: "GET",
                     responseType:"json",
-                    key:(await TestData()).dataHolder.clientKeyFiles.valid.key,
-                    cert:(await TestData()).dataHolder.clientKeyFiles.valid.cert,
                     ca:(await TestData()).dataHolder.clientKeyFiles.valid.ca,
-                    passphrase:(await TestData()).dataHolder.clientKeyFiles.valid.passphrase,
                     url: (await TestData()).dataHolder.oidcEndpoint+"/.well-known/openid-configuration"
                 }))
                 .Then(async ctx => {
@@ -1501,14 +1488,14 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                     logger.debug(consent)
 
-                    const id_token = JSON.parse(consent.idTokenJson);
-                    expect(id_token.iat).to.be.a('number');
-                    expect(consent.refreshTokenExpiry).to.be.a('date');
-                    expect(consent.sharingEndDate).to.be.a('date');
+                    const claims = consent.ExistingClaims();
+                    expect(claims.iat).to.be.a('number');
+                    expect(claims.refresh_token_expires_at).to.be.a('number');
+                    expect(claims.sharing_expires_at).to.be.a('number');
 
-                    const refreshExpiry = moment(consent.refreshTokenExpiry).utc();
-                    const sharingEnd = moment(consent.sharingEndDate).utc();
-                    const iat = moment(id_token.iat*1000).utc();
+                    const refreshExpiry = moment(0).add(claims.refresh_token_expires_at,"s").utc();
+                    const sharingEnd = moment(0).add(claims.sharing_expires_at,"s").utc();
+                    const iat = moment(claims.iat*1000).utc();
 
                     // iat should not be much different from now
                     expect(iat.diff(moment(),'s')).to.be.at.most(30);

@@ -152,7 +152,7 @@ interface OIDCConfiguration {
     id_token_signing_alg_values_supported: string[];
     request_object_signing_alg_values_supported: string[];
     token_endpoint_auth_methods_supported: string[];
-    mutual_tls_sender_constrained_access_tokens: boolean;
+    tls_client_certificate_bound_access_tokens: boolean;
 
     claims_supported: string[]
 }
@@ -181,7 +181,7 @@ let DefaultOIDCConfiguration: (cfg: DhServerConfig) => OIDCConfiguration = (cfg:
         "id_token_signing_alg_values_supported": ["ES256", "PS256"],
         "request_object_signing_alg_values_supported": ["ES256", "PS256"],
         "token_endpoint_auth_methods_supported": ["private_key_jwt"],
-        "mutual_tls_sender_constrained_access_tokens": true,
+        "tls_client_certificate_bound_access_tokens": true,
         "claims_supported": ["name", "given_name", "family_name", /*"vot",*/ "acr", "auth_time", "sub", "refresh_token_expires_at", "sharing_expires_at"],
         // TODO give a full list of algorithms/raise configuration errors if the JWKS does not contain supported algorithms
         "id_token_encryption_alg_values_supported": ["RSA-OAEP", "RSA-OAEP-256"],
