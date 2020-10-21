@@ -34,6 +34,9 @@ const TestAdrConnectivityConfig = async (env:E2ETestEnvironment):Promise<AdrConn
         Resource: env.SystemUnderTest.Register().PublicUri,
         SecureResource: env.SystemUnderTest.Register().SecureUri
     },
+    RegisterEndpointVersions: {
+        GetSoftwareStatementAssertion: false
+    },
     SoftwareProductConfigUris: {
         sandbox: `http://localhost:${env.TestServices.softwareProduct.port}/software.product.config`
     },

@@ -49,6 +49,9 @@ export interface AdrConnectivityConfig {
       Resource: string
       SecureResource: string
   },
+  RegisterEndpointVersions: {
+    GetSoftwareStatementAssertion: string | false
+  },
   SoftwareProductConfigUris: Dictionary<string>,
   UsePushedAuthorizationRequest: Boolean,
   UseDhArrangementEndpoint: boolean,
@@ -91,6 +94,14 @@ export const ConnectivityConvictOptions = () => {
               default: 'https://localhost:9301/',
               env: 'ADR_REGISTER_SECURE_RESOURCE_URI'
           },            
+      },
+      RegisterEndpointVersions: {
+        GetSoftwareStatementAssertion: {
+            doc: 'Version of the endpoint to request in the x-v header (positive int or false)',
+            format: ConvictFormats.XVHeader.name,
+            default: <false>false,
+            env: 'ADR_GETSSA_XV'
+        }
       },
       DefaultClaims: {
           doc: 'Default claims to apply for new consent request',

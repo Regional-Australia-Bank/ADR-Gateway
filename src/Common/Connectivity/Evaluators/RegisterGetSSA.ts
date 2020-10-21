@@ -11,7 +11,15 @@ export const RegisterGetSSA = async (cert: ClientCertificateInjector, $: {
   let productId = $.SoftwareProductConfig.ProductId;
   let nextUrl = $.AdrConnectivityConfig.RegisterBaseUris.SecureResource + `/v1/banking/data-recipients/brands/${brandId}/software-products/${productId}/ssa`; // TODO move the page limitation to an integration test and config option
 
-  let response = await axios.get(nextUrl, cert.inject({headers: {Authorization: `Bearer ${$.RegisterAccessCredentials.accessToken}`}}))
+  const headers = <any>{
+    Authorization: `Bearer ${$.RegisterAccessCredentials.accessToken}`
+  }
+  
+  if ($.AdrConnectivityConfig.RegisterEndpointVersions.GetSoftwareStatementAssertion) {
+    headers["x-v"] = $.AdrConnectivityConfig.RegisterEndpointVersions.GetSoftwareStatementAssertion
+  }
+
+  let response = await axios.get(nextUrl, cert.inject({headers}))
 
   return response.data;
 }

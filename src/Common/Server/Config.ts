@@ -116,6 +116,26 @@ export const ConvictFormats = {
             }
         }    
     },
+    XVHeader: {
+        name: 'XVHeader',
+        validate: function(val) {
+            if (val === false) {
+                return true;
+            }
+            if (typeof val == "string") {
+                if (!(/^[1-9]\d?$/.test(val))){
+                    throw new Error('Must be a whole number >= "1"')
+                }
+                return true;
+            }
+            throw new Error('Must be "false" or a positive integer string e.g. "1"')
+        },
+        coerce: function(val) {
+            if (val === "false") return false;
+            if (typeof val == "string") return val;
+            return false;
+        }
+    },
     MtlsOptions: {
         name: 'MtlsOptions',
         validate: function(val) {
