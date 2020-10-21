@@ -217,7 +217,7 @@ export const UpdateRegistrationAtDataholder = async (cert:ClientCertificateInjec
 
   let response = await axios.request(cert.inject({
       method:"PUT",
-      url:$.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration,
+      url:$.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration.clientId,
       data:registrationRequestJwt,
       responseType: "json",
       headers: {"content-type":"application/jwt", Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}

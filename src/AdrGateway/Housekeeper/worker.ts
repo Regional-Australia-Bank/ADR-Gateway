@@ -119,10 +119,12 @@ export class AdrHousekeeper {
         let config = await this.connector.AdrConnectivityConfig().GetWithHealing()
 
         let softwareProductIds = Object.keys(config.SoftwareProductConfigUris)
+        this.logger.debug({message:`ClientRegistration: Planning.`, date: moment().toISOString(), brands, config, softwareProductIds})
 
         for (let softwareProductId of softwareProductIds) {
             for (let brand of brands) {
                 try {
+                    this.logger.debug({message:`ClientRegistration: Start. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
                     await this.connector.CheckAndUpdateClientRegistration(softwareProductId,brand.dataHolderBrandId).GetWithHealing({ignoreCache:"all"})
                     this.logger.info({message:`ClientRegistration: Success. (${brand.dataHolderBrandId}: ${brand.brandName})`, date: moment().toISOString()})
                 } catch (error) {

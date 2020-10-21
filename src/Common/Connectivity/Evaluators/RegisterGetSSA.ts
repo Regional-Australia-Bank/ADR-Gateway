@@ -9,7 +9,7 @@ export const RegisterGetSSA = async (cert: ClientCertificateInjector, $: {
 }): Promise<string> => {
   let brandId = $.AdrConnectivityConfig.BrandId;
   let productId = $.SoftwareProductConfig.ProductId;
-  let nextUrl = $.AdrConnectivityConfig.RegisterBaseUris.SecureResource + `/v1/banking/data-recipients/brands/${brandId}/software-products/${productId}/ssa`; // TODO move the page limitation to an integration test and config option
+  let nextUrl = $.AdrConnectivityConfig.RegisterBaseUris.SecureResource + `/v1/banking/data-recipients/brands/${brandId}/software-products/${productId}/ssa`;
 
   const headers = <any>{
     Authorization: `Bearer ${$.RegisterAccessCredentials.accessToken}`
