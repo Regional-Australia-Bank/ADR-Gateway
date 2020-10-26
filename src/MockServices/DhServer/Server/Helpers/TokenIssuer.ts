@@ -56,7 +56,6 @@ class TokenIssuer {
             acr: "urn:cds.au:cdr:3", // TODO clarify levels and determine the appropriate response: https://consumerdatastandardsaustralia.github.io/standards/#levels-of-assurance-loas
             c_hash: oidc_fapi_hash(code),
             s_hash: consent.state && oidc_fapi_hash(consent.state),
-            refresh_token_expires_at: consent.refreshTokenExpiresNumericDate(),
             sharing_expires_at: consent.SharingExpiresNumericDate()
         }
     
