@@ -15,7 +15,7 @@ export const RegisterGetSSA = async (cert: ClientCertificateInjector, $: {
     Authorization: `Bearer ${$.RegisterAccessCredentials.accessToken}`
   }
   
-  if ($.AdrConnectivityConfig.RegisterEndpointVersions.GetSoftwareStatementAssertion) {
+  if ($.AdrConnectivityConfig.RegisterEndpointVersions?.GetSoftwareStatementAssertion) {
     headers["x-v"] = $.AdrConnectivityConfig.RegisterEndpointVersions.GetSoftwareStatementAssertion
   }
 

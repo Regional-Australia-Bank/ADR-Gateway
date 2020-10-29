@@ -186,7 +186,10 @@ export class E2ETestEnvironment {
                 }
 
                 config.UsePushedAuthorizationRequest = false;
-                config.UseDhArrangementEndpoint = this.switches.UseDhArrangementEndpoint;         
+                config.UseDhArrangementEndpoint = this.switches.UseDhArrangementEndpoint;      
+                config.RegisterEndpointVersions = {
+                    GetSoftwareStatementAssertion: "2"
+                }
 
                 return config;
             }),
