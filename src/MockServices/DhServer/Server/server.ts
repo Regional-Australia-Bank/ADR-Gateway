@@ -295,7 +295,9 @@ class DhServer {
             container.resolve(UserInfoMiddleware).handler()
         )    
 
-        app.get("/cds-au/v1/discovery/status", async (req, res) => {
+        app.get("/cds-au/v1/discovery/status",
+            container.resolve(CDSVersionComplianceMiddleware).handle,
+            async (req, res) => {
             // output the public portion of the key
 
             res.setHeader("content-type", "application/json");

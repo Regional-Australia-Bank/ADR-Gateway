@@ -57,7 +57,13 @@ export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
         return "OK"
     }
 
-    let options = cert.injectCa({responseType:"json", headers:{"x-v":1}});
+    let options = cert.injectCa({
+        responseType:"json",
+        headers: {
+            "accept":"application/json",
+            "x-v":1,
+        }
+    });
     let url = urljoin($.DataHolderBrandMetadata.endpointDetail.publicBaseUri,'cds-au/v1/discovery/status')
     
     try {
