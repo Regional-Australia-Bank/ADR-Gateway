@@ -1,6 +1,6 @@
 import { Scenario as ScenarioBase, TestContext, HttpLogEntry } from "./Framework/TestContext";
 import { expect } from "chai";
-import _ from "lodash"
+import _, { split } from "lodash"
 import { SetValue } from "./Framework/SetValue";
 import { E2ETestEnvironment } from "./Framework/E2ETestEnvironment";
 import { DataHolderRegistration } from "../../Common/Entities/DataHolderRegistration";
@@ -12,10 +12,14 @@ import moment from "moment";
 import { SwitchIdTokenAlgs } from "./Helpers/SwitchIdTokenAlgs";
 import { UpdateRegistrationAtDataholder } from "../../Common/Connectivity/Evaluators/DynamicClientRegistration";
 import { logger } from "../Logger";
+import { ClearDefaultInMemoryCache } from "../../Common/Connectivity/Cache/InMemoryCache";
+import { oidc_fapi_hash } from "../../Common/SecurityProfile/Util";
 
 export const DcrSymbols = {
     Context: {
-        ClientRegistration: Symbol.for("ClientRegistration"),
+        OldClientRegistration: Symbol.for("OldClientRegistration"),
+        OldClientRegistrationDeleted: Symbol.for("OldClientRegistrationDeleted"),
+        NewClientRegistration: Symbol.for("NewClientRegistration"),
         ClientRegistrationCreated: Symbol.for("ClientRegistrationCreated"),
         DCRAccessToken: Symbol.for("DCRAccessToken"),
         TS_085: Symbol.for("TS_085"),
@@ -123,7 +127,14 @@ const UpdateRegistrationPropertiesExpectations = (statusCode:number,registration
 
     expect(responseData.software_statement).to.equal(requestParts.software_statement);
     expect(responseData.software_id).to.equal(ssa.software_id);
-    expect(responseData.scope).to.equal(ssa.scope);
+
+    // expect response to contain all the requested scopes (additional are OK)
+    const awardedScopes = (<string>responseData.scope).split(" ");
+    const ssaScopes = (<string>ssa.scope).split(" ");
+
+    for (let ssaScope of ssaScopes) {
+        expect(awardedScopes).to.contain(ssaScope)
+    }
 
 }
 
@@ -147,7 +158,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             })
 
 
-        Scenario($ => it.apply(this,$('Get clientID')), undefined, 'Detemine if a client ID exists for given dataholder')
+        Scenario($ => it.apply(this,$('Get existing clientID')), undefined, 'Detemine if a client ID exists for given dataholder')
             .Given('Cold start')
             .When(SetValue,async (ctx) => {
                 let regManager = environment.TestServices.adrGateway?.connectivity.dataholderRegistrationManager;
@@ -160,52 +171,49 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let reg:DataHolderRegistration = await ctx.GetValue("Registration")
                 logger.debug(reg?.clientId);
-            }).Keep(DcrSymbols.Context.ClientRegistration)
+            }).Keep(DcrSymbols.Context.OldClientRegistration)
 
-        Scenario($ => it.apply(this,$('Get token')), undefined, 'Get Token for DCR (existing client)')
+        Scenario($ => it.apply(this,$('DELETE existing clientID')), undefined, 'DELETE existing client_id at the dataholder')
             .Given('Cold start')
-            .Precondition("ClientID exist",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+            .Precondition("Client ID does not exist",async (ctx) => {
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.OldClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
-                    throw 'Cannot proceed'
+                    throw 'Cannot proceed. No client_id to delete.'
                 }
             })
             .When(SetValue,async (ctx) => {
-                let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration");
-                let at = await environment.TestServices.adrGateway?.connectivity.DhRegAccessToken(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
-                return at;
-            },"Token")
-            .Then(async ctx => {
-                let reg:DataHolderRegistration = await ctx.GetValue("Token")
-                logger.debug(reg.clientId);
-            }).Keep(DcrSymbols.Context.DCRAccessToken)
 
-        Scenario($ => it.apply(this,$('Get current registration')), undefined, 'Get current registration (existing client)')
-            .Given('Cold start')
-            .Precondition("ClientID exists",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
-                if (typeof reg == 'undefined') {
-                    throw 'Cannot proceed'
-                }
-            })
-            .When(SetValue,async (ctx) => {
-                let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration");
-                let updatedReg = await environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
-                return updatedReg;
-            },"UpdatedRegistration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.OldClientRegistration).GetValue("Registration")
+
+                let deletedReg = await ctx.environment.TestServices.adrGateway.connectivity.DhDeleteClientRegistration(reg.softwareProductId,reg.dataholderBrandId).Evaluate();
+
+                return deletedReg;
+
+            },"Registration")
             .Then(async ctx => {
-                let result:DataHolderRegistration = (await ctx.GetResult(SetValue,"UpdatedRegistration")).value
-                logger.debug(result);
-            })
+                let reg:DataHolderRegistration = await ctx.GetValue("Registration")
+                expect(reg.status).to.eq("DELETED");
+                let registrationHttpRequest = ctx.GetLastHttpRequest("DELETE",/register\/cdr\/[^\/]+$/);
+
+                expect([204]).to.contain(registrationHttpRequest.response?.status);
+
+                logger.debug(reg);
+            }).Keep(DcrSymbols.Context.OldClientRegistrationDeleted)
+
+        const oldRegUndefinedOrDeleted = async (ctx:TestContext):Promise<void> => {
+            let oldReg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.OldClientRegistration).GetValue("Registration")
+            if (typeof oldReg == 'undefined') {
+                return;
+            }
+            let deletedReg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.OldClientRegistrationDeleted).GetValue("Registration")
+            if (deletedReg.status !== "DELETED") {
+                throw 'Cannot proceed. Old registration was not deleted.'
+            }
+        }
 
         Scenario($ => it.apply(this,$('TS_084')), undefined, 'redirect_uris must be a subset of those in the SSA')
             .Given('Cold start')
-            .Precondition("Client ID does not exist",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
-                if (typeof reg !== 'undefined') {
-                    throw 'Cannot proceed'
-                }
-            })
+            .Precondition("Client ID does not exist",oldRegUndefinedOrDeleted)
             .When(SetValue,async (ctx) => {
 
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
@@ -240,7 +248,9 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"NewRegistrationExecution")
             .Then(async ctx => {
 
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("POST",/register$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = ctx.GetLastHttpRequest("POST",oidc.registration_endpoint);
 
                 expect(registrationHttpRequest.response?.status).to.equal(400);
 
@@ -248,12 +258,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
         Scenario($ => it.apply(this,$('TS_083')).timeout(300000), undefined, 'New registration with correct claims')
             .Given('Cold start')
-            .Precondition("Client ID does not exist",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
-                if (typeof reg !== 'undefined') {
-                    throw 'Cannot proceed'
-                }
-            })
+            .Precondition("Client ID does not exist",oldRegUndefinedOrDeleted)
             .When(SetValue,async (ctx) => {
 
                 if (typeof environment.TestServices.adrGateway == 'undefined') throw 'AdrGateway service is undefined'
@@ -274,7 +279,10 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             .Then(async ctx => {
                 await ctx.GetValue("NewRegistrationExecution")
 
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("POST",/register$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = ctx.GetLastHttpRequest("POST",oidc.registration_endpoint);
+
                 if (registrationHttpRequest.error) {
                     throw registrationHttpRequest.error
                 }
@@ -283,19 +291,16 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
         Scenario($ => it.apply(this,$('TS_085')), undefined, 'On success an HTTP status code of 201-Created along with the Client ID should be issued back to the DR .Also all the registered metadata about this client MUST be returned by the DH authorisation server.')
             .Given('Cold start')
-            .Precondition("Client ID does not exist",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
-                if (typeof reg !== 'undefined') {
-                    throw 'Cannot proceed'
-                }
-            })
+            .Precondition("Client ID does not exist",oldRegUndefinedOrDeleted)
             .When(SetValue,async (ctx) => {
                 return ctx.GetTestContext(DcrSymbols.Context.ClientRegistrationCreated).GetValue("NewRegistrationExecution")
             },"NewRegistrationExecution")
             .Then(async ctx => {
                 let createRegistrationCtx = ctx.GetTestContext(DcrSymbols.Context.ClientRegistrationCreated)
 
-                let registrationHttpRequest = createRegistrationCtx.GetOnlyHttpRequest("POST",/register$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = createRegistrationCtx.GetLastHttpRequest("POST",oidc.registration_endpoint);
 
                 UpdateRegistrationPropertiesExpectations(201,registrationHttpRequest);
 
@@ -305,10 +310,63 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             .Given('Cold start')
             .Proxy(DcrSymbols.Context.TS_085)
 
+        Scenario($ => it.apply(this,$('Get new/existing clientID')), undefined, 'Detemine if a client ID exists for given dataholder')
+            .Given('Cold start')
+            .When(SetValue,async (ctx) => {
+                await ctx.GetTestContext(DcrSymbols.Context.ClientRegistrationCreated).GetResult(SetValue)
+                
+                let regManager = environment.TestServices.adrGateway?.connectivity.dataholderRegistrationManager;
+                if (typeof regManager == 'undefined') throw 'Registration manager is undefined';
+                let adrConfig = (await environment.GetServiceDefinition.AdrGateway());
+                let dataholderId = environment.Config.SystemUnderTest.Dataholder;
+                let reg = await regManager.GetActiveRegistrationByIds((await ctx.environment.OnlySoftwareProductConfig()).ProductId,dataholderId)
+                return reg;
+            },"Registration")
+            .Then(async ctx => {
+                let reg:DataHolderRegistration = await ctx.GetValue("Registration")
+                logger.debug(reg?.clientId);
+            }).Keep(DcrSymbols.Context.NewClientRegistration)
+
+        Scenario($ => it.apply(this,$('Get token')), undefined, 'Get Token for DCR (existing client)')
+            .Given('Cold start')
+            .Precondition("ClientID exist",async (ctx) => {
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
+                if (typeof reg == 'undefined') {
+                    throw 'Cannot proceed'
+                }
+            })
+            .When(SetValue,async (ctx) => {
+                let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration");
+                let at = await environment.TestServices.adrGateway?.connectivity.DhRegAccessToken(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
+                return at;
+            },"Token")
+            .Then(async ctx => {
+                let reg:DataHolderRegistration = await ctx.GetValue("Token")
+                logger.debug(reg.clientId);
+            }).Keep(DcrSymbols.Context.DCRAccessToken)
+
+        Scenario($ => it.apply(this,$('Get current registration')), undefined, 'Get current registration (existing client)')
+            .Given('Cold start')
+            .Precondition("ClientID exists",async (ctx) => {
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
+                if (typeof reg == 'undefined') {
+                    throw 'Cannot proceed'
+                }
+            })
+            .When(SetValue,async (ctx) => {
+                let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration");
+                let updatedReg = await environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
+                return updatedReg;
+            },"UpdatedRegistration")
+            .Then(async ctx => {
+                let result:DataHolderRegistration = (await ctx.GetResult(SetValue,"UpdatedRegistration")).value
+                logger.debug(result);
+            })
+
         Scenario($ => it.apply(this,$('TS_086')), undefined, 'Get an existing registration from a dataholder')
             .Given('Cold start')
             .Precondition("Client ID exists",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
                     throw 'Cannot proceed'
                 }
@@ -320,17 +378,21 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
                 logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
+                ClearDefaultInMemoryCache();
+
                 let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 await dependency.Evaluate()
             },"ExistingRegistrationExecution")
             .Then(async ctx => {
 
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration");
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration");
                 if (!reg) throw 'DataHolderRegistration is not truthy';
 
                 await ctx.GetValue("ExistingRegistrationExecution")
 
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("GET",/register\/[^\/]+$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = ctx.GetOnlyHttpRequest("GET",oidc.registration_endpoint);
 
                 GetRegistrationPropertiesExpectations(200,registrationHttpRequest);
 
@@ -339,10 +401,16 @@ export const Tests = ((environment:E2ETestEnvironment) => {
         Scenario($ => it.apply(this,$('TS_087')), undefined, 'Update a registration by changing the id_token_encrypted_response_enc')
             .Given('Cold start')
             .Precondition("Client ID exists",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
                     throw 'Cannot proceed'
                 }
+
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+                if (oidc.id_token_encryption_alg_values_supported.length < 2) {
+                    throw new Error(`Need more than one id_token_encryption_alg_values_supported for this test case`)
+                }
+
             })
             .When(SetValue,async (ctx) => {
                 let original_id_token_encrypted_response_alg:string|undefined = await SwitchIdTokenAlgs(environment)
@@ -350,15 +418,18 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 return original_id_token_encrypted_response_alg;
             },"original_id_token_encrypted_response_alg")
             .Then(async ctx => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration");
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration");
                 if (!reg) throw 'DataHolderRegistration is not truthy';
 
                 let original_id_token_encrypted_response_alg:string = await ctx.GetValue("original_id_token_encrypted_response_alg");
 
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("PUT",/register\/[^\/]+$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = ctx.GetLastHttpRequest("PUT",oidc.registration_endpoint+"/"+reg.clientId);
 
                 UpdateRegistrationPropertiesExpectations(200,registrationHttpRequest);
-
+                expect(original_id_token_encrypted_response_alg).to.not.be.undefined;
+                expect(registrationHttpRequest.response?.data.id_token_encrypted_response_alg).to.not.be.undefined;
                 expect(registrationHttpRequest.response?.data.id_token_encrypted_response_alg).to.not.equal(original_id_token_encrypted_response_alg);
                 logger.debug(`Successfully changed id_token_encrypted_response_alg from ${original_id_token_encrypted_response_alg} to ${registrationHttpRequest.response?.data.id_token_encrypted_response_alg}`)
 
@@ -367,7 +438,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
         Scenario($ => it.apply(this,$('TS_089')), undefined, 'DR sends a Get/Update/Delete request to the DH with an invalid access token.')
             .Given('Existing client ID')
             .Precondition("Client ID exists",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
                     throw 'Cannot proceed'
                 }
@@ -379,19 +450,23 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
                 logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
                 let interceptor = axios.interceptors.request.use(config => {
-                    if (config.method == "get" && config.url && /register\/[^\/]+$/.test(config.url)) {
+                    if (config.method == "get" && config.url && config.url.startsWith(oidc.registration_endpoint)) {
                         config.headers['Authorization'] = 'Bearer invalidtokenthisis'
                     }
                     return config;
                 })
 
                 try {
+                    ClearDefaultInMemoryCache();
+
                     let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 
                     await dependency.Evaluate()
                 } catch (err) {
-                    if (!err.response) throw err;
+                    
                 } finally {
                     axios.interceptors.request.eject(interceptor)
                 }
@@ -399,18 +474,20 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"ExistingRegistrationExecution")
             .Then(async ctx => {
 
-                let reg:DataHolderRegistration|undefined = await ctx.GetValue("ExistingRegistrationExecution");
+                await ctx.GetValue("ExistingRegistrationExecution");
 
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("GET",/register\/[^\/]+$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
 
-                expect(registrationHttpRequest.response?.status).to.equal(401);
+                let registrationHttpRequest = ctx.GetLastHttpRequest("GET",oidc.registration_endpoint);
+                
+                expect([400,401]).to.contain(registrationHttpRequest.response?.status);
 
             },300)
             
         Scenario($ => it.apply(this,$('TS_090')), undefined, 'DR sends a Get/Update/Delete request to the DH with an invalid client id.')
             .Given('Existing client ID')
             .Precondition("Client ID exists",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
                     throw 'Cannot proceed'
                 }
@@ -422,22 +499,23 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 const dataholder = environment.Config.SystemUnderTest.Dataholder;
                 logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
                 let interceptor = axios.interceptors.request.use(config => {
-                    if (config.method == "get" && config.url) {
-                        let m = /^(.*?)register\/([^\/]+$)/.exec(config.url)
-                        if (m) {
-                            config.url = `${m[1]}register/invalid-client-id`
-                        }
+                    if (config.method == "get" && config.url && config.url.startsWith(oidc.registration_endpoint)) {
+                        config.url = `${oidc.registration_endpoint}/invalid-client-id`
                     }
                     return config;
                 })
 
                 try {
+                    ClearDefaultInMemoryCache();
+
                     let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
                 
                     await dependency.Evaluate()
                 } catch (err) {
-                    if (!err.response) throw err;
+
                 } finally {
                     axios.interceptors.request.eject(interceptor)
                 }
@@ -445,29 +523,32 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"ExistingRegistrationExecution")
             .Then(async ctx => {
 
-                let reg:DataHolderRegistration|undefined = await ctx.GetValue("ExistingRegistrationExecution");
+                await ctx.GetValue("ExistingRegistrationExecution");
 
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("GET",/register\/[^\/]+$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
 
-                expect(registrationHttpRequest.response?.status).to.equal(401);
+                let registrationHttpRequest = ctx.GetLastHttpRequest("GET",`${oidc.registration_endpoint}/invalid-client-id`);
+
+                expect([400,401,404,403]).to.contain(registrationHttpRequest.response?.status);
 
             },300)
             
         Scenario($ => it.apply(this,$('TS_094')), undefined, 'DH rejects registration request for invalid client metadata.')
             .Given('the value of one of the client metadata fields is invalid')
             .Precondition("Client ID determined",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
                     throw 'Cannot proceed'
                 }
             })
             .When(SetValue,async (ctx) => {
 
-                let configFn = environment.TestServices.adrGateway.connectivity.configFn;
 
+                let configFn = environment.TestServices.adrGateway.connectivity.graph.Dependencies.AdrConnectivityConfig.spec.evaluator;
+                
                 try {
-                    environment.TestServices.adrGateway.connectivity.configFn = async ():Promise<AdrConnectivityConfig> => {
-                        let origConfig = _.clone(await configFn());
+                    environment.TestServices.adrGateway.connectivity.graph.Dependencies.AdrConnectivityConfig.spec.evaluator = async ():Promise<AdrConnectivityConfig> => {
+                        let origConfig = _.clone(await configFn({}));
                 
                         return {
                             BrandId: origConfig.BrandId,
@@ -488,7 +569,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                         }
                     }
     
-                    let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                    let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                     if (!reg) throw 'Asserting that reg is not undefined'
                     let dataholder = environment.Config.SystemUnderTest.Dataholder;
                     let pw = environment.TestServices.adrGateway?.connectivity;
@@ -516,13 +597,15 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     });
     
                 } finally {
-                    environment.TestServices.adrGateway.connectivity.configFn = configFn
+                    environment.TestServices.adrGateway.connectivity.graph.Dependencies.AdrConnectivityConfig.spec.evaluator = configFn
                 }
                 return;
             },"UpdateExecution")
             .Then(async ctx => {
                 await ctx.GetValue("UpdateExecution");
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("PUT",/register\/[^\/]+$/);
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = ctx.GetLastHttpRequest("PUT",oidc.registration_endpoint);
 
                 expect([401,400]).to.include(registrationHttpRequest.response?.status);
 
@@ -530,7 +613,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
         Scenario($ => it.apply(this,$('TS_095')), undefined, 'DR sends an expired SSA.')
             .Given('Existing client ID')
             .Precondition("Client ID determined and SSA is expired",async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (typeof reg == 'undefined') {
                     throw 'Cannot proceed'
                 }
@@ -560,7 +643,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
             })
             .When(SetValue,async (ctx) => {
-                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.ClientRegistration).GetValue("Registration")
+                let reg:DataHolderRegistration|undefined = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration")
                 if (!reg) throw 'Asserting that reg is not undefined'
                 let old_ssa = await environment.GetPersistedValue("Old SSA");
                 let dataholder = environment.Config.SystemUnderTest.Dataholder;
@@ -593,7 +676,10 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             },"ExpiredSSAExecution")
             .Then(async ctx => {
                 await ctx.GetValue("ExpiredSSAExecution");
-                let registrationHttpRequest = ctx.GetOnlyHttpRequest("PUT",/register\/[^\/]+$/);
+
+                let oidc = await ctx.environment.TestServices.adrGateway.connectivity.DataHolderOidc(ctx.environment.Config.SystemUnderTest.Dataholder).Evaluate()
+
+                let registrationHttpRequest = ctx.GetOnlyHttpRequest("PUT",oidc.registration_endpoint);
 
                 expect([401,400]).to.include(registrationHttpRequest.response?.status);
 

@@ -10,7 +10,7 @@ import { JWKS } from "jose";
 import { RegisterGetSSA } from "./Evaluators/RegisterGetSSA";
 import { ValidAndCurrentSSA } from "./Validators/ValidAndCurrentSSA"
 import { GetCurrentClientRegistration } from "./Evaluators/GetCurrentClientRegistration";
-import { NewClientRegistration, CheckAndUpdateClientRegistration, GetDataHolderRegistrationAccessToken } from "./Evaluators/DynamicClientRegistration";
+import { NewClientRegistration, CheckAndUpdateClientRegistration, GetDataHolderRegistrationAccessToken, DeleteClientRegistration } from "./Evaluators/DynamicClientRegistration";
 import { GetAuthorizationRequest } from "./Evaluators/AuthorizationRequest";
 import { FetchTokens, SyncRefreshTokenStatus } from "./Evaluators/FetchTokens";
 import { GetUserInfo } from "./Evaluators/UserInfo";
@@ -54,6 +54,7 @@ export {
   RegisterGetSSA,
   GetCurrentClientRegistration,
   NewClientRegistration,
+  DeleteClientRegistration,
   GetDataHolderRegistrationAccessToken,
   CheckAndUpdateClientRegistration,
   GetAuthorizationRequest,

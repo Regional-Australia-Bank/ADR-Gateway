@@ -229,6 +229,23 @@ DhRegAccessToken:
   evaluator: util.GetDataHolderRegistrationAccessToken.bind(undefined,factory.cert)
   cache: {minAge: 60, maxAge: 300}
 
+DhDeleteClientRegistration: 
+  parameters:
+    SoftwareProductId: string
+    DataHolderBrandId: string
+  dependencies:
+    - AdrConnectivityConfig
+    - SoftwareProductConfig
+    - DataRecipientJwks
+    - DataHolderOidc
+    - DataHolderBrandMetadata
+    - DataHolderUpAndReady
+    - CurrentClientRegistration
+    - DhRegAccessToken
+  output: Types.DataHolderRegistration
+  evaluator: util.DeleteClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager)
+  cache: {noCache: true}
+
 CheckAndUpdateClientRegistration:
   parameters:
     SoftwareProductKey: string

@@ -111,6 +111,10 @@ class UpdateClientRegistrationMiddleware {
                 }
             )
 
+            if (validatedRequestParts.id_token_signed_response_alg == "RS256") {
+                return res.status(400).json("I don't like RS256")
+            }
+
             let updatedRegistration = await this.clientRegistrationManager.UpdateRegistration(
                 dr_client_id,
                 params.software_statement.verified.payload.software_id,

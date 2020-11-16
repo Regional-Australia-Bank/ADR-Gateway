@@ -20,7 +20,13 @@ import { Dictionary } from "tsyringe/dist/typings/types";
 import { TestBoundaryParams } from "./Environments";
 import { logger } from "../Logger";
 
-const SMALL_PAGE_SIZE = 20;
+const SmallPageSize = (ctx:TestContext) => {
+    if (ctx.environment.Config.TestData?.SmallPageSize) {
+        return ctx.environment.Config.TestData.SmallPageSize
+    } else {
+        return 50
+    }
+};
 
 // TODO move time boundaries to environment or make dynamic
 const TestBoundaries = (ctx:TestContext):TestBoundaryParams => {
@@ -140,14 +146,14 @@ const transactionRules = {
     "type": ['required','string','regex:/^(FEE|INTEREST_CHARGED|INTEREST_PAID|TRANSFER_OUTGOING|TRANSFER_INCOMING|PAYMENT|DIRECT_DEBIT|OTHER)$/'],
     "status": ['required','string','regex:/^(POSTED|PENDING)$/'],
 
-    "description": ['required','string'],
+    "description": "string",
 
     "postingDateTime": ['required_if:status,POSTED','DateTimeString'],
     "valueDateTime": ['DateTimeString'],
     "executionDateTime": ['DateTimeString'],
     "amount":['required',"AmountString"],
     "currency": "CurrencyString",
-    "reference": "present|string",
+    "reference": "string",
     merchantName:'string',
     merchantCategoryCode:'string',
     billerCode:'string',
@@ -222,7 +228,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
                     Authorization: `Bearer ${(await ctx.GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
                 },
-                url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts?product-category=TRANS_AND_SAVINGS_ACCOUNTS&open-status=OPEN&is-owned=true"),
+                url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts?product-category=TRANS_AND_SAVINGS_ACCOUNTS&open-status=OPEN"),
             }
             return options;    
         } catch (err) {
@@ -542,7 +548,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                             "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
                             Authorization: `Bearer ${(await ctx.GetResult(NewGatewayConsent)).consent!.accessToken}`
                         },
-                        url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts?product-category=TRANS_AND_SAVINGS_ACCOUNTS&open-status=OPEN&is-owned=true"),
+                        url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts?product-category=TRANS_AND_SAVINGS_ACCOUNTS&open-status=OPEN"),
                     }
                     return DoRequest.Options(<any>options);
                 },"Accounts")
@@ -588,10 +594,10 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     ctx.kv.accountIds = [accounts[0].accountId];
 
                 })
-                .PreTask(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SMALL_PAGE_SIZE,{"x-v":"5"})),"Unsupported x-v")
-                .PreTask(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SMALL_PAGE_SIZE,{"x-min-v":"0"})),"Unsupported x-min-v")
-                .PreTask(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SMALL_PAGE_SIZE,{"accept":"application/xml"})),"Unsupported accept")
-                .When(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SMALL_PAGE_SIZE,{"content-type":"application/xml"})),"Unsupported content-type")
+                .PreTask(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SmallPageSize(ctx),{"x-v":"5"})),"Unsupported x-v")
+                .PreTask(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SmallPageSize(ctx),{"x-min-v":"0"})),"Unsupported x-min-v")
+                .PreTask(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SmallPageSize(ctx),{"accept":"application/xml"})),"Unsupported accept")
+                .When(DoRequest, async (ctx) => DoRequest.Options(<any>await BalancesOptions(ctx,ctx.kv.accountIds,SmallPageSize(ctx),{"content-type":"application/xml"})),"Unsupported content-type")
                 .Then(async ctx => {
                     let results = [
                         await (ctx.GetResult(DoRequest,"Unsupported x-v")),
@@ -600,10 +606,10 @@ const Tests = (async(env:E2ETestEnvironment) => {
                         await (ctx.GetResult(DoRequest,"Unsupported content-type")),
                     ]
                     
-                    for (let result of results) {
-                        let accountsObject = result.response.data;
-                        expect(result.response.status).to.equal(406);
-                    }
+                    expect(results[0].response.status).to.equal(406);
+                    expect(results[1].response.status).to.equal(406);
+                    expect(results[2].response.status).to.equal(406);
+                    expect(results[3].response.status).to.equal(400);
 
                 },120)
         })
@@ -616,7 +622,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     if (accounts.length == 0) throw 'No accounts to get transactions from'
                     let accountId = accounts[0].accountId;
 
-                    return DepaginateRequest.Options(<any>await AllTransactionsOptions(ctx,accountId,SMALL_PAGE_SIZE),0)
+                    return DepaginateRequest.Options(<any>await AllTransactionsOptions(ctx,accountId,SmallPageSize(ctx)),0)
                 })
                 .Then(async ctx => {
                     let depaginateResult = await (ctx.GetResult(DepaginateRequest));
@@ -652,12 +658,14 @@ const Tests = (async(env:E2ETestEnvironment) => {
 
                     let lastRequest = forwardRun.GetLastHttpRequest("GET",/transactions/);
                     let lastUri = lastRequest.response?.data.links.last
-                    let lastSelfUri = lastRequest.response?.data.links.last
-                    if (typeof lastUri !== 'string' || lastUri.length === 0) throw 'Forward run is not consistent in regards to links.self and links.last'
-                    if (lastUri != lastSelfUri) throw 'Self is not consistent'
+                    let lastSelfUri = lastRequest.response?.data.links.self
+                    if (typeof lastSelfUri !== 'string') throw 'Forward run is not consistent in regards to links.self and links.last'
+                    if (typeof lastUri !== "undefined") {
+                        if (lastUri != lastSelfUri) throw 'Self is not consistent'
+                    }
 
-                    let options = DepaginateRequest.Options(<any>await AllTransactionsOptions(ctx,accountId,SMALL_PAGE_SIZE),0,"BACKWARDS")
-                    options.requestOptions.url = lastUri;
+                    let options = DepaginateRequest.Options(<any>await AllTransactionsOptions(ctx,accountId,SmallPageSize(ctx)),0,"BACKWARDS")
+                    options.requestOptions.url = lastUri || lastSelfUri;
                     options.requestOptions.params = {}
                     return options
                 })
@@ -703,7 +711,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
 
                     // Parallel pagination
                     let resultPages = _.map(pageNumbers, async n => {
-                        let options = await AllTransactionsOptions(ctx,accountId,SMALL_PAGE_SIZE);
+                        let options = await AllTransactionsOptions(ctx,accountId,SmallPageSize(ctx));
                         (<any>options.params).page = n.toString()
                         logger.debug(`Spawning regular pagination request ${n} with options:`);
                         logger.debug(options);
@@ -748,13 +756,14 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     totalPages = Math.floor(totalPages);
                     
                     if (totalPages < 0) throw 'totalPages cannot be negative'
+                    if (totalPages < 5) throw 'Need at least 5 pages to do a good pagination test'
                     const pageNumbers = _.range(1,totalPages + 1);
 
                     // Serial pagination
                     let resultPages:Promise<any>[] = [];
                     
                     for (let n of pageNumbers) {
-                        let options = await AllTransactionsOptions(ctx,accountId,SMALL_PAGE_SIZE);
+                        let options = await AllTransactionsOptions(ctx,accountId,SmallPageSize(ctx));
                         (<any>options.params).page = n.toString()
                         logger.debug(`Spawning regular pagination request ${n} with options:`);
                         logger.debug(options);
@@ -800,7 +809,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
 
                     let response = requestResult.response
                     // TODO update expectation to match standard documentation (403 only)
-                    expect(response.status).to.satisfy(m => m == 403 || m == 401,'4xx level error code');
+                    expect(response.status).to.satisfy(m => m == 403 || m == 401 || m == 400,'4xx level error code');
                 },120).Keep("TS_253")
 
 
@@ -874,10 +883,10 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     // also filter the dates so we have a clear date range for comparsion
                     clientFiltered = _.filter(clientFiltered,t => moment(t.postingDateTime).isBetween(TestBoundaries(ctx)["oldest-time"],TestBoundaries(ctx)["newest-time"]))
                     if (clientFiltered.length == 0) {
-                        throw "No test data within the specified period";
+                        throw "No test data within the specified amounts";
                     }
                     if (transactions.length - clientFiltered.length == 0) {
-                        throw "No test data outside the specified period";
+                        throw "No test data outside the specified amounts";
                     }
                     ctx.kv.clientFiltered = clientFiltered
                 })
@@ -1092,7 +1101,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 })
                 .Then(async ctx => {
                     let res = await ctx.GetResult(DoRequest);
-                    expect(res.response.status).to.equal(403);
+                    expect([403,400]).to.contain(res.response.status)
                 },120)
 
             Scenario($ => it.apply(this,$('TS_279')), 'Julia', 'The transaction detail of A/C 1 are returned by DH1')
@@ -1170,7 +1179,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     if (accounts.length == 0) throw 'No accounts to get transactions from'
                     let accountId = accounts[0].accountId;
 
-                    return DepaginateRequest.Options(<any>await BalancesOptions(ctx,[accountId],SMALL_PAGE_SIZE),0)
+                    return DepaginateRequest.Options(<any>await BalancesOptions(ctx,[accountId],SmallPageSize(ctx)),0)
                 })
                 .Then(async ctx => {
                     let depaginateResult = await (ctx.GetResult(DepaginateRequest));
@@ -1205,7 +1214,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     if (accounts.length == 0) throw 'No accounts to get transactions from'
                     let accountId = accounts[0].accountId;
 
-                    return DoRequest.Options(<any>await BalancesOptions(ctx,[accountId, ctx.environment.Config.TestData?.Personas?.Jane?.InvalidAccountId!],SMALL_PAGE_SIZE))
+                    return DoRequest.Options(<any>await BalancesOptions(ctx,[accountId, ctx.environment.Config.TestData?.Personas?.Jane?.InvalidAccountId!],SmallPageSize(ctx)))
                 })
                 .Then(async ctx => {
                     let requestResult = await (ctx.GetResult(DoRequest));
@@ -1263,7 +1272,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     if (accounts.length == 0) throw 'No accounts to get transactions from'
                     let accountId = accounts[0].accountId;
 
-                    return DepaginateRequest.Options(<any>await BulkBalancesOptions(ctx,{"product-category":"TRANS_AND_SAVINGS_ACCOUNTS"},SMALL_PAGE_SIZE),0)
+                    return DepaginateRequest.Options(<any>await BulkBalancesOptions(ctx,{"product-category":"TRANS_AND_SAVINGS_ACCOUNTS"},SmallPageSize(ctx)),0)
                 })
                 .Then(async ctx => {
                     let depaginateResult = await (ctx.GetResult(DepaginateRequest));
@@ -1305,7 +1314,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     if (accounts.length == 0) throw 'No accounts to get transactions from'
                     let accountId = accounts[0].accountId;
 
-                    return DepaginateRequest.Options(<any>await BulkBalancesOptions(ctx,{"product-category":"TERM_DEPOSITS"},SMALL_PAGE_SIZE),0)
+                    return DepaginateRequest.Options(<any>await BulkBalancesOptions(ctx,{"product-category":"TRADE_FINANCE"},SmallPageSize(ctx)),0)
                 })
                 .Then(async ctx => {
                     let depaginateResult = await (ctx.GetResult(DepaginateRequest));

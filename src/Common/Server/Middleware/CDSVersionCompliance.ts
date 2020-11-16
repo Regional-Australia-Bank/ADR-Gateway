@@ -52,15 +52,20 @@ class CDSVersionComplianceMiddleware {
             return true;
         })();
 
-        let contentTypesOK:boolean = (():boolean => {
+        let acceptTypesOK:boolean = (():boolean => {
             // Accept request only if x-v = 1
             let accept = req.headers['accept'];
             if (typeof accept == 'string') {
                 if (accept != "application/json") {
                     return false;
                 }
-            }
-    
+            }    
+   
+            return true;
+        })();
+
+
+        let contentTypesOK:boolean = (():boolean => {   
             // Accept request only if x-min-v is 1 or not sent
             let contentType = req.headers['content-type'];
             if (typeof contentType == 'string') {
@@ -72,10 +77,16 @@ class CDSVersionComplianceMiddleware {
             return true;
         })();
     
-        if (!(xvOK && contentTypesOK)) {
-            res.statusCode = 406
-            res.statusMessage = "Not Acceptable"
-            res.send()
+        if (!(xvOK && acceptTypesOK && contentTypesOK)) {
+            if (!contentTypesOK) {
+                res.statusCode = 400
+                res.statusMessage = "Not Acceptable"
+                res.send()    
+            } else {
+                res.statusCode = 406
+                res.statusMessage = "Not Acceptable"
+                res.send()    
+            }
         } else {
             next();
         }        

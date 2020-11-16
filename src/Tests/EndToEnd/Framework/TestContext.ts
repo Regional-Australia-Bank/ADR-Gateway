@@ -307,7 +307,7 @@ class TestContext extends PartialContext {
 
     GetMatchingHttpRequests = (method?:"POST"|"GET"|"PUT"|"DELETE", urlMatcher?:string | RegExp) => {
         return _.filter(this.requestLog,l => {
-            let url = <string>(<any>l.request).path;
+            let url = l.config.url;
 
             if (method) {
                 if (l.config.method?.toUpperCase() !== method) return false;                

@@ -430,6 +430,30 @@ export class DependencyGraph {
       },
     })
 
+    const DhDeleteClientRegistration = new Dependency<{SoftwareProductId: string, DataHolderBrandId: string}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata, DataHolderUpAndReady: void, CurrentClientRegistration: Types.DataHolderRegistration, DhRegAccessToken: Types.AccessToken}, Types.DataHolderRegistration>({
+      name: "DhDeleteClientRegistration",
+      evaluator: util.DeleteClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager),
+      parameters: {
+        SoftwareProductId:Identifiers.string,
+        DataHolderBrandId:Identifiers.string
+      },
+      dependencies: [
+        AdrConnectivityConfig,
+        SoftwareProductConfig,
+        DataRecipientJwks,
+        DataHolderOidc,
+        DataHolderBrandMetadata,
+        DataHolderUpAndReady,
+        CurrentClientRegistration,
+        DhRegAccessToken
+      ],
+      // disabledCaches: []
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,],
+      cache: {
+        noCache: true
+      },
+    })
+
     const CheckAndUpdateClientRegistration = new Dependency<{SoftwareProductKey: string, DataHolderBrandId: string}, {AssertSoftwareProductStatusIsActive: void, AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, DataHolderUpAndReady: void, SoftwareStatementAssertion: string, BootstrapClientRegistration: Types.DataHolderRegistration, DhRegAccessToken: Types.AccessToken}, Types.DataHolderRegistration>({
       name: "CheckAndUpdateClientRegistration",
       evaluator: util.CheckAndUpdateClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager),
@@ -749,7 +773,7 @@ export class DependencyGraph {
     })
 
     
-    return { AdrConnectivityConfig, SoftwareProductConfigs, SoftwareProductConfig, DataRecipientJwks, RegisterOidc, DataRecipientStatus, AssertDataRecipientIsActive, SoftwareProductStatus, AssertSoftwareProductStatusIsActive, RegisterAccessCredentials, DataHolderBrands, DataHolderBrandMetadata, AssertDataHolderActiveAtRegister, DataHolderStatus, AssertDataHolderIsUp, DataHolderUpAndReady, DataHolderOidc, DataHolderJwks, DataHolderRevocationJwks, SoftwareStatementAssertion, CurrentClientRegistration, DhNewClientRegistration, BootstrapClientRegistration, DhRegAccessToken, CheckAndUpdateClientRegistration, GetAuthorizationRequest, SyncRefreshTokenStatus, FetchTokens, FetchTokensAndUpdateClaims, ConsentRefreshTokens, ConsentCurrentAccessToken, ConsumerDataAccessCredentials, UserInfoAccessCredentials, ConsentUserInfo, AssertValidAuthorizeResponse, FinaliseConsent, PropagateRevokeConsent,  }
+    return { AdrConnectivityConfig, SoftwareProductConfigs, SoftwareProductConfig, DataRecipientJwks, RegisterOidc, DataRecipientStatus, AssertDataRecipientIsActive, SoftwareProductStatus, AssertSoftwareProductStatusIsActive, RegisterAccessCredentials, DataHolderBrands, DataHolderBrandMetadata, AssertDataHolderActiveAtRegister, DataHolderStatus, AssertDataHolderIsUp, DataHolderUpAndReady, DataHolderOidc, DataHolderJwks, DataHolderRevocationJwks, SoftwareStatementAssertion, CurrentClientRegistration, DhNewClientRegistration, BootstrapClientRegistration, DhRegAccessToken, DhDeleteClientRegistration, CheckAndUpdateClientRegistration, GetAuthorizationRequest, SyncRefreshTokenStatus, FetchTokens, FetchTokensAndUpdateClaims, ConsentRefreshTokens, ConsentCurrentAccessToken, ConsumerDataAccessCredentials, UserInfoAccessCredentials, ConsentUserInfo, AssertValidAuthorizeResponse, FinaliseConsent, PropagateRevokeConsent,  }
     
   
   }

@@ -80,7 +80,8 @@ export interface EndToEndTestingConfig {
         Boundaries?: TestBoundaryParams
         MTLS?: {
             invalid?: MtlsConfig
-        }
+        },
+        SmallPageSize?: number
     }
 }
 
@@ -132,7 +133,11 @@ export const GetEnvironments = ():{liveTestEnvironments:E2ETestEnvironment[], mo
         
         try {
             liveTestEnvironments = _.map(<EndToEndTestingConfig[]><any>JSON.parse(fs.readFileSync(path.join(testConfigBase,"e2e.test.environments.json"),'utf8')),env => {
-                return new E2ETestEnvironment(env)
+                const environment =  new E2ETestEnvironment(env)
+                if (process.env.LOG_SILENT) {
+                    delete environment.Config.EvidenceDir
+                }
+                return environment
             });
         } catch {
             logger.debug(`Unable to read test environments. Please place JSON array at ${path.join(testConfigBase,"e2e.test.environments.json")}`);       

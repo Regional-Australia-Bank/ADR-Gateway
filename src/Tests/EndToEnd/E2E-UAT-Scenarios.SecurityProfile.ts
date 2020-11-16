@@ -616,7 +616,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let revocationResult = await ctx.GetResult(DoRequest,"Revocation")
                     expect(revocationResult.response.status).to.equal(200);
                     let userInfo2Result = await ctx.GetResult(DoRequest,"UserInfo2")
-                    expect(userInfo2Result.response.status).to.equal(401);
+                    expect([400,401]).to.include(userInfo2Result.response.status);
                 },600)
 
         })
@@ -871,7 +871,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                     expect(consent.refreshToken).to.not.be.a('string');
                     expect(id_token.sharing_expires_at).to.equal(0);
-                    expect(id_token.refresh_token_expires_at).to.be.null;
+                    expect([null,0]).to.contain(id_token.refresh_token_expires_at)
 
                 },120)
 
@@ -964,8 +964,15 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     responseType:"json"
                 }))))
                 .Then(async ctx => {
+
+                    // check auth_time from the original id_token
+                    let consent = await ctx.GetResult(NewGatewayConsent);
+                    let allClaims = consent.consent.ExistingClaims();
+                    expect(allClaims.auth_time).to.be.a("number");
+                    expect(moment(allClaims.auth_time*1000).isBefore(moment().subtract(5,'seconds'))).to.eql(true,"Auth time is too late")
+
                     let result = await (ctx.GetResult(DoRequest));
-                    for (let claim of ["sub","acr","auth_time","name","given_name","family_name","updated_at","refresh_token_expires_at","sharing_expires_at"]) {
+                    for (let claim of ["sub","acr","name","given_name","family_name","updated_at","refresh_token_expires_at","sharing_expires_at"]) {
                         let value = result.body[claim];
                         expect(value).to.not.be.null.and.not.be.undefined;
                         if (typeof value == 'string') {
@@ -973,7 +980,6 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         }
                     }
                     expect(["urn:cds.au:cdr:2"]).to.include(result.body.acr);
-                    expect(moment(result.body.auth_time*1000).isBefore(moment().subtract(5,'seconds'))).to.eql(true,"Auth time is too late")
                     expect(result.body.name).to.not.be.null.and.not.be.undefined.and.not.be.empty;
                     expect(result.body.given_name).to.not.be.null.and.not.be.undefined.and.not.be.empty;
                     expect(result.body.family_name).to.not.be.null.and.not.be.undefined.and.not.be.empty;

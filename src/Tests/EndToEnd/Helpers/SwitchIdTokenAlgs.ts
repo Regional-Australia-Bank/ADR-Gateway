@@ -3,8 +3,12 @@ import { axios } from "../../../Common/Axios/axios";
 import _ from "lodash";
 import { AdrConnectivityConfig } from "../../../Common/Config";
 import { logger } from "../../Logger";
+import { ClearDefaultInMemoryCache } from "../../../Common/Connectivity/Cache/InMemoryCache";
 
 const AlgSets = [{
+    id_token_encrypted_response_alg: "RSA-OAEP-256",
+    id_token_encrypted_response_enc: "A128CBC-HS256",
+},{
     id_token_encrypted_response_alg: "RSA-OAEP",
     id_token_encrypted_response_enc: "A128CBC-HS256",
 },{
@@ -30,11 +34,13 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
 
     let original_id_token_encrypted_response_alg:string|undefined;
 
-    // add a new redirectUrl
-    let configFn = environment.TestServices.adrGateway.connectivity.configFn;
+    let oidc = await environment.TestServices.adrGateway.connectivity.DataHolderOidc(environment.Config.SystemUnderTest.Dataholder).Evaluate()
 
-    environment.TestServices.adrGateway.connectivity.configFn = async ():Promise<AdrConnectivityConfig> => {
-        let origConfig = _.clone(await configFn());
+    // add a new redirectUrl
+    let configFn = environment.TestServices.adrGateway.connectivity.graph.Dependencies.AdrConnectivityConfig.spec.evaluator;
+
+    environment.TestServices.adrGateway.connectivity.graph.Dependencies.AdrConnectivityConfig.spec.evaluator = async ():Promise<AdrConnectivityConfig> => {
+        let origConfig = _.clone(await configFn({}));
 
         return {
             BrandId: origConfig.BrandId,
@@ -61,7 +67,7 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
     let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(softwareProductId,dataholder);
 
     let interceptor = axios.interceptors.response.use(async res => {
-        if (res.config.method == "get" && res.config.url && /register\/[^\/]+$/.test(res.config.url)) {
+        if (res.config.method == "get" && res.config.url && res.config.url.startsWith(oidc.registration_endpoint+"/")) {
             original_id_token_encrypted_response_alg = res.data.id_token_encrypted_response_alg
             cryptoAlgs = GetAlternateAlgs(res.data)
         }
@@ -70,16 +76,18 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
 
     try {
         // Get the current registration
+        ClearDefaultInMemoryCache();
         await dependency.Evaluate({ignoreCache:"all"});
         // This ^ will also populate a new configuration value for the desired id_token encryption algs
 
         // Evaluate again to update the registration
+        ClearDefaultInMemoryCache();
         await dependency.Evaluate({ignoreCache:"all"});
 
     } catch (e) {
     } finally {
         // reinstate the original configFn
-        environment.TestServices.adrGateway.connectivity.configFn = configFn
+        environment.TestServices.adrGateway.connectivity.graph.Dependencies.AdrConnectivityConfig.spec.evaluator = configFn
         axios.interceptors.response.eject(interceptor)
     }
 

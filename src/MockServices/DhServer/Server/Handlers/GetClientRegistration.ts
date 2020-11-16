@@ -40,7 +40,10 @@ class GetClientRegistrationMiddleware {
     handler = () => {
     
         let Responder = async (req:express.Request,res:express.Response,next: NextFunction) => {
-            const dr_client_id = (<any>req).token_subject;
+            const dr_client_id = (<any>req).token_subject; // the client_id from the auth token
+            if (dr_client_id != req.params.clientId) { // compare to the client_id URL param
+                return res.status(403).send();
+            }
             let reg = await this.clientRegistrationManager.GetRegistration(dr_client_id);
             if (typeof reg == 'undefined') {
                 return res.status(401).send();

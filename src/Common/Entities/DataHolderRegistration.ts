@@ -119,6 +119,21 @@ class DataHolderRegistrationManager {
         return await resolvedConnection.getRepository(DataHolderRegistration).save(c);
     }
 
+    DeleteRegistration = async (r:DataHolderRegistration):Promise<DataHolderRegistration> => {
+        let resolvedConnection = (await this.connection);
+        const repo = resolvedConnection.getRepository(DataHolderRegistration);
+        let [crs,count] = await repo.findAndCount({id: r.id});
+
+        if (count != 1) throw 'Did not find registration'
+
+        let c = crs[0]
+
+        c.lastUpdated = moment.utc().toDate();
+        c.status = RegistrationStatus.DELETED;
+
+        return await resolvedConnection.getRepository(DataHolderRegistration).save(c);
+    }
+
     GetActiveRegistrationByIds = async (softwareProductId:string,dataholderBrandId:string):Promise<DataHolderRegistration|undefined> => {
         let resolvedConnection = (await this.connection);
         const repo = resolvedConnection.getRepository(DataHolderRegistration);

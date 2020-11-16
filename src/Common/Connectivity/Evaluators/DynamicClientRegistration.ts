@@ -9,6 +9,7 @@ import { DataHolderRegistrationManager, DataHolderRegistration } from "../../Ent
 import { AxiosResponse, AxiosRequestConfig } from "axios";
 import qs from "qs";
 import { CreateAssertion } from "../../Connectivity/Assertions";
+import { TypeAssertion } from "typescript";
 
 export interface DataholderRegistrationResponse {
   client_id: string,
@@ -175,6 +176,29 @@ const NewRegistrationAtDataholder = async (cert:ClientCertificateInjector, $: {
   return response;
 }
 
+const DeleteRegistrationAtDataholder = async (cert:ClientCertificateInjector, $: {
+  AdrConnectivityConfig: AdrConnectivityConfig,
+  SoftwareProductConfig: SoftwareProductConnectivityConfig,
+  DataRecipientJwks: JWKS.KeyStore,
+  DataHolderOidc: DataholderOidcResponse,
+  CurrentClientRegistration: DataHolderRegistration,
+  DhRegAccessToken: AccessToken
+}):Promise<void> => {
+
+  let options = cert.inject({
+    method:"DELETE",
+    url: $.DataHolderOidc.registration_endpoint+'/'+$.CurrentClientRegistration.clientId,
+    headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
+  });
+  try {
+    await axios.request(options)
+  } catch (err) {
+    throw `Expected 204 from DELETE registration endpoint but received ${err.response.status}`;
+  }  
+
+  return;
+}
+
 export const NewClientRegistration = async (cert:ClientCertificateInjector, registrationManager:DataHolderRegistrationManager, $: {
   AdrConnectivityConfig: AdrConnectivityConfig,
   SoftwareProductConfig: SoftwareProductConnectivityConfig,
@@ -189,6 +213,23 @@ export const NewClientRegistration = async (cert:ClientCertificateInjector, regi
   return registration;
 
 }
+
+export const DeleteClientRegistration = async (cert:ClientCertificateInjector, registrationManager:DataHolderRegistrationManager, $: {
+  AdrConnectivityConfig: AdrConnectivityConfig,
+  SoftwareProductConfig: SoftwareProductConnectivityConfig,
+  DataRecipientJwks: JWKS.KeyStore,
+  DataHolderOidc: DataholderOidcResponse,
+  DataHolderBrandMetadata: DataHolderRegisterMetadata,
+  CurrentClientRegistration: DataHolderRegistration,
+  DhRegAccessToken: AccessToken
+}) => {
+ 
+  await DeleteRegistrationAtDataholder(cert,$);
+  let registration = await registrationManager.DeleteRegistration($.CurrentClientRegistration);
+  return registration;
+
+}
+
 
 export const CurrentRegistrationAtDataholder = async (cert:ClientCertificateInjector,$:{
   DataHolderOidc: DataholderOidcResponse,

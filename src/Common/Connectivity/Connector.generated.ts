@@ -121,6 +121,10 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhRegAccessToken,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<Types.AccessToken>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhRegAccessToken,{ SoftwareProductKey, DataHolderBrandId }, $)
   })
+  public DhDeleteClientRegistration = (SoftwareProductId: string, DataHolderBrandId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhDeleteClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhDeleteClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
+  })
   public CheckAndUpdateClientRegistration = (SoftwareProductKey: string, DataHolderBrandId: string) => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, $)
