@@ -52,17 +52,25 @@ class UserInfoProxyMiddleware {
             } catch {
                 return res.sendStatus(404).json("Consent does not exist")
             }
-
+            
             if (!consent.HasCurrentAccessToken()) {
                 if (consent.HasCurrentRefreshToken()) {
-                    consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
+                    try {
+                        consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
+                    } catch {
+                        return res.status(500).json("Unable to get access token")
+                    }
                 } else {
-                    if (consent.SharingDurationExpired()) {
+                    if (consent.revocationDate) {
+                        return res.status(403).json(`Consent was revoked at ${consent.revokedAt}`)
+                    } else if (consent.SharingDurationExpired()) {
                         return res.status(403).json("Consent has expired with the end of the sharing period")
                     } else if (consent.RefreshTokenExpired()) {
                         return res.status(403).json("Refresh token has expired before the end of the sharing period")
-                    } else {
+                    } else if ((!consent.refreshToken) && consent.AccessTokenExpired()) {
                         return res.status(403).json("One time access token has expired")
+                    } else {
+                        return res.status(403).json("No current access or refresh token for unknown reason")
                     }
                     
                 }
