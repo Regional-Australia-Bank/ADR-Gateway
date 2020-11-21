@@ -1567,8 +1567,56 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 expect(selfResponse.data.data).to.not.be.undefined;
                 expect(_.isEqual(selfResponse.data,result.body)).to.be.true;
                 expect(result.response.status).to.equal(200)
-            },120)        
+            },120)                    
+    })
 
+    describe('Backend endpoints', async () => {
+        Scenario($ => it.apply(this,$('JWKS')), '', 'GET /jwks')
+            .Given('Nothing')
+            .When(DoRequest, async ctx => {
+                return DoRequest.Options(env.Util.MtlsAgent({
+                    responseType:"json",
+                    url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"jwks")
+                }))
+            })
+            .Then(async ctx => {
+                let result = await ctx.GetResult(DoRequest);
+                JWKS.asKeyStore(result.body).get({alg:"PS256"})
+            },120)
+
+        Scenario($ => it.apply(this,$('Consent details')), '', 'GET /cdr/consents/:id')
+            .Given('Some active consent')
+            .PreTask(GatewayConsentWithCurrentAccessToken,async () => ({
+                cdrScopes: ["bank:accounts.basic:read"],
+                sharingDuration: 86400,
+                systemId: "sandbox",
+                userId: "user-12345",
+                dataholderBrandId: (await TestData()).dataHolder.id
+            }))
+            .When(DoRequest, async ctx => {
+                const consent = (await ctx.GetResult(GatewayConsentWithCurrentAccessToken)).consent
+                return DoRequest.Options(env.Util.MtlsAgent({
+                    responseType:"json",
+                    url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"/cdr/consents/"+consent.id)
+                }))
+            })
+            .Then(async ctx => {
+                let result = await ctx.GetResult(DoRequest);
+                expect(result.response.status).to.eq(200)
+            },120)
+
+        Scenario($ => it.apply(this,$('Consent details')), '', 'GET /cdr/consents/0')
+            .Given('Nothing')
+            .When(DoRequest, async ctx => {
+                return DoRequest.Options(env.Util.MtlsAgent({
+                    responseType:"json",
+                    url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"/cdr/consents/0")
+                }))
+            })
+            .Then(async ctx => {
+                let result = await ctx.GetResult(DoRequest);
+                expect(result.response.status).to.eq(404)
+            },120)
 
     })
 })
