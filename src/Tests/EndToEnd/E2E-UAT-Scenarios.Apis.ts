@@ -123,6 +123,14 @@ Validator.register("MaskedAccountString", (s:any) => {
     return true;
 }, "Not a MaskedAccountString");
 
+Validator.register("ExtendedDescription", (s:any) => {
+    if (typeof s == "object") {
+        if (typeof s.extendedDescription == "string") {
+            return true;
+        }
+    }
+    return false;
+}, "extendedDescription is not present");
 
 
 const customerRules = {
@@ -167,8 +175,8 @@ const transactionDetailRules = {
     "extendedData.payer":'required_if:type,TRANSFER_INCOMING|string',
     "extendedData.payee":'required_if:type,TRANSFER_OUTCOMING|string',
     "extendedData.extensionUType":['string','regex:/^x2p101Payload$/'],
-    "extendedData.x2p101Payload":['object','required_if:extendedData.extensionUType,x2p101Payload'],
-    "extendedData.x2p101Payload.extendedDescription":['string','required_if:extendedData.extensionUType,x2p101Payload'],
+    "extendedData.x2p101Payload":['object','required_if:extendedData.extensionUType,x2p101Payload','ExtendedDescription'],
+    "extendedData.x2p101Payload.extendedDescription":['string'],
     "extendedData.x2p101Payload.endToEndId":['string'],
     "extendedData.x2p101Payload.purposeCode":['string'],
     "extendedData.service":['required','string','regex:/^X2P1.01$/'],

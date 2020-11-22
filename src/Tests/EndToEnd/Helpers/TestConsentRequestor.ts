@@ -26,6 +26,9 @@ class TestConsentRequestor {
         systemId: string,
         sharingDuration: number
     }):Promise<ConsentRequestLog> => {
+
+        let spc = await this.testContext.environment.TestServices.adrGateway?.connectivity.SoftwareProductConfig("sandbox",undefined).Evaluate();
+
         const connection = await this.testContext.environment.TestServices.adrDbConn;
         if (!connection) throw 'No connection'
         const consents = await connection.manager.find(ConsentRequestLog,{
@@ -33,7 +36,8 @@ class TestConsentRequestor {
                 dataHolderId: params.dataholderBrandId,
                 adrSystemUserId: params.userId,
                 adrSystemId: params.systemId,
-                requestedSharingDuration: params.sharingDuration
+                requestedSharingDuration: params.sharingDuration,
+                softwareProductId: spc.ProductId
             },
             order: {
                 accessTokenExpiry: "DESC" // increase the chances we get a current access token
