@@ -26,10 +26,10 @@ class EcosystemDataholder implements DataholderMetadata {
         this.brandName = dm.brandName;
         this.logoUri = dm.logoUri;
         this.industry = dm.industry;
-        this.legalEntityName = dm.legalEntity.legalEntityName
-        this.websiteUri = dm.endpointDetail.websiteUri
-        this.abn = dm.legalEntity.abn
-        this.acn = dm.legalEntity.acn
+        this.legalEntityName = dm.legalEntity?.legalEntityName
+        this.websiteUri = dm.endpointDetail?.websiteUri
+        this.abn = dm.legalEntity?.abn
+        this.acn = dm.legalEntity?.acn
     }
 
     "dataHolderBrandId": string;

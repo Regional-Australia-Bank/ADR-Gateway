@@ -1584,6 +1584,21 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 JWKS.asKeyStore(result.body).get({alg:"PS256"})
             },120)
 
+
+        Scenario($ => it.apply(this,$('Get Dataholders')), '', 'GET /cdr/data-holders')
+            .Given('Nothing')
+            .When(DoRequest, async ctx => {
+                return DoRequest.Options(env.Util.MtlsAgent({
+                    responseType:"json",
+                    url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"/cdr/data-holders")
+                }))
+            })
+            .Then(async ctx => {
+                let result = await ctx.GetResult(DoRequest);
+                expect(result.response.status).to.eq(200);
+            },120)
+
+
         Scenario($ => it.apply(this,$('Consent details')), '', 'GET /cdr/consents/:id')
             .Given('Some active consent')
             .PreTask(GatewayConsentWithCurrentAccessToken,async () => ({

@@ -5,6 +5,8 @@ import { TestPKI } from "../../../Tests/EndToEnd/Helpers/PKI";
 import { axios } from "../../../Common/Axios/axios";
 import { DefaultClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import uuid from "uuid";
+import moment from "moment";
 
 export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector):Promise<any[]> => {
 
@@ -25,5 +27,26 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
     }
     
     let results = await Promise.all(promises)
+
+    // Add a non-conformant payload to test robustness of DR. https://github.com/Regional-Australia-Bank/ADR-Gateway/issues/23
+    const badBank = {
+        "dataHolderBrandId": uuid.v4(),
+        "brandName": "Bad bank",
+        "industry": "banking",
+        "logoUri": "https://bad.bank",
+        "legalEntity": {
+            "legalEntityId": uuid.v4(),
+            "legalEntityName": "Bad bank",
+            "logoUri": "https://bad.bank/logo",
+            "abn": "1234567890"
+        },
+        "status": "INACTIVE",
+        "authDetails": [],
+        "lastUpdated": moment().utc().toISOString()
+    }
+
+    results.push([badBank])
+
+
     return _.flatten(results);
 }
