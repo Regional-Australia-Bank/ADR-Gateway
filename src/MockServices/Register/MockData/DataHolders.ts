@@ -40,12 +40,32 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
             "logoUri": "https://bad.bank/logo",
             "abn": "1234567890"
         },
+        "status": "ACTIVE",
+        "authDetails": [],
+        "lastUpdated": moment().utc().toISOString()
+    }
+
+    const inactiveBank = {
+        "dataHolderBrandId": "inactive-bank",
+        "brandName": "Bad bank",
+        "industry": "banking",
+        "logoUri": "https://bad.bank",
+        "legalEntity": {
+            "legalEntityId": uuid.v4(),
+            "legalEntityName": "Bad bank",
+            "logoUri": "https://bad.bank/logo",
+            "abn": "1234567890"
+        },
+        "endpointDetails": {
+
+        },
         "status": "INACTIVE",
         "authDetails": [],
         "lastUpdated": moment().utc().toISOString()
     }
 
-    results.push([badBank])
+
+    results.push([badBank,inactiveBank])
 
 
     return _.flatten(results);

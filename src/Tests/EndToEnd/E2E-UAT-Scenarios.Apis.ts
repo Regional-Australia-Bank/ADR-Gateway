@@ -1596,6 +1596,9 @@ const Tests = (async(env:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let result = await ctx.GetResult(DoRequest);
                 expect(result.response.status).to.eq(200);
+                let dhs = <any[]>result.body;
+                let found = (_.findIndex(dhs, d => d.dataHolderBrandId == "inactive-bank") >= 0);
+                expect(found).to.not.be.true;
             },120)
 
 

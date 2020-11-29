@@ -27,6 +27,9 @@ export const GetDataholders = async (cert: ClientCertificateInjector, $:{AdrConn
 
   let dataholders = await GetDataHoldersResponse($.RegisterAccessCredentials.accessToken,nextUrl,cert);
 
+  // filter out non-ACTIVE dhs
+  dataholders = _.filter(dataholders, d => d.status.toUpperCase() == "ACTIVE")
+
   return dataholders;
 }
 
