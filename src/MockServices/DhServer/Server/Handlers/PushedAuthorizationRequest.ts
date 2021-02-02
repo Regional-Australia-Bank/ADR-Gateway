@@ -43,7 +43,9 @@ export class PushedAuthorizationRequestMiddleware {
             let params:{
                 request: string
                 client_id: string,
-                client_assertion: string
+                client_assertion: string,
+                scope?: string,
+                response_type?: string
             } = <any>matchedData(req)
 
             // TODO move this client credntial check to an auth middleware
@@ -83,7 +85,15 @@ export class PushedAuthorizationRequestMiddleware {
             } catch (e) {
                 return res.status(401).json({error:"invalid_client"})
             }
-            
+
+            if (typeof params.scope !== "string" || params.scope !== requestObject.scope) {
+                return res.status(401).json({error:"invalid_request"});
+            }
+
+            if (typeof params.response_type !== "string" || params.response_type !== requestObject.response_type) {
+                return res.status(401).json({error:"invalid_request"});
+            }
+
             const request_uri = "par:"+uuid.v4();
 
             storedRequests[request_uri] = requestObject;
@@ -102,7 +112,9 @@ export class PushedAuthorizationRequestMiddleware {
             body("request").isJWT(),
             body("client_id").isString(),
             body('client_assertion_type').isString().equals("urn:ietf:params:oauth:client-assertion-type:jwt-bearer").withMessage("invalid client_assertion_type"),
-            body("client_assertion").isJWT()            
+            body("client_assertion").isJWT(),
+            body("scope").optional().isString(),
+            body("response_type").optional().isString()
         ],[
             <any>validationErrorMiddleware,
             Responder

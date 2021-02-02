@@ -31,6 +31,9 @@ const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $
   DataHolderOidc: Types.DataholderOidcResponse,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
   DataRecipientJwks: Types.JWKS.KeyStore
+}, queryParams : {
+  scope: string,
+  response_type: string
 }) => {
 
   const url = $.DataHolderOidc.pushed_authorization_request_endpoint;
@@ -41,6 +44,8 @@ const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $
     "client_id": $.CheckAndUpdateClientRegistration.clientId,
     "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     "client_assertion": CreateAssertion($.CheckAndUpdateClientRegistration.clientId, url, $.DataRecipientJwks),
+    scope: queryParams.scope,
+    response_type: queryParams.response_type
   }))
 
   let options: AxiosRequestConfig = {
@@ -138,7 +143,7 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
   }
 
   if (usePar) {
-    const {request_uri} = await FetchRequestUri(cert,signed,$)
+    const {request_uri} = await FetchRequestUri(cert,signed,$,payload)
     url.searchParams.append('request_uri', request_uri);
   } else {
     url.searchParams.append('request', signed);
