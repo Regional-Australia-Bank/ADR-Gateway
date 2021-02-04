@@ -1532,6 +1532,37 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 // .Proxy("TS_032")
                 .Proxy(SecurityProfileSymbols.Context.TS_032)
 
+            Scenario($ => it.apply(this,$('Results in 403 when no refresh token')), '', 'ADR Gateway should return a 403 for a one-time consent it knows is expired.')
+                .Given('New consent')
+                .PreTask(NewGatewayConsent, async () => ({
+                    cdrScopes: ["bank:accounts.basic:read"],
+                    sharingDuration: 0,
+                    systemId: "sandbox",
+                    userId: "user-12345",
+                    dataholderBrandId: (await TestData()).dataHolder.id
+                }))
+                .When(DoRequest, async ctx => {
+                    let consent = await ctx.GetResult(NewGatewayConsent);
+                    consent.consent.accessTokenExpiry = moment().subtract(1, 'day').toDate();
+                    const connection = await ctx.environment.TestServices.adrDbConn;
+                    consent.consent.save();
+                    // await connection.getRepository(ConsentRequestLog).save(consent.consent);
+                    ClearDefaultInMemoryCache();
+
+                    return DoRequest.Options(env.Util.MtlsAgent({
+                        responseType:"json",
+                        headers: {
+                            "x-adrgw-present": false,
+                            "x-adrgw-last-authenticated": moment().subtract(1,'hour').toISOString()
+                        },
+                        url: urljoin(env.SystemUnderTest.AdrGateway().BackendUrl,"cdr/consents",consent.consent!.id.toString(),"accounts")
+                    }))
+                })
+                .Then(async ctx => {
+                    let result = await ctx.GetResult(DoRequest);
+                    expect(result.response.status).to.equal(403);
+                    expect(result.response.data).contains("One time access token has expired");
+                },120)  
         })
 
         describe('Token - ID Token', async () => {
