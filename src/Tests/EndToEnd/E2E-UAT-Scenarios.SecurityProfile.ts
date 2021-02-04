@@ -1532,7 +1532,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                 // .Proxy("TS_032")
                 .Proxy(SecurityProfileSymbols.Context.TS_032)
 
-            Scenario($ => it.apply(this,$('Consent Expiry HTTP Status Code')), '', 'ADR Gateway should return a 403 for a one-time consent it knows is expired.')
+            Scenario($ => it.apply(this,$('Results in 403 when no refresh token')), '', 'ADR Gateway should return a 403 for a one-time consent it knows is expired.')
                 .Given('New consent')
                 .PreTask(NewGatewayConsent, async () => ({
                     cdrScopes: ["bank:accounts.basic:read"],
