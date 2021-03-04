@@ -203,10 +203,33 @@ class DhServer {
                 container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
                 container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
                 container.resolve(CDSVersionComplianceMiddleware).handle,
-                MockDataArray(() => { console.log('testDirectDebitList', testDirectDebitList); return testDirectDebitList; }),
+                MockDataArray(() => { return testDirectDebitList; }),
                 this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/accounts/direct-debits',dataObjectName:"directDebitAuthorisations", mtls:true}));
 
-            app.get(
+            app.post(
+                '/cds-au/v1/banking/accounts/direct-debits',
+                container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
+                container.resolve(CDSVersionComplianceMiddleware).handle,
+                bodyParser.json(),
+                MockDataArray((req:express.Request) => { 
+                    let directDebits = _.filter(testDirectDebitList, (dd) => {
+                        if (!_.find(req.body.data.accountIds, reqAccountId => {
+                            if (reqAccountId !== dd.accountId) return false
+                            let matchingAccount = _.find(testDirectDebitList,x => x.accountId === dd.accountId);
+                            if (typeof matchingAccount === 'undefined') throw 'Cannot find account to match direct debit'
+                            return true
+                        })) {
+                            return false;
+                        }
+    
+                        return true;
+                        })
+                    return directDebits;
+                }),
+                this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/accounts/direct-debits',dataObjectName:"directDebitAuthorisations", mtls:true}));
+
+                app.get(
             '/cds-au/v1/banking/accounts/:accountId/balance',
             container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
             container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankAccountsBasicRead).handler("Resource"),
@@ -302,7 +325,6 @@ class DhServer {
          * Endpoints yet to implement
          * * GET /discovery/outages
          * * GET /banking/accounts/{accountId}/direct-debits
-         * * POST /banking/accounts/direct-debits
          * * GET /banking/accounts/{accountId}/payments/scheduled
          * * GET /banking/payments/scheduled
          * * POST /banking/payments/scheduled

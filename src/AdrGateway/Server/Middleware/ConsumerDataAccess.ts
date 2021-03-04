@@ -180,7 +180,8 @@ class ConsumerDataAccessMiddleware {
 
 
         let options:AxiosRequestConfig = {
-            method: "GET",
+            method: <AxiosRequestConfig["method"]>req.method,
+            data: req.body,
             url: url.toString(),
             headers: headers,
             responseType:"json"
@@ -190,7 +191,7 @@ class ConsumerDataAccessMiddleware {
             requestStatus: "sending",
             consentId: consent.id,
             url: url.toString(),
-            method: "GET",
+            method: <AxiosRequestConfig["method"]>req.method,
             requestId,
             headers,
         })

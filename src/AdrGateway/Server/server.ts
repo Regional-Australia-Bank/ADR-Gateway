@@ -146,6 +146,11 @@ class AdrGateway {
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/direct-debits`,'bank:regular_payments:read')
         )
 
+        app.post("/cdr/consents/:consentId/accounts/direct-debits",
+            bodyParser.json(),
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/direct-debits`,'bank:regular_payments:read')
+        )
+
         app.get("/cdr/consents/:consentId/accounts/:accountId/balance",
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/balance`,'bank:accounts.basic:read')
         )
