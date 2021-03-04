@@ -16,7 +16,7 @@ import { ConsentManager } from "../Entities/Consent";
 import bodyParser, { urlencoded } from "body-parser"
 import { OIDCConfiguration, DhServerConfig } from "./Config";
 import { Authorize, AuthorizeMiddleware } from "./Handlers/Authorize";
-import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions } from "../TestData/ResourceData";
+import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions, testCustomerDetail, testDirectDebitList } from "../TestData/ResourceData";
 import { HokBoundTokenScopeVerificationFactory } from "./Middleware/OAuth2ScopeAuth";
 import { CdsScope } from "../../../Common/SecurityProfile/Scope";
 import { container } from "../DhDiContainer";
@@ -198,7 +198,15 @@ class DhServer {
             }),
             this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/accounts/balances',dataObjectName:"balances", mtls:true}));
 
-        app.get(
+            app.get(
+                '/cds-au/v1/banking/accounts/direct-debits',
+                container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
+                container.resolve(CDSVersionComplianceMiddleware).handle,
+                MockDataArray(() => { console.log('testDirectDebitList', testDirectDebitList); return testDirectDebitList; }),
+                this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/accounts/direct-debits',dataObjectName:"directDebitAuthorisations", mtls:true}));
+
+            app.get(
             '/cds-au/v1/banking/accounts/:accountId/balance',
             container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
             container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankAccountsBasicRead).handler("Resource"),
@@ -235,7 +243,14 @@ class DhServer {
             MockDataObject(() => testCustomer),
             this.paginationMiddleware.MetaWrap({mtls:true,baseUrl: (req) => '/cds-au/v1/common/customer'}));
     
-
+        app.get(
+            '/cds-au/v1/common/customer/detail',
+            container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+            container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.CommonCustomerDetailRead).handler("Resource"),
+            container.resolve(CDSVersionComplianceMiddleware).handle,
+            MockDataObject(() => testCustomerDetail),
+            this.paginationMiddleware.MetaWrap({mtls:true,baseUrl: (req) => '/cds-au/v1/common/customer/detail'}));
+    
         app.get(
             '/cds-au/v1/banking/accounts/:accountId/transactions',
             container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
@@ -280,8 +295,24 @@ class DhServer {
                 let consent = (<any>req as DhGatewayRequest).gatewayContext.consent;
                 return TransactionDetail(consent.secretSubjectId,req.params.accountId,req.params.transactionId);
             } ),
-            this.paginationMiddleware.MetaWrap({baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/transactions`, mtls:true}))
+            this.paginationMiddleware.MetaWrap({baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/transactions/${req.params.transactionId}`, mtls:true}))
     
+
+        /** TODO
+         * Endpoints yet to implement
+         * * GET /discovery/outages
+         * * GET /banking/accounts/{accountId}/direct-debits
+         * * POST /banking/accounts/direct-debits
+         * * GET /banking/accounts/{accountId}/payments/scheduled
+         * * GET /banking/payments/scheduled
+         * * POST /banking/payments/scheduled
+         * * GET /banking/payees
+         * * GET /banking/payees/{payeeId}
+         * * GET /banking/products
+         * * GET /banking/products/{productId}
+         */
+
+
 
         app.get( // TODO and POST
             // TODO CORS

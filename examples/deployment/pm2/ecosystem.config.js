@@ -11,7 +11,7 @@ const env = {
   // NO_PROXY: "localhost",
   
   //LOG_FILE: "debug.log.txt",
-  LOG_LEVEL: "info",
+  LOG_LEVEL: "debug",
 
   /** JWKS service (optional). Provides a single source of truth JWKS in a microservice. Any URL could be used instead */
   /** JWKS can also be supplied in the ADR_JWKS var as a JSON string or URL */

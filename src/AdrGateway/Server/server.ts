@@ -142,6 +142,10 @@ class AdrGateway {
             this.consumerDataAccess.handler('/cds-au/v1/banking/accounts/balances','bank:accounts.basic:read')
         )
 
+        app.get("/cdr/consents/:consentId/accounts/direct-debits",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/direct-debits`,'bank:regular_payments:read')
+        )
+
         app.get("/cdr/consents/:consentId/accounts/:accountId/balance",
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/balance`,'bank:accounts.basic:read')
         )
@@ -154,14 +158,36 @@ class AdrGateway {
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/transactions`,'bank:transactions:read')
         )
 
+        app.get("/cdr/consents/:consentId/accounts/:accountId/transactions/:transactionId",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/transactions/${p.transactionId}`,'bank:transactions:read')
+        )
+
         app.get("/cdr/consents/:consentId/consumerInfo",
             this.consumerDataAccess.handler('/cds-au/v1/common/customer','common:customer.basic:read')
+        )
+
+        app.get("/cdr/consents/:consentId/consumerInfo/detail",
+            this.consumerDataAccess.handler('/cds-au/v1/common/customer/detail','common:customer.detail:read')
         )
 
         app.get("/cdr/consents/:consentId/userInfo",
             this.userInfo.handler()
         );
-      
+
+        /** TODO
+         * Endpoints yet to implement
+         * * GET /discovery/outages
+         * * GET /banking/accounts/{accountId}/direct-debits
+         * * POST /banking/accounts/direct-debits
+         * * GET /banking/accounts/{accountId}/payments/scheduled
+         * * GET /banking/payments/scheduled
+         * * POST /banking/payments/scheduled
+         * * GET /banking/payees
+         * * GET /banking/payees/{payeeId}
+         * * GET /banking/products
+         * * GET /banking/products/{productId}
+         */
+
         // Test hook
         (<any>app).connector = this.connector;
 

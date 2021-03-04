@@ -148,7 +148,8 @@ class PaginationMiddleware {
             }
     
             if (!(<any>res).responseData) {
-                return res.status(404).send();
+                console.error('No response data found while trying to wrap the data', res)
+                return res.status(500).send();
             }
 
             const result = {

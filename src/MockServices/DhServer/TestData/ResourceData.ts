@@ -91,6 +91,21 @@ interface BankAccountTransactionInternal extends BankAccountTransaction {
     _detail: any
 }
 
+interface BankingAuthorisedEntity {
+    description: string
+    financialInstitution: string
+    abn: string
+    acn: string
+    arbn: string
+}
+
+interface BankDirectDebit {
+    accountId: ASCIIString
+    authorisedEntity: BankingAuthorisedEntity
+    lastDebitDateTime: DateString
+    lastDebitAmount: string
+}
+
 const padLeft = (n:number,width:number,decWidth=0,padChar='0') => {
     let right = n.toFixed(decWidth);
     let padWidth = width - right.length;
@@ -146,6 +161,23 @@ export const testAccountDetailList:BankAccountDetail[] = _.map(_.range(1,6),ind 
     return accountDetail
 })
 
+export const testDirectDebitList:BankDirectDebit[] = _.map(_.range(1,6),ind => {
+    let directDebits = {
+        accountId: `account-${ind}`,
+        authorisedEntity: {
+            description: `Telstra-${ind}`,
+            financialInstitution: "ANZ",
+            abn: (123456789*ind).toString(),
+            acn: (987654321*ind).toString(),
+            arbn: (192837465*ind).toString()
+        },
+        lastDebitDateTime: moment().subtract(5,'months').format('YYYY-MM-DD'),
+        lastDebitAmount: "123.45"
+    }
+
+    return directDebits;
+})
+
 export const testCustomer = {
     customerUType: "person",
     person: {
@@ -156,6 +188,59 @@ export const testCustomer = {
         prefix: "Dr.",
         suffix: "Jr",
         occupationCode: "121111"
+    }
+}
+
+export const testCustomerDetail = {
+    customerUType: "person",
+    person: {
+        lastUpdateTime: testCustomer.person.lastUpdateTime,
+        firstName: testCustomer.person.firstName,
+        lastName: testCustomer.person.lastName,
+        middleNames: testCustomer.person.middleNames,
+        prefix: testCustomer.person.prefix,
+        suffix: testCustomer.person.suffix,
+        occupationCode: testCustomer.person.occupationCode,
+        phoneNumbers: [{
+            isPreferred: true,
+            purpose: "MOBILE", //MOBILE, HOME, INTERNATIONAL, WORK, OTHER, UNSPECIFIED
+            countryCode: "+61",
+            number: "0412345678",
+            fullNumber: "tel:+61-412-345-678"
+        },
+        {
+            purpose: "HOME", //MOBILE, HOME, INTERNATIONAL, WORK, OTHER, UNSPECIFIED
+            countryCode: "+61",
+            areaCode: "2",
+            number: "67786778",
+            fullNumber: "tel:+61-2-6778-6778"
+        }],
+        emailAddresses: [{
+            isPreferred: true,
+            purpose: "HOME", //WORK, HOME, OTHER, UNSPECIFIED
+            address: "jsmith@example.com"
+        },
+        {
+            purpose: "WORK", //WORK, HOME, OTHER, UNSPECIFIED
+            address: "jsmith2@examplework.com.au"
+        }],
+        physicalAddresses: [{
+            addressUType: "simple", //simple, paf
+            addressLine1: "Amaroo",
+            addressLine2: "12345 Wingwabinda Road",
+            postcode: "2345",
+            city:   "Whoop Whoop",
+            state: "NSW",
+            purpose: "PHYSICAL" //MAIL, PHYSICAL, REGISTERED, WORK, OTHER
+        },
+        {
+            addressUType: "simple", //simple, paf
+            addressLine1: "PO Box 123",
+            postcode: "2345",
+            city:   "Whoop Whoop",
+            state: "NSW",
+            purpose: "MAIL" //MAIL, PHYSICAL, REGISTERED, WORK, OTHER
+        }]
     }
 }
 
@@ -192,7 +277,10 @@ export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.
             _detail = {
                 extendedData: {
                     payer: "Payer",
-                    service: "X2P1.01"
+                    service: "X2P1.01",
+                    extensionUType: "x2p101Payload",
+                    extendedDescription: `${r} - An extended message as sent by the payer, up to 250 characters.`,
+                    endToEndId: `abcd123${r}`
                 }
             }
         }
@@ -201,7 +289,10 @@ export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.
             _detail = {
                 extendedData: {
                     payee: "Payee",
-                    service: "X2P1.01"
+                    service: "X2P1.01",
+                    extensionUType: "x2p101Payload",
+                    extendedDescription: `${r} - An extended message as sent to the payee, up to 250 characters.`,
+                    endToEndId: `abcd123${r}`
                 }
             }        
         }
@@ -241,7 +332,7 @@ export const GetTransactions = (subjectId:string, accountId: string) => {
         })
     }
 
-    let transactions = _.filter(testTransactionList, t => t.accountId == accountId)
+    let transactions = _.map(_.filter(testTransactionList, t => t.accountId == accountId), (t) => _.omit(t,'_detail'))
     return transactions;
 }
 
