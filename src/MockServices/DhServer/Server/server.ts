@@ -203,7 +203,14 @@ class DhServer {
                 container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
                 container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
                 container.resolve(CDSVersionComplianceMiddleware).handle,
-                MockDataArray(() => { return testDirectDebitList; }),
+                MockDataArray(() => {
+                    //Remove non-standard 'consentStatus' property
+                    var cleanFilteredDdList = _.map(testDirectDebitList, dd => {
+                        return _.omit(dd, ['consentStatus']);
+                    })
+                    
+                    return cleanFilteredDdList;
+                }),
                 this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/accounts/direct-debits',dataObjectName:"directDebitAuthorisations", mtls:true}));
 
             app.post(
@@ -225,30 +232,68 @@ class DhServer {
     
                         return true;
                         })
-                    return directDebits;
+
+                    //Remove non-standard 'consentStatus' property
+                    var cleanFilteredDdList = _.map(directDebits, dd => {
+                        return _.omit(dd, ['consentStatus']);
+                    })
+
+                    return cleanFilteredDdList;
                 }),
                 this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/accounts/direct-debits',dataObjectName:"directDebitAuthorisations", mtls:true}));
 
                 app.get(
-            '/cds-au/v1/banking/accounts/:accountId/balance',
-            container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
-            container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankAccountsBasicRead).handler("Resource"),
-            container.resolve(CDSVersionComplianceMiddleware).handle,
-            MockDataObject((req) => _.find(testBalanceList,b => {
-                if (b.accountId !== req.params.accountId) return false;
-                let account = _.find(testAccountDetailList, acc => acc.accountId == b.accountId);
-                if (!account) {
-                    return false;
-                };
-                if (account.consentStatus == AccountConsentStatus.CONSENTED) {
-                    return true;
-                } else if (account.consentStatus == AccountConsentStatus.NOT_CONSENTED) {
-                    throw {unconsentedAccount: true}
-                } else {
-                    throw {unsupportedStatus: account}
-                }
-            })),
-            this.paginationMiddleware.MetaWrap({mtls:true,baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/balance`}));
+                    '/cds-au/v1/banking/accounts/:accountId/direct-debits',
+                    container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                    container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
+                    container.resolve(CDSVersionComplianceMiddleware).handle,
+                    MockDataArray((req) => {
+                        //Does the requested account exist and is able to be included?
+                        var account = _.find(testAccountDetailList, acc => acc.accountId == req.params.accountId);
+                        if (!account) throw 'Specified account not found: ' + req.params.accountId;
+                        if (account.consentStatus == AccountConsentStatus.NOT_CONSENTED) {
+                            throw {unconsentedAccount: true}
+                        } else if (account.consentStatus != AccountConsentStatus.CONSENTED) {
+                            throw {unsupportedStatus: account}
+                        }
+
+                        //Find all DDs that match the requested account
+                        var filteredDdList = _.filter(testDirectDebitList,dd => {
+                            if (dd.accountId !== req.params.accountId) return false; //Is this a DD for the specified account?
+                            else return true;
+                        });
+
+                        //Remove non-standard 'consentStatus' property
+                        var cleanFilteredDdList = _.map(filteredDdList, dd => {
+                            return _.omit(dd, ['consentStatus']);
+                        })
+
+                        //Return final list of DDs for the specified account
+                        return cleanFilteredDdList;
+                    }),
+                    this.paginationMiddleware.Paginate({mtls:true,baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/direct-debits`,dataObjectName:"directDebitAuthorisations"}));
+    
+
+                app.get(
+                    '/cds-au/v1/banking/accounts/:accountId/balance',
+                    container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                    container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankAccountsBasicRead).handler("Resource"),
+                    container.resolve(CDSVersionComplianceMiddleware).handle,
+                    MockDataObject((req) => _.find(testBalanceList,b => {
+                        if (b.accountId !== req.params.accountId) return false;
+                        let account = _.find(testAccountDetailList, acc => acc.accountId == b.accountId);
+                        if (!account) {
+                            return false;
+                        };
+                        if (account.consentStatus == AccountConsentStatus.CONSENTED) {
+                            return true;
+                        } else if (account.consentStatus == AccountConsentStatus.NOT_CONSENTED) {
+                            throw {unconsentedAccount: true}
+                        } else {
+                            throw {unsupportedStatus: account}
+                        }
+                    })),
+                    this.paginationMiddleware.MetaWrap({mtls:true,baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/balance`}));
 
         app.get(
             '/cds-au/v1/banking/accounts/:accountId',

@@ -151,6 +151,10 @@ class AdrGateway {
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/direct-debits`,'bank:regular_payments:read')
         )
 
+        app.get("/cdr/consents/:consentId/accounts/:accountId/direct-debits",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/direct-debits`,'bank:regular_payments:read')
+        )
+
         app.get("/cdr/consents/:consentId/accounts/:accountId/balance",
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/balance`,'bank:accounts.basic:read')
         )
@@ -182,8 +186,6 @@ class AdrGateway {
         /** TODO
          * Endpoints yet to implement
          * * GET /discovery/outages
-         * * GET /banking/accounts/{accountId}/direct-debits
-         * * POST /banking/accounts/direct-debits
          * * GET /banking/accounts/{accountId}/payments/scheduled
          * * GET /banking/payments/scheduled
          * * POST /banking/payments/scheduled

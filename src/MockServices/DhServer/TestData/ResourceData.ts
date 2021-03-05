@@ -104,6 +104,7 @@ interface BankDirectDebit {
     authorisedEntity: BankingAuthorisedEntity
     lastDebitDateTime: DateString
     lastDebitAmount: string
+    consentStatus: AccountConsentStatus
 }
 
 const padLeft = (n:number,width:number,decWidth=0,padChar='0') => {
@@ -172,7 +173,8 @@ export const testDirectDebitList:BankDirectDebit[] = _.map(_.range(1,6),ind => {
             arbn: (192837465*ind).toString()
         },
         lastDebitDateTime: moment().subtract(5,'months').format('YYYY-MM-DD'),
-        lastDebitAmount: "123.45"
+        lastDebitAmount: "123.45",
+        consentStatus: DetermineAccountConsentStatus(`account-${ind}`)
     }
 
     return directDebits;
