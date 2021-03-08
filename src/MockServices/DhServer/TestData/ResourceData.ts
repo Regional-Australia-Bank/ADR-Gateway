@@ -618,6 +618,114 @@ class GetAccountsRequest implements FilterableRequest {
     ]
 }
 
+enum BankingDomesticPayeeTypes {
+    Biller = 'BILLER',
+    Domestic = 'DOMESTIC',
+    International = 'INTERNATIONAL'
+}
+
+enum BankingPayeeDetailPayeeUTypes {
+    Biller = 'biller',
+    Domestic = 'domestic',
+    International = 'international'
+}
+
+interface BankingPayee {
+    payeeId: ASCIIString
+    nickname: string
+    description?: string
+    type: BankingDomesticPayeeTypes
+    creationDate: DateString
+    _detail: {
+        payeeUType: BankingPayeeDetailPayeeUTypes,
+        domestic?: BankingDomesticPayee,
+        biller?: BankingBillerPayee,
+        international?: BankingInternationalPayee
+    }
+}
+
+export const testPayeesList:BankingPayee[] = _.map(_.range(1,16),ind => {
+    let getType = ():BankingDomesticPayeeTypes => { switch(ind % (Object.keys(BankingDomesticPayeeTypes).length)) {
+        case 0: return BankingDomesticPayeeTypes.Biller; break;
+        case 1: return BankingDomesticPayeeTypes.Domestic; break;
+        case 2: return BankingDomesticPayeeTypes.International; break;
+        default: return BankingDomesticPayeeTypes.Domestic; break;
+    }};
+    let type = getType();
+
+    let getDetails = (type: BankingDomesticPayeeTypes) => {
+        switch(type) {
+            case BankingDomesticPayeeTypes.Biller:
+                return {
+                    payeeUType: BankingPayeeDetailPayeeUTypes.Biller,
+                    biller: {
+                        billerCode: "123456",
+                        crn: '987654321',
+                        billerName: 'Big Bad Biller'
+                    }
+                }
+            break;
+
+            case BankingDomesticPayeeTypes.Domestic:
+                return {
+                    payeeUType: BankingPayeeDetailPayeeUTypes.Domestic,
+                    domestic: {
+                        payeeAccountUType: BankingDomesticPayeeUTypes.Account,
+                        account: {
+                            accountName: 'J & J Smith',
+                            bsb: '012-345',
+                            accountNumber: '123456789'
+                        }
+                    }
+                }
+            break;
+
+            case BankingDomesticPayeeTypes.International:
+                return {
+                    payeeUType: BankingPayeeDetailPayeeUTypes.International,
+                    international: {
+                        beneficiaryDetails: {
+                            name: 'Kiwi Joe',
+                            country: 'NZ'
+                        },
+                        bankDetails: {
+                            country: 'NZ',
+                            accountNumber: '123456789'
+                        }
+                    }
+                }
+            break;
+
+            default:
+                throw "Unrecognised value for BankingDomesticPayeeTypes: " + type
+            break;
+        }
+    }
+
+    let payee = {
+        payeeId: `payee-${ind}`,
+        nickname: `payee-${ind}-nickname`,
+        description: `payee-description-${ind}`,
+        type: type,
+        creationDate: moment().subtract(5,'months').format('YYYY-MM-DD'),
+        _detail: getDetails(type)
+    }
+
+    return payee;
+})
+
+export const PayeeDetail = (subjectId:string, payeeId: string) => {
+    let payeeInt = _.find(testPayeesList, t => t.payeeId == payeeId)
+
+    let detail = payeeInt._detail
+
+    let payeeDetail = _.merge(_.omit(payeeInt,'_detail'),detail)
+
+    return payeeDetail
+
+}
+
+
 // results.ApplyFilter(new ProductCategoryAccountsFilter(ProductCategory.TRANS_AND_SAVINGS_ACCOUNTS),"productCategory")
 // results.ApplyFilter(ProductCategoryFilter,"openStatus",params["open-status"])
 // results.ApplyFilter(ProductCategoryFilter,"isOwned",params["is-owned"])

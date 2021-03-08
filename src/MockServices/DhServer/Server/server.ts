@@ -16,7 +16,7 @@ import { ConsentManager } from "../Entities/Consent";
 import bodyParser, { urlencoded } from "body-parser"
 import { OIDCConfiguration, DhServerConfig } from "./Config";
 import { Authorize, AuthorizeMiddleware } from "./Handlers/Authorize";
-import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions, testCustomerDetail, testDirectDebitList, testScheduledPaymentsList } from "../TestData/ResourceData";
+import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions, testCustomerDetail, testDirectDebitList, testScheduledPaymentsList, testPayeesList, PayeeDetail } from "../TestData/ResourceData";
 import { HokBoundTokenScopeVerificationFactory } from "./Middleware/OAuth2ScopeAuth";
 import { CdsScope } from "../../../Common/SecurityProfile/Scope";
 import { container } from "../DhDiContainer";
@@ -427,11 +427,38 @@ class DhServer {
                 this.paginationMiddleware.Paginate({mtls:true,baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/payments/scheduled`,dataObjectName:"scheduledPayments"})
             );
 
+            app.get(
+                '/cds-au/v1/banking/payees',
+                container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankPayeesRead).handler("Resource"),
+                container.resolve(CDSVersionComplianceMiddleware).handle,
+                MockDataArray(() => {
+                    //Remove non-standard '_detail' property from each payee in the array
+                    var cleanFilteredPayeesList = _.map(testPayeesList, payee => {
+                        return _.omit(payee, ['_detail']);
+                    })
+
+                    return cleanFilteredPayeesList;
+                }),
+                this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/payees',dataObjectName:"payees", mtls:true})
+            );
+    
+            app.get(
+                '/cds-au/v1/banking/payees/:payeeId',
+                container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankPayeesRead).handler("Resource"),
+                container.resolve(CDSVersionComplianceMiddleware).handle,
+                MockDataObject((req,res) =>{
+                    let consent = (<any>req as DhGatewayRequest).gatewayContext.consent;
+                    return PayeeDetail(consent.secretSubjectId,req.params.payeeId);
+                } ),
+                this.paginationMiddleware.MetaWrap({baseUrl: (req) => `/cds-au/v1/banking/payees/${req.params.payeeId}`, mtls:true})
+            );
+        
+    
         /** TODO
          * Endpoints yet to implement
          * * GET /discovery/outages
-         * * GET /banking/payees
-         * * GET /banking/payees/{payeeId}
          * * GET /banking/products
          * * GET /banking/products/{productId}
          */
