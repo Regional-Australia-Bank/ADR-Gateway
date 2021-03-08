@@ -1,13 +1,16 @@
 import moment from "moment"
 import _ from "lodash"
 import { ConsumerForbiddenError } from "../Server/Middleware/OAuth2ScopeAuth"
+import { EnumType } from "typescript"
 
 type URIString = string
 type MaskedAccountString = string
+type MaskedPANString = string
 type ASCIIString = string
 type DateString = string
 type NaturalNumber = number
 type PositiveInteger = number
+type ExternalRef = string
 
 interface Validatable<T> extends String {
     validate(): boolean;
@@ -99,12 +102,194 @@ interface BankingAuthorisedEntity {
     arbn: string
 }
 
-interface BankDirectDebit {
+interface BankingDirectDebit {
     accountId: ASCIIString
     authorisedEntity: BankingAuthorisedEntity
     lastDebitDateTime: DateString
     lastDebitAmount: string
     consentStatus: AccountConsentStatus
+}
+
+interface BankingScheduledPaymentFrom {
+    accountId: string
+}
+
+interface BankingDomesticPayeeAccount {
+    accountName?: string
+    bsb: string
+    accountNumber: string
+}
+
+interface BankingDomesticPayeeCard {
+    cardNumber: MaskedPANString
+}
+
+enum BankingDomesticPayeePayIdTypes {
+    Abn = 'ABN',
+    Email = 'EMAIL',
+    Org_identifier = 'ORG_IDENTIFIER',
+    Telephone = 'TELEPHONE'
+}
+
+interface BankingDomesticPayeePayId {
+    name?: string
+    identifier: string
+    type: BankingDomesticPayeePayIdTypes
+}
+
+enum BankingDomesticPayeeUTypes {
+    Account = 'account',
+    Card = 'card',
+    PayId = 'payId'
+}
+
+interface BankingDomesticPayee {
+    payeeAccountUType: BankingDomesticPayeeUTypes
+    account?: BankingDomesticPayeeAccount
+    card?: BankingDomesticPayeeCard
+    payId?: BankingDomesticPayeePayId
+}
+
+interface BankingBillerPayee {
+    billerCode: string
+    crn?: string
+    billerName: string
+}
+
+interface BankingInternationalPayeeBeneficiaryDetails {
+    name?: string
+    country: ExternalRef
+    message?: string
+}
+
+interface BankingInternationalPayeeBankDetails {
+    country: ExternalRef
+    accountNumber: string
+    bankAddress?: {
+        name: string
+        address: string
+    }
+    beneficiaryBankBIC?: ExternalRef
+    fedWireNumber?: string
+    sortCode?: string
+    chipNumber?: string
+    routingNumber?: string
+    legalEntityIdentifier?: ExternalRef
+}
+
+interface BankingInternationalPayee {
+    beneficiaryDetails: BankingInternationalPayeeBeneficiaryDetails
+    bankDetails: BankingInternationalPayeeBankDetails
+}
+
+enum BankingScheduledPaymentToUTypes {
+    AccountId = 'accountId',
+    PayeeId = 'payeeId',
+    Domestic = 'domestic',
+    Biller = 'biller',
+    International = 'international'
+}
+
+interface BankingScheduledPaymentTo {
+    toUType: BankingScheduledPaymentToUTypes
+    accountId?: ASCIIString
+    payeeId?: ASCIIString
+    domestic?: BankingDomesticPayee
+    biller?: BankingBillerPayee
+    international?: BankingInternationalPayee
+}
+
+interface BankingScheduledPaymentSet {
+    to: BankingScheduledPaymentTo
+    isAmountCalculated?: boolean
+    amount?: string
+    currency?: string
+}
+
+interface BankingScheduledPaymentRecurrenceOnceOff {
+    paymentDate: DateString
+}
+
+interface BankingScheduledPaymentInterval {
+    interval: ExternalRef
+    dayInInterval?: ExternalRef
+}
+
+enum BankingScheduledPaymentRecurrenceIntervalScheduleNonBusinessDayTreatments {
+    After = 'AFTER',
+    Before = 'BEFORE',
+    On = 'ON',
+    Only = 'ONLY'
+}
+
+interface BankingScheduledPaymentRecurrenceIntervalSchedule {
+    finalPaymentDate?: DateString
+    paymentsRemaining?: PositiveInteger
+    nonBusinessDayTreatment?: BankingScheduledPaymentRecurrenceIntervalScheduleNonBusinessDayTreatments
+    intervals: BankingScheduledPaymentInterval[]
+
+}
+
+enum BankingScheduledPaymentRecurrenceLastWeekdayLastWeekDays {
+    Mon = 'MON',
+    Tue = 'TUE',
+    Wed = 'WED',
+    Thu = 'THU',
+    Fri = 'FRI',
+    Sat = 'SAT',
+    Sum = 'SUN'
+}
+
+enum BankingScheduledPaymentRecurrenceLastWeekdayNonBusinessDayTreatment {
+    After = 'AFTER',
+    Before = 'BEFORE',
+    On = 'ON',
+    Only = 'ONLY'
+}
+
+interface BankingScheduledPaymentRecurrenceLastWeekday {
+    finalPaymentDate?: DateString
+    paymentsRemaining?: PositiveInteger
+    interval: ExternalRef
+    lastWeekDay: BankingScheduledPaymentRecurrenceLastWeekdayLastWeekDays
+    nonBusinessDayTreatment?: BankingScheduledPaymentRecurrenceLastWeekdayNonBusinessDayTreatment
+}
+
+interface BankingScheduledPaymentRecurrenceEventBased {
+    desription: string
+}
+
+enum BankingScheduledPaymentRecurrenceUTypes {
+    OnceOff = 'onceOff',
+    IntervalSchedule = 'intervalSchedule',
+    LastWeekDay = 'lastWeekDay',
+    EventBased = 'eventBased'
+}
+
+interface BankingScheduledPaymentRecurrence {
+    nextPaymentDate?: DateString
+    recurrenceUType: BankingScheduledPaymentRecurrenceUTypes
+    onceOff?: BankingScheduledPaymentRecurrenceOnceOff
+    intervalSchedule?: BankingScheduledPaymentRecurrenceIntervalSchedule
+    lastWeekDay?: BankingScheduledPaymentRecurrenceLastWeekday
+    eventBased?: BankingScheduledPaymentRecurrenceEventBased
+}
+
+enum BankScheduledPaymentStatus {
+    Active = 'ACTIVE',
+    Inactive = 'INACTIVE',
+    Skip = 'SKIP'
+}
+
+interface BankScheduledPayment {
+    scheduledPaymentId: ASCIIString
+    nickname?: string
+    payerReference: string
+    payeeReference: string
+    status: BankScheduledPaymentStatus
+    from: BankingScheduledPaymentFrom
+    paymentSet: BankingScheduledPaymentSet[]
+    recurrence: BankingScheduledPaymentRecurrence
 }
 
 const padLeft = (n:number,width:number,decWidth=0,padChar='0') => {
@@ -127,19 +312,19 @@ const masked = (s:string) => {
 }
 
 export enum AccountConsentStatus {
-    "CONSENTED",
-    "INVALID",
-    "NOT_CONSENTED"
+    Consented = "CONSENTED",
+    Invalid = "INVALID",
+    Not_consented = "NOT_CONSENTED"
 }
 
 const DetermineAccountConsentStatus = (accountId:string):AccountConsentStatus => {
     if (accountId == 'account-5') {
-        return AccountConsentStatus.NOT_CONSENTED
+        return AccountConsentStatus.Not_consented
     }
     if (accountId == 'account-78') {
-        return AccountConsentStatus.INVALID
+        return AccountConsentStatus.Invalid
     }
-    return AccountConsentStatus.CONSENTED
+    return AccountConsentStatus.Consented
 }
 
 export const testAccountDetailList:BankAccountDetail[] = _.map(_.range(1,6),ind => {
@@ -162,7 +347,7 @@ export const testAccountDetailList:BankAccountDetail[] = _.map(_.range(1,6),ind 
     return accountDetail
 })
 
-export const testDirectDebitList:BankDirectDebit[] = _.map(_.range(1,6),ind => {
+export const testDirectDebitList:BankingDirectDebit[] = _.map(_.range(1,6),ind => {
     let directDebits = {
         accountId: `account-${ind}`,
         authorisedEntity: {
@@ -178,6 +363,33 @@ export const testDirectDebitList:BankDirectDebit[] = _.map(_.range(1,6),ind => {
     }
 
     return directDebits;
+})
+
+export const testScheduledPaymentsList:BankScheduledPayment[] = _.map(_.range(1,16),ind => {
+    let scheduledPayment = {
+        scheduledPaymentId: `payment-${ind}`,
+        nickname: `payment-${ind}-nickname`,
+        payerReference: `payer-ref-${ind}`,
+        payeeReference: `payee-ref-${ind}`,
+        status: BankScheduledPaymentStatus[Math.floor(Math.random() * 3)],
+        from: {
+            accountId: `account-${ind}`
+        },
+        paymentSet: [{
+            to: {
+                toUType: BankingScheduledPaymentToUTypes.AccountId,
+                accountId: (12345 * ind).toString()
+            },
+            isAmountCalculated: false,
+            amount: '123.45',
+            currency: 'AUD'
+        }],
+        recurrence: {
+            recurrenceUType: BankingScheduledPaymentRecurrenceUTypes.OnceOff
+        }
+    }
+
+    return scheduledPayment;
 })
 
 export const testCustomer = {

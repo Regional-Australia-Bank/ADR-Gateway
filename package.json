@@ -41,6 +41,7 @@
     "build": "npx rimraf dist && npm run build-templates && npx tsc && npx cpx package.json dist",
     "clean": "npx rimraf dist",
     "evidence-clean": "npx rimraf .evidence",
+    "restart:pm2": "node ./node_modules/pm2/bin/pm2 restart examples/deployment/pm2/ecosystem.config.js",
     "start:pm2": "node ./node_modules/pm2/bin/pm2 delete examples/deployment/pm2/ecosystem.config.js && node ./node_modules/pm2/bin/pm2 start examples/deployment/pm2/ecosystem.config.js",
     "start": "set PM2_HOME=&& npm run build && npm run start:pm2",
     "up:docker": "docker-compose -f ./examples/deployment/docker/docker-compose.yml up --build -d",

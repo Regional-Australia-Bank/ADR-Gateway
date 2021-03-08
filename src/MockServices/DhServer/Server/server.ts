@@ -16,7 +16,7 @@ import { ConsentManager } from "../Entities/Consent";
 import bodyParser, { urlencoded } from "body-parser"
 import { OIDCConfiguration, DhServerConfig } from "./Config";
 import { Authorize, AuthorizeMiddleware } from "./Handlers/Authorize";
-import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions, testCustomerDetail, testDirectDebitList } from "../TestData/ResourceData";
+import { testAccountList, testTransactionList, testBalanceList, testAccountDetailList, testCustomer, AccountConsentStatus, TransactionDetail, GetTransactions, testCustomerDetail, testDirectDebitList, testScheduledPaymentsList } from "../TestData/ResourceData";
 import { HokBoundTokenScopeVerificationFactory } from "./Middleware/OAuth2ScopeAuth";
 import { CdsScope } from "../../../Common/SecurityProfile/Scope";
 import { container } from "../DhDiContainer";
@@ -251,9 +251,9 @@ class DhServer {
                         //Does the requested account exist and is able to be included?
                         var account = _.find(testAccountDetailList, acc => acc.accountId == req.params.accountId);
                         if (!account) throw 'Specified account not found: ' + req.params.accountId;
-                        if (account.consentStatus == AccountConsentStatus.NOT_CONSENTED) {
+                        if (account.consentStatus == AccountConsentStatus.Not_consented) {
                             throw {unconsentedAccount: true}
-                        } else if (account.consentStatus != AccountConsentStatus.CONSENTED) {
+                        } else if (account.consentStatus != AccountConsentStatus.Consented) {
                             throw {unsupportedStatus: account}
                         }
 
@@ -285,9 +285,9 @@ class DhServer {
                         if (!account) {
                             return false;
                         };
-                        if (account.consentStatus == AccountConsentStatus.CONSENTED) {
+                        if (account.consentStatus == AccountConsentStatus.Consented) {
                             return true;
-                        } else if (account.consentStatus == AccountConsentStatus.NOT_CONSENTED) {
+                        } else if (account.consentStatus == AccountConsentStatus.Not_consented) {
                             throw {unconsentedAccount: true}
                         } else {
                             throw {unsupportedStatus: account}
@@ -365,14 +365,71 @@ class DhServer {
             } ),
             this.paginationMiddleware.MetaWrap({baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/transactions/${req.params.transactionId}`, mtls:true}))
     
+        app.get(
+            '/cds-au/v1/banking/payments/scheduled',
+            container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+            container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
+            container.resolve(CDSVersionComplianceMiddleware).handle,
+            MockDataArray(() => {
+                return testScheduledPaymentsList;
+            }),
+            this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/payments/scheduled',dataObjectName:"scheduledPayments", mtls:true}));
+
+            app.post(
+                '/cds-au/v1/banking/payments/scheduled',
+                container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
+                container.resolve(CDSVersionComplianceMiddleware).handle,
+                bodyParser.json(),
+                MockDataArray((req:express.Request) => { 
+                    let scheduledPayments = _.filter(testScheduledPaymentsList, (sp) => {
+                        if (!_.find(req.body.data.accountIds, reqAccountId => {
+                            if (reqAccountId !== sp.from.accountId) return false
+                            let matchingAccount = _.find(testScheduledPaymentsList,x => x.from.accountId === sp.from.accountId);
+                            if (typeof matchingAccount === 'undefined') throw 'Cannot find account to match scheduled payment'
+                            return true
+                        })) {
+                            return false;
+                        }
+    
+                        return true;
+                        })
+
+                    return scheduledPayments;
+                }),
+                this.paginationMiddleware.Paginate({baseUrl: '/cds-au/v1/banking/payments/scheduled',dataObjectName:"scheduledPayments", mtls:true})
+            );
+
+            app.get(
+                '/cds-au/v1/banking/accounts/:accountId/payments/scheduled',
+                container.resolve(MTLSVerificationMiddleware).handle, // Check MTLS Certificate 
+                container.resolve(HokBoundTokenScopeVerificationFactory).make(CdsScope.BankRegularPaymentsRead).handler("Resource"),
+                container.resolve(CDSVersionComplianceMiddleware).handle,
+                MockDataArray((req) => {
+                    //Does the requested account exist and is able to be included?
+                    var account = _.find(testAccountDetailList, acc => acc.accountId == req.params.accountId);
+                    if (!account) throw 'Specified account not found: ' + req.params.accountId;
+                    if (account.consentStatus == AccountConsentStatus.Not_consented) {
+                        throw {unconsentedAccount: true}
+                    } else if (account.consentStatus != AccountConsentStatus.Consented) {
+                        throw {unsupportedStatus: account}
+                    }
+
+                    //Find all SPs that match the requested account
+                    var filteredSpList = _.filter(testScheduledPaymentsList,sp => {
+                        if (sp.from.accountId !== req.params.accountId) return false; //Is this a SP for the specified account?
+                        else return true;
+                    });
+
+                    //Return final list of SPs for the specified account
+                    return filteredSpList;
+                }),
+                this.paginationMiddleware.Paginate({mtls:true,baseUrl: (req) => `/cds-au/v1/banking/accounts/${req.params.accountId}/payments/scheduled`,dataObjectName:"scheduledPayments"})
+            );
 
         /** TODO
          * Endpoints yet to implement
          * * GET /discovery/outages
-         * * GET /banking/accounts/{accountId}/direct-debits
-         * * GET /banking/accounts/{accountId}/payments/scheduled
-         * * GET /banking/payments/scheduled
-         * * POST /banking/payments/scheduled
          * * GET /banking/payees
          * * GET /banking/payees/{payeeId}
          * * GET /banking/products

@@ -171,6 +171,19 @@ class AdrGateway {
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/transactions/${p.transactionId}`,'bank:transactions:read')
         )
 
+        app.get("/cdr/consents/:consentId/accounts/:accountId/payments/scheduled",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/payments/scheduled`,'bank:regular_payments:read')
+        )
+
+        app.get("/cdr/consents/:consentId/payments/scheduled",
+            this.consumerDataAccess.handler('/cds-au/v1/banking/payments/scheduled','bank:regular_payments:read')
+        )
+
+        app.post("/cdr/consents/:consentId/payments/scheduled",
+            bodyParser.json(),
+            this.consumerDataAccess.handler('/cds-au/v1/banking/payments/scheduled','bank:regular_payments:read')
+        )
+
         app.get("/cdr/consents/:consentId/consumerInfo",
             this.consumerDataAccess.handler('/cds-au/v1/common/customer','common:customer.basic:read')
         )
