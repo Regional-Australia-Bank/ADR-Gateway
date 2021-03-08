@@ -17,7 +17,7 @@ npm run start:docker
 
 ## PM2
 
-You must have Node 14. This s historically not considered as robust as the Docker example, which is much closer to a production deployment.
+You must have Node 14. This is historically not considered as robust as the Docker example, which is much closer to a production deployment.
 
 ```
 npm i 
