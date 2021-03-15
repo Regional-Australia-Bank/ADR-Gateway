@@ -32,7 +32,8 @@ const bodySchema:Schema = {
     systemId: { isString: { errorMessage: "systemId must be a string" }, isLength: {options: {min: 1}, errorMessage: "systemId must be at least length 1"} },
     state: { isString: { errorMessage: "state must be a string" }, isLength: {options: {min: 5}, errorMessage: "state must be at least length 5"} },
     scopes: {isArray:true, errorMessage: "authorized scopes must be presented as an array"},
-    'scopes.*': {isString: true, errorMessage: "all scopes must be strings"}
+    'scopes.*': {isString: true, errorMessage: "all scopes must be strings"},
+    redirectUri: {isString: { errorMessage: "redirectUri must be a URI string"}}
 };
 
 const querySchema:Schema = {
@@ -59,7 +60,7 @@ class ConsentRequestMiddleware {
     
         let Responder = async (req:express.Request,res:express.Response) => {
     
-            let m:ConsentRequestParams = <any>matchedData(req);
+            let m:ConsentRequestParams = <any>matchedData(req, {includeOptionals: true});
 
             try {
                 let redirect_uri = await this.RequestConsent(m);

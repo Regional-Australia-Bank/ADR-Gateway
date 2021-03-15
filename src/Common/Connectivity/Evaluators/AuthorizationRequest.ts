@@ -15,6 +15,7 @@ export interface ConsentRequestParams {
   scopes: string[],
   dataholderBrandId: string,
   productKey: string,
+  redirectUri?: string,
   additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
 }
 
@@ -44,7 +45,8 @@ export const GetAuthorizationRequest = async (cert:ClientCertificateInjector,con
       id_token: _.merge($.AdrConnectivityConfig.DefaultClaims?.id_token, p.additionalClaims?.id_token)
   }
 
-  let redirectUri = $.SoftwareProductConfig.redirect_uris[0];
+  let redirectUri = $.ConsentRequestParams.redirectUri || $.SoftwareProductConfig.redirect_uris[0];
+  //let redirectUri = $.SoftwareProductConfig.redirect_uris[0];
 
   // Get a request URL
   let authUrl = await getAuthPostGetRequestUrl(cert,{

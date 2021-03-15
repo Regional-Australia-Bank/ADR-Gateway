@@ -149,6 +149,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production
+    env_production,
+    node_args: "--inspect --inspect-port 9292"
   }]
 };

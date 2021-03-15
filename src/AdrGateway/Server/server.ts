@@ -184,11 +184,11 @@ class AdrGateway {
             this.consumerDataAccess.handler('/cds-au/v1/banking/payments/scheduled','bank:regular_payments:read')
         )
 
-        app.get("/cdr/consents/:consentId/banking/payees",
+        app.get("/cdr/consents/:consentId/payees",
             this.consumerDataAccess.handler('/cds-au/v1/banking/payees','bank:payees:read')
         )
 
-        app.get("/cdr/consents/:consentId/banking/payees/:payeeId",
+        app.get("/cdr/consents/:consentId/payees/:payeeId",
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/payees/${p.payeeId}`,'bank:payees:read')
         )
 
@@ -207,11 +207,6 @@ class AdrGateway {
         /** TODO
          * Endpoints yet to implement
          * * GET /discovery/outages
-         * * GET /banking/accounts/{accountId}/payments/scheduled
-         * * GET /banking/payments/scheduled
-         * * POST /banking/payments/scheduled
-         * * GET /banking/payees
-         * * GET /banking/payees/{payeeId}
          * * GET /banking/products
          * * GET /banking/products/{productId}
          */
