@@ -464,7 +464,7 @@ export const testCustomerDetail = {
 export const testBalanceList:BankAccountBalance[] = _.map(testAccountDetailList,acc => ({
     accountId: acc.accountId,
     currentBalance: ((Math.random()-0.5)*5000).toFixed(2),
-    availableBalance: ((Math.random()-0.5)*5000).toFixed(2)
+    availableBalance: Math.abs(((Math.random()-0.5)*5000)).toFixed(2)
 }))
 
 const testAccountList:BankAccount[] = _.map(testAccountDetailList,det => _.pick(det,'accountId','displayName','nickname','isOwned','maskedNumber','productCategory','productName','consentStatus'));
