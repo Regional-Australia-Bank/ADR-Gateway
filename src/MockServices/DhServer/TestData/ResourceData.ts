@@ -385,7 +385,10 @@ export const testScheduledPaymentsList:BankScheduledPayment[] = _.map(_.range(1,
             currency: 'AUD'
         }],
         recurrence: {
-            recurrenceUType: BankingScheduledPaymentRecurrenceUTypes.OnceOff
+            recurrenceUType: BankingScheduledPaymentRecurrenceUTypes.OnceOff,
+            onceOff: {
+                paymentDate: moment().add(1,'months').format('YYYY-MM-DD')
+            }
         }
     }
 

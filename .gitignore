@@ -15,3 +15,4 @@ coverage
 .vagrant
 *.log
 *.tar.gz
+drg.tar
