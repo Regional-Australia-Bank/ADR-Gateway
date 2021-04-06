@@ -1,3 +1,6 @@
+import {loadInstrumentation} from "./Instrumentation"
+loadInstrumentation();
+
 import "reflect-metadata"
 
 import { GetBackendConfig } from "../Config";

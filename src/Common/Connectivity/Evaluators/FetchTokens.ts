@@ -47,7 +47,7 @@ export const SyncRefreshTokenStatus = async (consentManager:ConsentRequestLogMan
     }
 
     let response:AxiosResponse<{active:boolean}> = await axios.request(cert.inject(options));
-
+  
     if (!response.data.active) {
         await consentManager.RevokeConsent($.Consent,"DataHolder");
         return {
@@ -93,6 +93,7 @@ export const FetchTokens = async (logger: winston.Logger, cert: ClientCertificat
 
     cert.inject(options);
     const tokenRequestTime = moment.utc().toDate();
+
     let response = await axios.request(options);
 
     let responseObject: Types.TokenResponse = response.data;

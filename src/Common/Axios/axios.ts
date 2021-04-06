@@ -5,7 +5,6 @@ import {Agent as httpAgent}  from "http"
 import https from "https"
 import URLParse from "url-parse"
 import tls from "tls"
-import { requestFormatter, responseFormatter } from "../LogReplacers"
 
 interface MtlsOptions {
     ca?: any,
@@ -118,7 +117,6 @@ const axiosClient = (() => {
     })
 
     client.interceptors.request.use(config => {
-
         // use the https proxy for non-localhost addresses
         let mtlsConfig = <MtlsOptions>_.pick(config.httpsAgent.options,'ca','cert','key');
 
@@ -142,6 +140,7 @@ const axiosClient = (() => {
         let {http,https} = createTunnelAgents(proxyOptions,mtlsConfig);
         config.httpAgent = http;
         config.httpsAgent = https;
+
         return config;
 
     })

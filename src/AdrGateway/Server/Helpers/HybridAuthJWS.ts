@@ -56,7 +56,9 @@ const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $
   }
 
   cert.inject(options);
+
   let response = await axios.request(options);
+ 
   return {request_uri: response.data.request_uri}
 }
 

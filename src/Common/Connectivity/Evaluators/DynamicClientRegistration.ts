@@ -40,7 +40,9 @@ export const GetDataHolderRegistrationAccessToken = async (cert:ClientCertificat
           client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
       })
   }
+
   let response = await axios.request(cert.inject(options));
+
   return new AccessToken(response.data.access_token,response.data.expires_in);
 }
 
@@ -170,7 +172,9 @@ const NewRegistrationAtDataholder = async (cert:ClientCertificateInjector, $: {
   let registrationRequestJwt = JWT.sign(registrationRequest,$.DataRecipientJwks.get({alg:'PS256',use:'sig'}),{header:{typ:"JWT"}})
 
   let options = cert.inject({method:"POST", url: $.DataHolderOidc.registration_endpoint, responseType: "json", data: registrationRequestJwt, headers: {"content-type":"application/jwt"}});
+
   let responseRaw = await axios.request(options)
+
   let response:DataholderRegistrationResponse = responseRaw.data;
 
   return response;
@@ -191,8 +195,9 @@ const DeleteRegistrationAtDataholder = async (cert:ClientCertificateInjector, $:
     headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
   });
   try {
-    await axios.request(options)
-  } catch (err) {
+    let response = await axios.request(options)
+  
+    } catch (err) {
     throw `Expected 204 from DELETE registration endpoint but received ${err.response.status}`;
   }  
 

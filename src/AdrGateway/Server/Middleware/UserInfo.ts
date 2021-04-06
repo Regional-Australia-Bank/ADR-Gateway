@@ -122,6 +122,7 @@ class UserInfoProxyMiddleware {
 
         try {
             let dhRes = await axios.request(options);
+
             if (dhRes.status == 200) {
                 return res.json(dhRes.data)
             } else {

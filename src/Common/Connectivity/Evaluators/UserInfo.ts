@@ -21,6 +21,8 @@ export const GetUserInfo = async (clientCertInjector:ClientCertificateInjector, 
     }
 
     clientCertInjector.inject(options);
-    let response:Types.UserInfoResponse = (await axios.request(options)).data;
-    return response
+
+    let response = (await axios.request(options)).data;
+
+    return <Types.UserInfoResponse>response
 }

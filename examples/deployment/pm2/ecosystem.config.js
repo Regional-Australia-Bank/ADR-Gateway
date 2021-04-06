@@ -65,6 +65,7 @@ const env = {
   // DH_OIDC_DCR_ENDPOINT: 'https://localhost:10202/idp/register',
   // DH_OIDC_JWKS_ENDPOINT: 'http://localhost:8201/jwks',
 
+  //APPINSIGHTS_INSTRUMENTATIONKEY: ""
 }
 
 const env_production = {

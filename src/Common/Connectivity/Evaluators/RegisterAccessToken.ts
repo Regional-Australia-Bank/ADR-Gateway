@@ -27,6 +27,8 @@ export const GetRegisterAccessToken = async (cert:ClientCertificateInjector, par
           client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
       })
   }
+
   let response = await axios.request(cert.inject(<any>options));
+
   return new AccessToken(response.data.access_token,response.data.expires_in);
 }

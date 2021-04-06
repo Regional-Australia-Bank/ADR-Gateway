@@ -28,12 +28,13 @@ export const GetDataHolderRevocationJwks = async (cert: ClientCertificateInjecto
             responseType: "json",
             timeout: 10000
         })
+
         axios.request(options).then(value => { // TODO configure timeout value
             resolve(value.data)
         }, err => {
             reject(err)
         })
-    })))
+})))
 
     let aggregated = { keys: _.flatten(jwksObjs.map(j => j.keys)) }
 
