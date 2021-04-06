@@ -496,8 +496,10 @@ export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.
                     payer: "Payer",
                     service: "X2P1.01",
                     extensionUType: "x2p101Payload",
-                    extendedDescription: `${r} - An extended message as sent by the payer, up to 250 characters.`,
-                    endToEndId: `abcd123${r}`
+                    x2p101Payload: {
+                        extendedDescription: `${r} - An extended message as sent by the payer, up to 250 characters.`,
+                        endToEndId: `abcd123${r}`
+                    }
                 }
             }
         }
@@ -508,8 +510,10 @@ export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.
                     payee: "Payee",
                     service: "X2P1.01",
                     extensionUType: "x2p101Payload",
-                    extendedDescription: `${r} - An extended message as sent to the payee, up to 250 characters.`,
-                    endToEndId: `abcd123${r}`
+                    x2p101Payload: {
+                        extendedDescription: `${r} - An extended message as sent to the payee, up to 250 characters.`,
+                        endToEndId: `abcd123${r}`
+                    }
                 }
             }        
         }
@@ -554,7 +558,8 @@ export const GetTransactions = (subjectId:string, accountId: string) => {
 }
 
 export const TransactionDetail = (subjectId:string, accountId: string, transactionId: string) => {
-    if (!_.find(testAccountList, acc => acc.accountId == accountId)) {
+    let accountInt = _.find(testAccountList, acc => acc.accountId == accountId);
+    if (!accountInt) {
         throw new ConsumerForbiddenError("Account does not exist",{
             code: "NO_ACCOUNT",
             detail: "The account does not exist or is not consented",
@@ -574,6 +579,7 @@ export const TransactionDetail = (subjectId:string, accountId: string, transacti
     let detail = transactionInt._detail
 
     let transaction = _.merge(_.omit(transactionInt,'_detail'),detail)
+    transaction.accountId = accountInt.accountId;
 
     return transaction
 
