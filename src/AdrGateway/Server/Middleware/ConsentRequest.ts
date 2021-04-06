@@ -33,7 +33,7 @@ const bodySchema:Schema = {
     state: { isString: { errorMessage: "state must be a string" }, isLength: {options: {min: 5}, errorMessage: "state must be at least length 5"} },
     scopes: {isArray:true, errorMessage: "authorized scopes must be presented as an array"},
     'scopes.*': {isString: true, errorMessage: "all scopes must be strings"},
-    redirectUri: {isString: { errorMessage: "redirectUri must be a URI string"}}
+    redirectUri: {optional: true, isString: { errorMessage: "redirectUri must be a URI string"}}
 };
 
 const querySchema:Schema = {
