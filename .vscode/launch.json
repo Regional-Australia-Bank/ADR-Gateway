@@ -41,6 +41,12 @@
         {
             "type": "node",
             "request": "attach",
+            "name": "Attach MockRegister PM2",
+            "port": 9293
+        },
+        {
+            "type": "node",
+            "request": "attach",
             "name": "Attach to a process",
             "processId": "${command:PickProcess}"
         },

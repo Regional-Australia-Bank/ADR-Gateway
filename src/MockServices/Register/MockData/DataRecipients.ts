@@ -30,7 +30,27 @@ const OriginalDataRecipients = [
                             "revocation_uri": "https://regaustbank.io/revocation",
                             "scope": "bank:accounts.basic:read bank:accounts.detail:read bank:transactions:read bank:payees:read bank:regular_payments:read common:customer.basic:read common:customer.detail:read cdr:registration"
                         }
+                    },
+                    {
+                        "softwareProductId": "test-data-recipient-1-brand-1-product-2",
+                        "softwareProductName": "Product 2",
+                        "logoUri": "string",
+                        "status": "ACTIVE",
+                        "ssaParticulars": {
+                            "client_description": "A mock software product for testing SSA",
+                            "client_uri": "https://regaustbank.io",
+                            "redirect_uris": [
+                                "https://raw.githubusercontent.com/Regional-Australia-Bank/ADR-Gateway/master/examples/redirect-uri.md",
+                                "https://regaustbank.io/redirect2"
+                            ],
+                            "tos_uri": "https://regaustbank.io/tos.html",
+                            "policy_uri": "https://regaustbank.io/policy.html",
+                            "jwks_uri": "https://regaustbank.io/jwks",
+                            "revocation_uri": "https://regaustbank.io/revocation",
+                            "scope": "bank:accounts.basic:read bank:accounts.detail:read bank:transactions:read bank:payees:read bank:regular_payments:read common:customer.basic:read common:customer.detail:read cdr:registration"
+                        }
                     }
+
                 ],
                 "status": "ACTIVE"
             }
