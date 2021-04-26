@@ -60,10 +60,21 @@ class ConsentRequestMiddleware {
     
         let Responder = async (req:express.Request,res:express.Response) => {
     
-            let m:ConsentRequestParams = <any>matchedData(req, {includeOptionals: true});
+            let m:Omit<ConsentRequestParams,'softwareProductId'> = <any>matchedData(req);
+
+            let configs = await this.connector.SoftwareProductConfigs().Evaluate();
+            let softwareProductId = configs.byKey[m.productKey].ProductId;
+            if (typeof softwareProductId !== "string") {
+                return res.status(400).json({
+                    error: `productKey not recognised: ${m.productKey}`
+                });
+            }
 
             try {
-                let redirect_uri = await this.RequestConsent(m);
+                let redirect_uri = await this.RequestConsent({
+                    ...m,
+                    softwareProductId
+                });
                 return res.json(redirect_uri)          
             } catch (e) {
                 if (e instanceof NoneFoundError) {
@@ -91,7 +102,7 @@ class ConsentRequestMiddleware {
     }
 
     RequestConsent = async (p: ConsentRequestParams) =>{
-        this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.productKey}`);
+        this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.softwareProductId} (${p.productKey})`);
         let requestor = this.connector.GetAuthorizationRequest(p);
         return (await requestor.Evaluate())
 

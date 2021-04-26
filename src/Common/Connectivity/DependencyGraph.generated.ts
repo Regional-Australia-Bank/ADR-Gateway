@@ -56,11 +56,10 @@ export class DependencyGraph {
       cacheTrail: [],
     })
 
-    const SoftwareProductConfig = new Dependency<{SoftwareProductKey: Types.StringOrUndefined, SoftwareProductId: Types.StringOrUndefined}, {SoftwareProductConfigs: Types.IndexedSoftwareProductConfigs}, Types.SoftwareProductConnectivityConfig>({
+    const SoftwareProductConfig = new Dependency<{SoftwareProductId: Types.StringOrUndefined}, {SoftwareProductConfigs: Types.IndexedSoftwareProductConfigs}, Types.SoftwareProductConnectivityConfig>({
       name: "SoftwareProductConfig",
       evaluator: util.GetSoftwareProductConfig,
       parameters: {
-        SoftwareProductKey:Identifiers.Types.StringOrUndefined,
         SoftwareProductId:Identifiers.Types.StringOrUndefined
       },
       dependencies: [
@@ -125,11 +124,11 @@ export class DependencyGraph {
       },
     })
 
-    const SoftwareProductStatus = new Dependency<{SoftwareProductKey: string}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig}, string>({
+    const SoftwareProductStatus = new Dependency<{SoftwareProductId: string}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig}, string>({
       name: "SoftwareProductStatus",
       evaluator: util.SoftwareProductStatus.bind(undefined,factory.cert),
       parameters: {
-        SoftwareProductKey:Identifiers.string
+        SoftwareProductId:Identifiers.string
       },
       dependencies: [
         AdrConnectivityConfig,
@@ -142,11 +141,11 @@ export class DependencyGraph {
       },
     })
 
-    const AssertSoftwareProductStatusIsActive = new Dependency<{SoftwareProductKey: string}, {SoftwareProductStatus: string, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig}, void>({
+    const AssertSoftwareProductStatusIsActive = new Dependency<{SoftwareProductId: string}, {SoftwareProductStatus: string, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig}, void>({
       name: "AssertSoftwareProductStatusIsActive",
       evaluator: util.AssertSoftwareProductActive,
       parameters: {
-        SoftwareProductKey:Identifiers.string
+        SoftwareProductId:Identifiers.string
       },
       dependencies: [
         SoftwareProductStatus,
@@ -330,12 +329,12 @@ export class DependencyGraph {
       serializer: Serial.JWKS,
     })
 
-    const SoftwareStatementAssertion = new Dependency<{SoftwareProductKey: string}, {SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, AdrConnectivityConfig: Types.AdrConnectivityConfig, RegisterAccessCredentials: Types.AccessToken}, string>({
+    const SoftwareStatementAssertion = new Dependency<{SoftwareProductId: string}, {SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, AdrConnectivityConfig: Types.AdrConnectivityConfig, RegisterAccessCredentials: Types.AccessToken}, string>({
       name: "SoftwareStatementAssertion",
       evaluator: util.RegisterGetSSA.bind(undefined,factory.cert),
       validator: util.Validation.ValidAndCurrentSSA,
       parameters: {
-        SoftwareProductKey:Identifiers.string
+        SoftwareProductId:Identifiers.string
       },
       dependencies: [
         SoftwareProductConfig,
@@ -350,11 +349,11 @@ export class DependencyGraph {
       },
     })
 
-    const CurrentClientRegistration = new Dependency<{SoftwareProductKey: string, DataHolderBrandId: string}, {SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}, Types.DataHolderRegistration>({
+    const CurrentClientRegistration = new Dependency<{SoftwareProductId: string, DataHolderBrandId: string}, {SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}, Types.DataHolderRegistration>({
       name: "CurrentClientRegistration",
       evaluator: util.GetCurrentClientRegistration.bind(undefined,factory.dataholderRegistrationManager),
       parameters: {
-        SoftwareProductKey:Identifiers.string,
+        SoftwareProductId:Identifiers.string,
         DataHolderBrandId:Identifiers.string
       },
       dependencies: [
@@ -368,11 +367,11 @@ export class DependencyGraph {
       },
     })
 
-    const DhNewClientRegistration = new Dependency<{SoftwareProductKey: string, DataHolderBrandId: string}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata, DataHolderUpAndReady: void, SoftwareStatementAssertion: string}, Types.DataHolderRegistration>({
+    const DhNewClientRegistration = new Dependency<{SoftwareProductId: string, DataHolderBrandId: string}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata, DataHolderUpAndReady: void, SoftwareStatementAssertion: string}, Types.DataHolderRegistration>({
       name: "DhNewClientRegistration",
       evaluator: util.NewClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager),
       parameters: {
-        SoftwareProductKey:Identifiers.string,
+        SoftwareProductId:Identifiers.string,
         DataHolderBrandId:Identifiers.string
       },
       dependencies: [
@@ -391,11 +390,11 @@ export class DependencyGraph {
       },
     })
 
-    const BootstrapClientRegistration = new Dependency<{SoftwareProductKey: string, DataHolderBrandId: string}, {AssertSoftwareProductStatusIsActive: void, CurrentClientRegistration: Types.DataHolderRegistration, DhNewClientRegistration?: Types.DataHolderRegistration}, Types.DataHolderRegistration>({
+    const BootstrapClientRegistration = new Dependency<{SoftwareProductId: string, DataHolderBrandId: string}, {AssertSoftwareProductStatusIsActive: void, CurrentClientRegistration: Types.DataHolderRegistration, DhNewClientRegistration?: Types.DataHolderRegistration}, Types.DataHolderRegistration>({
       name: "BootstrapClientRegistration",
       evaluator: $ => $.CurrentClientRegistration || $.DhNewClientRegistration || (() => {throw new Error('Could not bootstrap client registration')})(),
       parameters: {
-        SoftwareProductKey:Identifiers.string,
+        SoftwareProductId:Identifiers.string,
         DataHolderBrandId:Identifiers.string
       },
       dependencies: [
@@ -410,11 +409,11 @@ export class DependencyGraph {
       },
     })
 
-    const DhRegAccessToken = new Dependency<{SoftwareProductKey: string, DataHolderBrandId: string}, {DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, BootstrapClientRegistration: Types.DataHolderRegistration}, Types.AccessToken>({
+    const DhRegAccessToken = new Dependency<{SoftwareProductId: string, DataHolderBrandId: string}, {DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, BootstrapClientRegistration: Types.DataHolderRegistration}, Types.AccessToken>({
       name: "DhRegAccessToken",
       evaluator: util.GetDataHolderRegistrationAccessToken.bind(undefined,factory.cert),
       parameters: {
-        SoftwareProductKey:Identifiers.string,
+        SoftwareProductId:Identifiers.string,
         DataHolderBrandId:Identifiers.string
       },
       dependencies: [
@@ -454,11 +453,11 @@ export class DependencyGraph {
       },
     })
 
-    const CheckAndUpdateClientRegistration = new Dependency<{SoftwareProductKey: string, DataHolderBrandId: string}, {AssertSoftwareProductStatusIsActive: void, AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, DataHolderUpAndReady: void, SoftwareStatementAssertion: string, BootstrapClientRegistration: Types.DataHolderRegistration, DhRegAccessToken: Types.AccessToken}, Types.DataHolderRegistration>({
+    const CheckAndUpdateClientRegistration = new Dependency<{SoftwareProductId: string, DataHolderBrandId: string}, {AssertSoftwareProductStatusIsActive: void, AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderOidc: Types.DataholderOidcResponse, DataHolderUpAndReady: void, SoftwareStatementAssertion: string, BootstrapClientRegistration: Types.DataHolderRegistration, DhRegAccessToken: Types.AccessToken}, Types.DataHolderRegistration>({
       name: "CheckAndUpdateClientRegistration",
       evaluator: util.CheckAndUpdateClientRegistration.bind(undefined,factory.cert,factory.dataholderRegistrationManager),
       parameters: {
-        SoftwareProductKey:Identifiers.string,
+        SoftwareProductId:Identifiers.string,
         DataHolderBrandId:Identifiers.string
       },
       dependencies: [
@@ -492,7 +491,7 @@ export class DependencyGraph {
         ConsentRequestParams:Identifiers.Types.ConsentRequestParams
       },
       project: {
-        SoftwareProductKey:$ => $.ConsentRequestParams.productKey,
+        SoftwareProductId:$ => $.ConsentRequestParams.softwareProductId,
         DataHolderBrandId:$ => $.ConsentRequestParams.dataholderBrandId,
       },
       dependencies: [

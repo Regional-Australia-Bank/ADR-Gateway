@@ -16,6 +16,7 @@ export interface ConsentRequestParams {
   dataholderBrandId: string,
   productKey: string,
   redirectUri?: string,
+  softwareProductId: string,
   additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
 }
 

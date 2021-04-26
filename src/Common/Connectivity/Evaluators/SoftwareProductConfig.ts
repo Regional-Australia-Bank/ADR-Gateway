@@ -32,12 +32,10 @@ export const GetSoftwareProductConfigs = (async ({AdrConnectivityConfig}:{AdrCon
   return {byKey,byId};
 });
 
-export const GetSoftwareProductConfig = async ($:{SoftwareProductConfigs: IndexedSoftwareProductConfigs, SoftwareProductKey?:string, SoftwareProductId?:string}):Promise<Types.SoftwareProductConnectivityConfig> => {
-  if (typeof $.SoftwareProductKey == "string") {
-    return $.SoftwareProductConfigs.byKey[$.SoftwareProductKey]
-  } else if (typeof $.SoftwareProductId == "string") {
+export const GetSoftwareProductConfig = async ($:{SoftwareProductConfigs: IndexedSoftwareProductConfigs, SoftwareProductId:string}):Promise<Types.SoftwareProductConnectivityConfig> => {
+  if (typeof $.SoftwareProductId == "string") {
     return $.SoftwareProductConfigs.byId[$.SoftwareProductId]
   } else {
-    throw 'Must supply a SoftwareProductId or SoftwareProductKey as a parameter'
+    throw 'Must supply a SoftwareProductId as a parameter'
   }
 };
