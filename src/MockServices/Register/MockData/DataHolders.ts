@@ -30,19 +30,19 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
 
     // Add a non-conformant payload to test robustness of DR. https://github.com/Regional-Australia-Bank/ADR-Gateway/issues/23
     const badBank = {
-        "dataHolderBrandId": uuid.v4(),
+        "dataHolderBrandId": "8c5bdd1b-aed9-40eb-8866-bfc5c1cfcae7", //uuid.v4(),
         "brandName": "Bad bank",
         "industry": "banking",
         "logoUri": "https://bad.bank",
         "legalEntity": {
-            "legalEntityId": uuid.v4(),
+            "legalEntityId": "3759e668-7385-4d2a-8a5c-fb1637cce7e4", //uuid.v4(),
             "legalEntityName": "Bad bank",
             "logoUri": "https://bad.bank/logo",
             "abn": "1234567890"
         },
         "status": "ACTIVE",
         "authDetails": [],
-        "lastUpdated": moment().utc().toISOString()
+        "lastUpdated": "2021-01-29T10:57:50Z" //moment().utc().toISOString()
     }
 
     const inactiveBank = {
@@ -51,7 +51,7 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
         "industry": "banking",
         "logoUri": "https://bad.bank",
         "legalEntity": {
-            "legalEntityId": uuid.v4(),
+            "legalEntityId": "3759e668-7385-4d2a-8a5c-fb1637cce7e4", //uuid.v4(),
             "legalEntityName": "Bad bank",
             "logoUri": "https://bad.bank/logo",
             "abn": "1234567890"
@@ -61,7 +61,7 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
         },
         "status": "INACTIVE",
         "authDetails": [],
-        "lastUpdated": moment().utc().toISOString()
+        "lastUpdated": "2021-01-29T10:57:50Z" //moment().utc().toISOString()
     }
 
     const realDhs = [
