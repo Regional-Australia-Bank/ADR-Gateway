@@ -63,7 +63,7 @@ export const SwitchIdTokenAlgs = async (environment: E2ETestEnvironment) => {
     const dataholder = environment.Config.SystemUnderTest.Dataholder;
     logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
-    let softwareProductId = await environment.OnlySoftwareProduct();
+    let softwareProductId = await environment.OnlySoftwareProductId();
     let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(softwareProductId,dataholder);
 
     let interceptor = axios.interceptors.response.use(async res => {

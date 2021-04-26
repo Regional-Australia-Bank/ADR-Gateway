@@ -15,6 +15,7 @@ export interface ConsentRequestParams {
   scopes: string[],
   dataholderBrandId: string,
   productKey: string,
+  softwareProductId: string,
   additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
 }
 

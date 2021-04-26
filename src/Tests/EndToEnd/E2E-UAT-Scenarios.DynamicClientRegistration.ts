@@ -233,7 +233,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 // Expect the NewClientRegistration to be evaluated
-                let productId = (await ctx.environment.OnlySoftwareProduct());
+                let productId = (await ctx.environment.OnlySoftwareProductId());
                 let dependency = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration(productId,dataholder);
 
                 try {
@@ -267,7 +267,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 logger.debug(`Test new client registration with dataholder ${dataholder}`)
 
                 // Expect the NewClientRegistration to be evaluated
-                let dependency = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration((await ctx.environment.OnlySoftwareProduct()),dataholder);
+                let dependency = environment.TestServices.adrGateway.connectivity.DhNewClientRegistration((await ctx.environment.OnlySoftwareProductId()),dataholder);
 
                 try {
                     await dependency.Evaluate({ignoreCache:"all"});
@@ -337,7 +337,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             })
             .When(SetValue,async (ctx) => {
                 let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration");
-                let at = await environment.TestServices.adrGateway?.connectivity.DhRegAccessToken(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
+                let at = await environment.TestServices.adrGateway?.connectivity.DhRegAccessToken(await ctx.environment.OnlySoftwareProductId(),reg.dataholderBrandId).Evaluate()
                 return at;
             },"Token")
             .Then(async ctx => {
@@ -355,7 +355,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             })
             .When(SetValue,async (ctx) => {
                 let reg:DataHolderRegistration = await ctx.GetTestContext(DcrSymbols.Context.NewClientRegistration).GetValue("Registration");
-                let updatedReg = await environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),reg.dataholderBrandId).Evaluate()
+                let updatedReg = await environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProductId(),reg.dataholderBrandId).Evaluate()
                 return updatedReg;
             },"UpdatedRegistration")
             .Then(async ctx => {
@@ -380,7 +380,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
 
                 ClearDefaultInMemoryCache();
 
-                let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
+                let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProductId(),dataholder);
                 await dependency.Evaluate()
             },"ExistingRegistrationExecution")
             .Then(async ctx => {
@@ -462,7 +462,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 try {
                     ClearDefaultInMemoryCache();
 
-                    let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
+                    let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProductId(),dataholder);
                 
                     await dependency.Evaluate()
                 } catch (err) {
@@ -511,7 +511,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 try {
                     ClearDefaultInMemoryCache();
 
-                    let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProduct(),dataholder);
+                    let dependency = environment.TestServices.adrGateway?.connectivity.CheckAndUpdateClientRegistration(await ctx.environment.OnlySoftwareProductId(),dataholder);
                 
                     await dependency.Evaluate()
                 } catch (err) {
@@ -575,7 +575,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     let pw = environment.TestServices.adrGateway?.connectivity;
                     if (!pw) throw 'Asserting that pw is not undefined'
                     
-                    let productKey = await ctx.environment.OnlySoftwareProduct();
+                    let productKey = await ctx.environment.OnlySoftwareProductId();
                     let productConfig = await ctx.environment.OnlySoftwareProductConfig();
                     let dhOidc = await pw.DataHolderOidc(dataholder).Evaluate();
                     let jwks = await pw.DataRecipientJwks().Evaluate();
@@ -624,7 +624,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                     old_ssa = await environment.GetPersistedValue("Old SSA")
                 } catch (e) {
                     logger.debug("Getting an SSA")
-                    let ssa = await environment.TestServices.adrGateway?.connectivity.SoftwareStatementAssertion(await ctx.environment.OnlySoftwareProduct()).Evaluate({ignoreCache:"all"})
+                    let ssa = await environment.TestServices.adrGateway?.connectivity.SoftwareStatementAssertion(await ctx.environment.OnlySoftwareProductId()).Evaluate({ignoreCache:"all"})
                     if (!ssa) throw 'Failed to get an SSA'
                     await environment.PersistValue("Old SSA",ssa);
                     logger.debug(`Received SSA: ${ssa}`);
@@ -652,7 +652,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 let DataHolderOidc = await pw.DataHolderOidc(dataholder).Evaluate();
                 let DataRecipientJwks = await pw.DataRecipientJwks().Evaluate();
                 let AdrConnectivityConfig = await pw.AdrConnectivityConfig().Evaluate();
-                let productKey = await ctx.environment.OnlySoftwareProduct();
+                let productKey = await ctx.environment.OnlySoftwareProductId();
                 let SoftwareProductConfig = await ctx.environment.OnlySoftwareProductConfig();
 
                 let DhRegAccessToken = await pw.DhRegAccessToken(productKey,dataholder).Evaluate();

@@ -107,16 +107,18 @@ export class E2ETestEnvironment {
     }
 
     OnlySoftwareProductConfig = async ():Promise<SoftwareProductConnectivityConfig> => {
-        let softwareProduct = await this.OnlySoftwareProduct()
-        return this.TestServices.adrGateway.connectivity.SoftwareProductConfig(softwareProduct,undefined).Evaluate()
+        const softwareProduct = await this.OnlySoftwareProductKey()
+        const softwareProductId = (await this.TestServices.adrGateway.connectivity.SoftwareProductConfigs().Evaluate()).byKey[softwareProduct].ProductId;
+        return this.TestServices.adrGateway.connectivity.SoftwareProductConfig(softwareProductId).Evaluate()
     }
 
-    OnlySoftwareProduct = async () => {
-        let adrConfig = await this.TestServices.adrGateway.connectivity.AdrConnectivityConfig().Evaluate();
-        let softwareProduct = _.first(Object.keys(adrConfig.SoftwareProductConfigUris));
-        if (!softwareProduct) throw 'Expected exactly one software product to be configured';
-        return softwareProduct;
+    OnlySoftwareProductId = async () => {
+        const softwareProduct = await this.OnlySoftwareProductKey()
+        const softwareProductId = (await this.TestServices.adrGateway.connectivity.SoftwareProductConfigs().Evaluate()).byKey[softwareProduct].ProductId;
+        return softwareProductId;
     }
+
+    OnlySoftwareProductKey = () => "sandbox"
     
     Config:EndToEndTestingConfig
     SystemUnderTest = {

@@ -11,7 +11,6 @@ SoftwareProductConfigs:
 
 SoftwareProductConfig:
   parameters:
-    SoftwareProductKey: Types.StringOrUndefined
     SoftwareProductId: Types.StringOrUndefined
   dependencies:
     - SoftwareProductConfigs
@@ -49,7 +48,7 @@ AssertDataRecipientIsActive:
 
 SoftwareProductStatus:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
   output: string
   dependencies:
     - AdrConnectivityConfig
@@ -59,7 +58,7 @@ SoftwareProductStatus:
 
 AssertSoftwareProductStatusIsActive:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
   dependencies:
     - SoftwareProductStatus
     - SoftwareProductConfig
@@ -167,7 +166,7 @@ DataHolderRevocationJwks:
 
 SoftwareStatementAssertion:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
   dependencies:
     - SoftwareProductConfig
     - AdrConnectivityConfig
@@ -179,7 +178,7 @@ SoftwareStatementAssertion:
 
 CurrentClientRegistration:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
     DataHolderBrandId: string
   dependencies:
     - SoftwareProductConfig
@@ -190,7 +189,7 @@ CurrentClientRegistration:
 
 DhNewClientRegistration: 
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
     DataHolderBrandId: string
   dependencies:
     - AdrConnectivityConfig
@@ -206,7 +205,7 @@ DhNewClientRegistration:
 
 BootstrapClientRegistration:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
     DataHolderBrandId: string
   dependencies:
     - AssertSoftwareProductStatusIsActive
@@ -219,7 +218,7 @@ BootstrapClientRegistration:
 
 DhRegAccessToken:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
     DataHolderBrandId: string
   dependencies:
     - DataRecipientJwks
@@ -248,7 +247,7 @@ DhDeleteClientRegistration:
 
 CheckAndUpdateClientRegistration:
   parameters:
-    SoftwareProductKey: string
+    SoftwareProductId: string
     DataHolderBrandId: string
   dependencies:
     - AssertSoftwareProductStatusIsActive
@@ -268,7 +267,7 @@ GetAuthorizationRequest:
   parameters:
     ConsentRequestParams: Types.ConsentRequestParams
   project:
-    SoftwareProductKey: $ => $.ConsentRequestParams.productKey
+    SoftwareProductId: $ => $.ConsentRequestParams.softwareProductId
     DataHolderBrandId: $ => $.ConsentRequestParams.dataholderBrandId
   preassertions:
     - AssertSoftwareProductStatusIsActive

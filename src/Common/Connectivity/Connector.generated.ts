@@ -33,9 +33,9 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductConfigs,{  }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<Types.IndexedSoftwareProductConfigs>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductConfigs,{  }, $)
   })
-  public SoftwareProductConfig = (SoftwareProductKey: Types.StringOrUndefined, SoftwareProductId: Types.StringOrUndefined) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductConfig,{ SoftwareProductKey, SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.SoftwareProductConnectivityConfig>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductConfig,{ SoftwareProductKey, SoftwareProductId }, $)
+  public SoftwareProductConfig = (SoftwareProductId: Types.StringOrUndefined) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductConfig,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.SoftwareProductConnectivityConfig>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductConfig,{ SoftwareProductId }, $)
   })
   public DataRecipientJwks = () => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataRecipientJwks,{  }, _.merge({maxHealingIterations: 0},$)),
@@ -53,13 +53,13 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertDataRecipientIsActive,{  }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<void>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertDataRecipientIsActive,{  }, $)
   })
-  public SoftwareProductStatus = (SoftwareProductKey: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductStatus,{ SoftwareProductKey }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<string>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductStatus,{ SoftwareProductKey }, $)
+  public SoftwareProductStatus = (SoftwareProductId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductStatus,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<string>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareProductStatus,{ SoftwareProductId }, $)
   })
-  public AssertSoftwareProductStatusIsActive = (SoftwareProductKey: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertSoftwareProductStatusIsActive,{ SoftwareProductKey }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<void>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertSoftwareProductStatusIsActive,{ SoftwareProductKey }, $)
+  public AssertSoftwareProductStatusIsActive = (SoftwareProductId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertSoftwareProductStatusIsActive,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<void>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertSoftwareProductStatusIsActive,{ SoftwareProductId }, $)
   })
   public RegisterAccessCredentials = () => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentials,{  }, _.merge({maxHealingIterations: 0},$)),
@@ -101,33 +101,33 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderRevocationJwks,{ DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<Types.JWKS.KeyStore>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderRevocationJwks,{ DataHolderBrandId }, $)
   })
-  public SoftwareStatementAssertion = (SoftwareProductKey: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareStatementAssertion,{ SoftwareProductKey }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<string>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareStatementAssertion,{ SoftwareProductKey }, $)
+  public SoftwareStatementAssertion = (SoftwareProductId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareStatementAssertion,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<string>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SoftwareStatementAssertion,{ SoftwareProductId }, $)
   })
-  public CurrentClientRegistration = (SoftwareProductKey: string, DataHolderBrandId: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CurrentClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CurrentClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, $)
+  public CurrentClientRegistration = (SoftwareProductId: string, DataHolderBrandId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CurrentClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CurrentClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
   })
-  public DhNewClientRegistration = (SoftwareProductKey: string, DataHolderBrandId: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhNewClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhNewClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, $)
+  public DhNewClientRegistration = (SoftwareProductId: string, DataHolderBrandId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhNewClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhNewClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
   })
-  public BootstrapClientRegistration = (SoftwareProductKey: string, DataHolderBrandId: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.BootstrapClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.BootstrapClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, $)
+  public BootstrapClientRegistration = (SoftwareProductId: string, DataHolderBrandId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.BootstrapClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.BootstrapClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
   })
-  public DhRegAccessToken = (SoftwareProductKey: string, DataHolderBrandId: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhRegAccessToken,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.AccessToken>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhRegAccessToken,{ SoftwareProductKey, DataHolderBrandId }, $)
+  public DhRegAccessToken = (SoftwareProductId: string, DataHolderBrandId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhRegAccessToken,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.AccessToken>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhRegAccessToken,{ SoftwareProductId, DataHolderBrandId }, $)
   })
   public DhDeleteClientRegistration = (SoftwareProductId: string, DataHolderBrandId: string) => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhDeleteClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DhDeleteClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
   })
-  public CheckAndUpdateClientRegistration = (SoftwareProductKey: string, DataHolderBrandId: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductKey, DataHolderBrandId }, $)
+  public CheckAndUpdateClientRegistration = (SoftwareProductId: string, DataHolderBrandId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
   })
   public GetAuthorizationRequest = (ConsentRequestParams: Types.ConsentRequestParams) => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.GetAuthorizationRequest,{ ConsentRequestParams }, _.merge({maxHealingIterations: 0},$)),

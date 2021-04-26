@@ -27,7 +27,9 @@ class TestConsentRequestor {
         sharingDuration: number
     }):Promise<ConsentRequestLog> => {
 
-        let spc = await this.testContext.environment.TestServices.adrGateway?.connectivity.SoftwareProductConfig("sandbox",undefined).Evaluate();
+        const softwareProductId = (await this.testContext.environment.TestServices.adrGateway.connectivity.SoftwareProductConfigs().Evaluate()).byKey["sandbox"].ProductId;
+
+        let spc = await this.testContext.environment.TestServices.adrGateway?.connectivity.SoftwareProductConfig(softwareProductId).Evaluate();
 
         const connection = await this.testContext.environment.TestServices.adrDbConn;
         if (!connection) throw 'No connection'
@@ -143,7 +145,7 @@ class TestConsentRequestor {
                 sharingDuration: params.sharingDuration,
                 state: `${params.systemId}:${params.userId}`,
                 additionalClaims: params.additionalClaims,
-                softwareProductId: await this.testContext.environment.OnlySoftwareProduct(),
+                softwareProductId: await this.testContext.environment.OnlySoftwareProductId(),
                 dataholderBrandId: params.dataholderBrandId
             },
         }));
