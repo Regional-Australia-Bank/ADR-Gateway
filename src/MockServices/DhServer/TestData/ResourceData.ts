@@ -443,19 +443,23 @@ export const testCustomerDetail = {
         }],
         physicalAddresses: [{
             addressUType: "simple", //simple, paf
-            addressLine1: "Amaroo",
-            addressLine2: "12345 Wingwabinda Road",
-            postcode: "2345",
-            city:   "Whoop Whoop",
-            state: "NSW",
+            simple: {
+                addressLine1: "Amaroo",
+                addressLine2: "12345 Wingwabinda Road",
+                postcode: "2345",
+                city:   "Whoop Whoop",
+                state: "NSW"
+            },
             purpose: "PHYSICAL" //MAIL, PHYSICAL, REGISTERED, WORK, OTHER
         },
         {
             addressUType: "simple", //simple, paf
-            addressLine1: "PO Box 123",
-            postcode: "2345",
-            city:   "Whoop Whoop",
-            state: "NSW",
+            simple: {
+                addressLine1: "PO Box 123",
+                postcode: "2345",
+                city:   "Whoop Whoop",
+                state: "NSW"
+            },
             purpose: "MAIL" //MAIL, PHYSICAL, REGISTERED, WORK, OTHER
         }]
     }
