@@ -158,18 +158,17 @@ export class DependencyGraph {
       },
     })
 
-    const RegisterAccessCredentials = new Dependency<{}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, RegisterOidc: Types.RegisterOidcResponse, AssertDataRecipientIsActive: void}, Types.AccessToken>({
+    const RegisterAccessCredentials = new Dependency<{}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, RegisterOidc: Types.RegisterOidcResponse}, Types.AccessToken>({
       name: "RegisterAccessCredentials",
       evaluator: util.GetRegisterAccessToken.bind(undefined,factory.cert),
       parameters: {},
       dependencies: [
         AdrConnectivityConfig,
         DataRecipientJwks,
-        RegisterOidc,
-        AssertDataRecipientIsActive
+        RegisterOidc
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,],
       cache: {
         minAge: 30,
         maxAge: 300
@@ -185,7 +184,7 @@ export class DependencyGraph {
         RegisterAccessCredentials
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,],
       cache: {
         maxAge: 14400
       },
@@ -201,7 +200,7 @@ export class DependencyGraph {
         DataHolderBrands
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,],
       cache: {
         noCache: true
       },
@@ -217,7 +216,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,],
       cache: {
         noCache: true
       },
@@ -234,7 +233,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,],
       cache: {
         maxAge: 300
       },
@@ -251,7 +250,7 @@ export class DependencyGraph {
         DataHolderStatus
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,],
       cache: {
         noCache: true
       },
@@ -269,7 +268,7 @@ export class DependencyGraph {
         AssertDataHolderIsUp
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,],
       cache: {
         maxAge: 300
       },
@@ -287,7 +286,7 @@ export class DependencyGraph {
         DataHolderUpAndReady
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,],
       cache: {
         minAge: 300
       },
@@ -304,7 +303,7 @@ export class DependencyGraph {
         DataHolderOidc
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,],
       cache: {
         minAge: 300
       },
@@ -322,7 +321,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,],
       cache: {
         minAge: 300
       },
@@ -342,7 +341,7 @@ export class DependencyGraph {
         RegisterAccessCredentials
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,],
       cache: {
         minAge: 300,
         maxAge: 1800
@@ -361,7 +360,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,],
       cache: {
         noCache: true
       },
@@ -384,7 +383,7 @@ export class DependencyGraph {
         SoftwareStatementAssertion
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,],
       cache: {
         noCache: true
       },
@@ -403,7 +402,7 @@ export class DependencyGraph {
         {do: DhNewClientRegistration, when: ctx => !ctx.intermediate.CurrentClientRegistration}
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,],
       cache: {
         noCache: true
       },
@@ -422,7 +421,7 @@ export class DependencyGraph {
         BootstrapClientRegistration
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,],
       cache: {
         minAge: 60,
         maxAge: 300
@@ -447,7 +446,7 @@ export class DependencyGraph {
         DhRegAccessToken
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,],
       cache: {
         noCache: true
       },
@@ -472,7 +471,7 @@ export class DependencyGraph {
         DhRegAccessToken
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,],
       cache: {
         minAge: 600,
         maxAge: 3600
@@ -504,7 +503,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: ["DataHolderOidc","DataHolderUpAndReady"]
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,],
       cache: {
         noCache: true
       },
@@ -529,7 +528,7 @@ export class DependencyGraph {
         CheckAndUpdateClientRegistration
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,],
       cache: {
         maxAge: 3600
       },
@@ -555,7 +554,7 @@ export class DependencyGraph {
         SyncRefreshTokenStatus
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,SyncRefreshTokenStatus,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -579,7 +578,7 @@ export class DependencyGraph {
         FetchTokens
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,DataHolderJwks,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,SyncRefreshTokenStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,DataHolderJwks,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -599,7 +598,7 @@ export class DependencyGraph {
         FetchTokensAndUpdateClaims
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,DataHolderJwks,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,SyncRefreshTokenStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,DataHolderJwks,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -624,7 +623,7 @@ export class DependencyGraph {
         {do: ConsentRefreshTokens, when: ctx => ctx.parameters.Consent.HasCurrentRefreshToken() && !ctx.parameters.Consent.HasCurrentAccessToken()}
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -648,7 +647,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -671,7 +670,7 @@ export class DependencyGraph {
         DataHolderBrandMetadata
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -692,7 +691,7 @@ export class DependencyGraph {
         ConsentCurrentAccessToken
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -718,7 +717,7 @@ export class DependencyGraph {
         DataRecipientJwks
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,],
       cache: {
         noCache: true
       },
@@ -742,7 +741,7 @@ export class DependencyGraph {
         FetchTokensAndUpdateClaims
       ],
       // disabledCaches: []
-      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
+      cacheTrail: [SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,DataHolderJwks,SyncRefreshTokenStatus,],
       cache: {
         noCache: true
       },
@@ -765,7 +764,7 @@ export class DependencyGraph {
         CheckAndUpdateClientRegistration
       ],
       // disabledCaches: []
-      cacheTrail: [DataRecipientJwks,RegisterOidc,DataRecipientStatus,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,],
+      cacheTrail: [DataRecipientJwks,RegisterOidc,RegisterAccessCredentials,DataHolderBrands,DataHolderStatus,DataHolderUpAndReady,DataHolderOidc,SoftwareProductConfigs,SoftwareProductConfig,SoftwareProductStatus,SoftwareStatementAssertion,DhRegAccessToken,CheckAndUpdateClientRegistration,],
       cache: {
         noCache: true
       },
