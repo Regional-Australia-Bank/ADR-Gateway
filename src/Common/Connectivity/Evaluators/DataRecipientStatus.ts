@@ -10,7 +10,7 @@ export const AssertDataRecipientActive = async ($:{
 }) => {
 
   if ($.DataRecipientStatus !== "ACTIVE") {
-    throw `Software product is not ACTIVE: ${$.AdrConnectivityConfig.BrandId} is ${$.DataRecipientStatus}`;
+    throw `Data recipient entity is not ACTIVE: ${$.AdrConnectivityConfig.LegalEntityId} is ${$.DataRecipientStatus}`;
   }
 
 }
@@ -32,11 +32,11 @@ export const DataRecipientStatus = async (cert:ClientCertificateInjector,$:{
     dataRecipientStatus: string
   }[] = result.data.dataRecipients;
 
-  const thisProductStatus = _.filter(statusus, s => s.dataRecipientId == $.AdrConnectivityConfig.LegalEntityId);
-  if (thisProductStatus.length !== 1) {
+  const thisDataRecipientStatus = _.filter(statusus, s => s.dataRecipientId == $.AdrConnectivityConfig.LegalEntityId);
+  if (thisDataRecipientStatus.length !== 1) {
     throw `Cannot uniquely identify status of data recipient ${$.AdrConnectivityConfig.LegalEntityId}`;
   }
-  const status = thisProductStatus[0];
+  const status = thisDataRecipientStatus[0];
   return status.dataRecipientStatus;
 
 }
