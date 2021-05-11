@@ -1,10 +1,11 @@
 import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
-import { AdrConnectivityConfig, RegisterOidcResponse, AccessToken } from "../Types";
+import { AdrConnectivityConfig, SoftwareProductConnectivityConfig, RegisterOidcResponse, AccessToken } from "../Types";
 import { JWKS } from "jose";
 import qs from "qs";
 import { CreateAssertion } from "../../Connectivity/Assertions";
 import { axios } from "../../Axios/axios";
 import * as Types from "../Types"
+import { config } from "winston";
 
 type RegisterTokenParams = {
   connectivityConfig: AdrConnectivityConfig,
@@ -13,8 +14,14 @@ type RegisterTokenParams = {
   client_id: string
 }
 
-export const GetRegisterAccessToken = async (cert:ClientCertificateInjector, params: {AdrConnectivityConfig: Types.AdrConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, RegisterOidc: Types.RegisterOidcResponse}): Promise<AccessToken> => {
-  let client_id = params.AdrConnectivityConfig.BrandId;
+export const GetRegisterAccessToken = async (cert:ClientCertificateInjector, params: {
+  AdrConnectivityConfig: Types.AdrConnectivityConfig,
+  DataRecipientJwks: Types.JWKS.KeyStore
+  RegisterOidc: Types.RegisterOidcResponse
+  SoftwareProductConfigs: Types.IndexedSoftwareProductConfigs
+}): Promise<AccessToken> => {
+  config
+  let client_id = params.SoftwareProductConfigs.byIndex[0].ProductId; //Should be software product ID, not brand ID  //Using default [0] to pass CTS until Dr G has product ID in context :-(
   let options = {
       method: "POST",
       url: params.RegisterOidc.token_endpoint,
