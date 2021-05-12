@@ -21,7 +21,7 @@ export const GetRegisterAccessToken = async (cert:ClientCertificateInjector, par
   SoftwareProductConfigs: Types.IndexedSoftwareProductConfigs
 }): Promise<AccessToken> => {
   config
-  let client_id = params.SoftwareProductConfigs.byIndex[0].ProductId; //Should be software product ID, not brand ID  //Using default [0] to pass CTS until Dr G has product ID in context :-(
+  let client_id = params.SoftwareProductConfigs.byIndex[0].ProductId; //Should be software product ID, not brand ID  //Using default [0] to suffice until Dr G has a product ID in context
   let options = {
       method: "POST",
       url: params.RegisterOidc.token_endpoint,

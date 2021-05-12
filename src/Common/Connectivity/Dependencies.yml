@@ -73,7 +73,7 @@ RegisterAccessCredentials:
     - DataRecipientJwks
     - RegisterOidc
     - SoftwareProductConfigs
-#    - AssertDataRecipientIsActive #CTS does not support DR status endpoint
+    - AssertDataRecipientIsActive
   output: Types.AccessToken
   evaluator: util.GetRegisterAccessToken.bind(undefined,factory.cert)
   cache: {minAge: 30, maxAge: 300}
