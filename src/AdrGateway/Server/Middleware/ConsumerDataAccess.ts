@@ -196,7 +196,10 @@ class ConsumerDataAccessMiddleware {
             headers,
         })
 
-        this.clientCertInjector.inject(options);
+        options = this.clientCertInjector.inject({
+            softwareProductId:consent.softwareProductId,
+            ...options
+        });
 
         try {
             let dhRes = await axios.request(options);

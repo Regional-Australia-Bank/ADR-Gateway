@@ -28,7 +28,9 @@ export const GetDataHolderRegistrationAccessToken = async (cert:ClientCertificat
   DataHolderOidc: DataholderOidcResponse,
   BootstrapClientRegistration: DataHolderRegistration
 }): Promise<AccessToken> => {
-  let options:AxiosRequestConfig = {
+  let options:AxiosRequestConfig & {
+    softwareProductId: string
+  } = {
       method: "POST",
       url: $.DataHolderOidc.token_endpoint,
       responseType: "json",
@@ -38,7 +40,8 @@ export const GetDataHolderRegistrationAccessToken = async (cert:ClientCertificat
           scope: "cdr:registration",
           client_id: $.BootstrapClientRegistration.clientId,
           client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-      })
+      }),
+      softwareProductId: $.BootstrapClientRegistration.softwareProductId
   }
 
   let response = await axios.request(cert.inject(options));
@@ -171,7 +174,14 @@ const NewRegistrationAtDataholder = async (cert:ClientCertificateInjector, $: {
   let registrationRequest = RegistrationRequestObject($)
   let registrationRequestJwt = JWT.sign(registrationRequest,$.DataRecipientJwks.get({alg:'PS256',use:'sig'}),{header:{typ:"JWT"}})
 
-  let options = cert.inject({method:"POST", url: $.DataHolderOidc.registration_endpoint, responseType: "json", data: registrationRequestJwt, headers: {"content-type":"application/jwt"}});
+  let options = cert.inject({
+    method:"POST",
+    url: $.DataHolderOidc.registration_endpoint,
+    responseType: "json",
+    data: registrationRequestJwt,
+    headers: {"content-type":"application/jwt"},
+    softwareProductId: $.SoftwareProductConfig.ProductId
+  });
 
   let responseRaw = await axios.request(options)
 
@@ -192,7 +202,8 @@ const DeleteRegistrationAtDataholder = async (cert:ClientCertificateInjector, $:
   let options = cert.inject({
     method:"DELETE",
     url: $.DataHolderOidc.registration_endpoint+'/'+$.CurrentClientRegistration.clientId,
-    headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
+    headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`},
+    softwareProductId: $.SoftwareProductConfig.ProductId
   });
   try {
     let response = await axios.request(options)
@@ -244,7 +255,8 @@ export const CurrentRegistrationAtDataholder = async (cert:ClientCertificateInje
 
   let response:AxiosResponse<DataholderRegistrationResponse> = await axios.get($.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration.clientId,cert.inject({
       responseType: "json",
-      headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
+      headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`},
+      softwareProductId: $.BootstrapClientRegistration.softwareProductId
   }))
   return response.data;
 }
@@ -266,7 +278,8 @@ export const UpdateRegistrationAtDataholder = async (cert:ClientCertificateInjec
       url:$.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration.clientId,
       data:registrationRequestJwt,
       responseType: "json",
-      headers: {"content-type":"application/jwt", Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
+      headers: {"content-type":"application/jwt", Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`},
+      softwareProductId: $.SoftwareProductConfig.ProductId
   }))
 
   return response.data;

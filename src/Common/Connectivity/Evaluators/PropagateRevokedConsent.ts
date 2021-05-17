@@ -37,7 +37,10 @@ export const PropagateRevokedConsent = async (logger: winston.Logger, cert: Clie
       })
     }
 
-    cert.inject(options);
+    options = cert.inject({
+      ...options,
+      softwareProductId: $.Consent.softwareProductId
+    });
 
     let response = await axios.request(options);
 
@@ -57,7 +60,10 @@ export const PropagateRevokedConsent = async (logger: winston.Logger, cert: Clie
       })
     }
 
-    cert.inject(options);
+    options = cert.inject({
+      ...options,
+      softwareProductId: $.Consent.softwareProductId
+    });
 
     let response = await axios.request(options);
 

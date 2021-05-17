@@ -29,6 +29,7 @@ interface AuthSignatureRequest {
 
 const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $: {
   DataHolderOidc: Types.DataholderOidcResponse,
+  SoftwareProductConfig: Types.SoftwareProductConnectivityConfig,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
   DataRecipientJwks: Types.JWKS.KeyStore
 }, queryParams : {
@@ -55,7 +56,10 @@ const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $
     responseType: "json",
   }
 
-  cert.inject(options);
+  options = cert.inject({
+    softwareProductId:$.SoftwareProductConfig.ProductId,
+    ...options
+  });
 
   let response = await axios.request(options);
  

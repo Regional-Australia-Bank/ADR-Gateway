@@ -23,19 +23,20 @@ export const GetRegisterAccessToken = async (cert:ClientCertificateInjector, par
   config
   let client_id = params.SoftwareProductConfigs.byIndex[0].ProductId; //Should be software product ID, not brand ID  //Using default [0] to suffice until Dr G has a product ID in context
   let options = {
-      method: "POST",
+      method: <"POST">"POST",
       url: params.RegisterOidc.token_endpoint,
-      responseType: "json",
+      responseType: <"json">"json",
       data: qs.stringify({
           grant_type: "client_credentials",
           client_assertion: CreateAssertion(client_id,params.RegisterOidc.token_endpoint,params.DataRecipientJwks),
           scope: "cdr-register:bank:read",
           client_id: client_id,
           client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-      })
+      }),
+      softwareProductId:client_id
   }
 
-  let response = await axios.request(cert.inject(<any>options));
+  let response = await axios.request(cert.inject(options));
 
   return new AccessToken(response.data.access_token,response.data.expires_in);
 }

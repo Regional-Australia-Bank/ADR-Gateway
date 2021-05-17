@@ -7,7 +7,11 @@ import urljoin from "url-join";
 import * as Types from "../Types"
 
 const GetDataHoldersResponse = async (accessToken:string, nextUrl:string, cert:ClientCertificateInjector):Promise<DataHolderRegisterMetadata[]> => {
-  let response = await axios.get(nextUrl,cert.inject({responseType:"json", headers:{Authorization: `Bearer ${accessToken}`}}))
+  let response = await axios.get(nextUrl,cert.inject({
+      responseType:"json",
+      headers:{Authorization: `Bearer ${accessToken}`},
+      softwareProductId: null
+    }))
   let responseObject = response.data;
   if (typeof responseObject.meta != 'object' || typeof responseObject.links != 'object') {
       throw 'Response from register for GetDataHolders is not conformant'

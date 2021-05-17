@@ -19,7 +19,10 @@ export const RegisterGetSSA = async (cert: ClientCertificateInjector, $: {
     headers["x-v"] = $.AdrConnectivityConfig.RegisterEndpointVersions.GetSoftwareStatementAssertion
   }
 
-  let response = await axios.get(nextUrl, cert.inject({headers}))
+  let response = await axios.get(nextUrl, cert.inject({
+    headers,
+    softwareProductId: productId
+  }))
 
   return response.data;
 }

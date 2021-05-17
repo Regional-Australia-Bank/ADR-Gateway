@@ -46,7 +46,10 @@ export const SyncRefreshTokenStatus = async (consentManager:ConsentRequestLogMan
         })
     }
 
-    let response:AxiosResponse<{active:boolean}> = await axios.request(cert.inject(options));
+    let response:AxiosResponse<{active:boolean}> = await axios.request(cert.inject({
+        ...options,
+        softwareProductId: $.Consent.softwareProductId
+    }));
   
     if (!response.data.active) {
         await consentManager.RevokeConsent($.Consent,"DataHolder");
@@ -91,7 +94,11 @@ export const FetchTokens = async (logger: winston.Logger, cert: ClientCertificat
         }, additionalParams))
     }
 
-    cert.inject(options);
+    options = cert.inject({
+        ...options,
+        softwareProductId: $.Consent.softwareProductId
+    });
+
     const tokenRequestTime = moment.utc().toDate();
 
     let response = await axios.request(options);
