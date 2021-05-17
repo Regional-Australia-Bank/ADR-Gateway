@@ -42,7 +42,7 @@ export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId
         }
         try {
             let testClient = await clientProvider(dataRecipientBrandId)
-            if (testClient.clientId == claims.org_id) {
+            if (testClient.clientId == claims.software_id) {
                 claims.jwks_uri = testClient.jwksUri
             }
         } catch(e) {

@@ -260,7 +260,7 @@ export class E2ETestEnvironment {
             if (typeof serviceDefinitions.MockRegister == 'function') {
                 const clientProvider = async ():Promise<{clientId:string, jwksUri:string}> => {
                     const jwksUri = this.SystemUnderTest.AdrGateway().FrontEndUrls.JWKSEndpoint;
-                    const clientId = (await this.GetServiceDefinition.Connectivity()).BrandId
+                    const clientId = (await this.GetServiceDefinition.SoftwareProduct()).ProductId;
                     return {clientId,jwksUri}
                 }
                 this.TestServices.mockRegister = await MockRegisterServerStartup.Start(serviceDefinitions.MockRegister.bind(this,this),clientProvider)

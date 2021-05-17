@@ -127,7 +127,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 await ctx.GetTestContext(RegisterSymbols.Context.RegisterOpenIdDiscoveryResponse).GetValue("tokenEndpoint")
             ,"tokenEndpoint")
             .PreTask(DoRequest,async (ctx) => {
-                let client_id = (await environment.GetServiceDefinition.Connectivity()).BrandId
+                let client_id = (await environment.GetServiceDefinition.SoftwareProduct()).ProductId;
                 let endpoint = await ctx.GetValue("tokenEndpoint")
                 return DoRequest.Options(await environment.Mtls({
                     method: "POST",
