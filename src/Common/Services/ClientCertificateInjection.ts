@@ -53,9 +53,9 @@ class DefaultClientCertificateInjector implements ClientCertificateInjector{
 
         if (options.softwareProductId) {
             options.httpsAgent = new https.Agent({
-                cert: mtlsByProduct[options.softwareProductId]?.cert || this.cert,
-                key: mtlsByProduct[options.softwareProductId]?.key || this.key,
-                ca: mtlsByProduct[options.softwareProductId]?.ca || this.ca,
+                cert: mtlsByProduct[options.softwareProductId]?.cert ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].cert): this.cert,
+                key: mtlsByProduct[options.softwareProductId]?.key ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].key): this.key,
+                ca: mtlsByProduct[options.softwareProductId]?.ca ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].ca): this.ca,
                 passphrase: mtlsByProduct[options.softwareProductId]?.passphrase || this.passphrase,
             })        
     
