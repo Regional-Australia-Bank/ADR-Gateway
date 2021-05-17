@@ -1,7 +1,7 @@
 import { GetRegisterOIDC } from "./Evaluators/RegisterOidc";
 import { GetSoftwareProductConfig, GetSoftwareProductConfigs } from "./Evaluators/SoftwareProductConfig";
 import { AssertSoftwareProductActive, SoftwareProductStatus } from "./Evaluators/SoftwareProductStatus";
-import { GetRegisterAccessToken } from "./Evaluators/RegisterAccessToken";
+import { GetRegisterAccessToken, GetRegisterAccessTokenDHB } from "./Evaluators/RegisterAccessToken";
 import { GetDataholders, GetDataholderMetadata, AssertDataHolderActiveAtRegister, AssertDataHolderIsUp, DataHolderStatus } from "./Evaluators/DataHolderMetadata";
 import { GetDataHolderOidc } from "./Evaluators/DataHolderOidc";
 import { DataHolderOidcResponse } from "./Validators/DataHolderOidcResponse"
@@ -43,6 +43,7 @@ export {
   SoftwareProductStatus,
   AssertSoftwareProductActive,
   GetRegisterAccessToken,
+  GetRegisterAccessTokenDHB,
   GetDataholders,
   GetDataholderMetadata,
   AssertDataHolderActiveAtRegister,

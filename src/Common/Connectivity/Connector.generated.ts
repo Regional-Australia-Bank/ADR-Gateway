@@ -61,9 +61,13 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertSoftwareProductStatusIsActive,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<void>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertSoftwareProductStatusIsActive,{ SoftwareProductId }, $)
   })
-  public RegisterAccessCredentials = () => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentials,{  }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.AccessToken>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentials,{  }, $)
+  public RegisterAccessCredentials = (SoftwareProductId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentials,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.AccessToken>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentials,{ SoftwareProductId }, $)
+  })
+  public RegisterAccessCredentialsDHB = (SoftwareProductId: string) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentialsDHB,{ SoftwareProductId }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.AccessToken>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.RegisterAccessCredentialsDHB,{ SoftwareProductId }, $)
   })
   public DataHolderBrands = () => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderBrands,{  }, _.merge({maxHealingIterations: 0},$)),
