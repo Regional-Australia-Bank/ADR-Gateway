@@ -231,7 +231,7 @@ class ConsumerDataAccessMiddleware {
                         oldUrl.searchParams.forEach((v,k) => {
                             newUrl.searchParams.append(k,v);
                         });
-                        newLinks[k] = newUrl.toString();
+                        newLinks[k] = decodeURIComponent(newUrl.toString());
                     }
                 }
 
