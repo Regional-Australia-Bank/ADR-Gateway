@@ -15,6 +15,7 @@ import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
 import urljoin from "url-join";
 import { DataHolderRegisterMetadata } from "../../../Common/Connectivity/Types";
+import moment from "moment";
 
 interface DataAccessRequestParams {
     user: {
@@ -170,7 +171,7 @@ class ConsumerDataAccessMiddleware {
             "content-type":"application/json",
             "accept":"application/json",
             "x-fapi-interaction-id":requestId,
-            "x-fapi-auth-date":params.user.lastAuthenticated,
+            "x-fapi-auth-date":moment(params.user.lastAuthenticated).utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
         }
 
         if (params.user.present) {

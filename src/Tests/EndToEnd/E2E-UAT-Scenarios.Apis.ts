@@ -233,7 +233,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     "x-v":"1",
                     "Accept":"application/json",
                     "Content-Type":"application/json",
-                    "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                    "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                     Authorization: `Bearer ${(await ctx.GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
                 },
                 url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts?product-category=TRANS_AND_SAVINGS_ACCOUNTS&open-status=OPEN"),
@@ -257,7 +257,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                     "x-v":"1",
                     "Accept":"application/json",
                     "Content-Type":"application/json",
-                    "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                    "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                     Authorization: `Bearer ${(await ctx.GetResult(NewGatewayConsent)).consent!.accessToken}`
                 },
                 url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts"),
@@ -279,7 +279,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             "x-v":"1",
             "Accept":"application/json",
             "Content-Type":"application/json",
-            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
             "x-fapi-customer-ip-address":"127.0.0.1",
             // TODO support x-cds-client-headers in ADR Gateway
             "x-cds-client-headers": 'TW96aWxsYS81LjAgKFgxMTsgTGludXggeDg2XzY0KSBBcHBsZVdlYktpdC81MzcuMzYgKEtIVE1MLCBsaWtlIEdlY2tvKSBDaHJvbWUvNzkuMC4zOTQ1Ljg4IFNhZmFyaS81MzcuMzY=',
@@ -306,7 +306,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                 "x-v":"1",
                 "Accept":"application/json",
                 "Content-Type":"application/json",
-                "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                 "x-fapi-interaction-id":uuid.v4(),
                 Authorization: `Bearer ${(await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
             },
@@ -332,7 +332,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             "x-v":"1",
             "Accept":"application/json",
             "Content-Type":"application/json",
-            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
             "x-fapi-interaction-id":uuid.v4(),
             Authorization: `Bearer ${(await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
         },
@@ -351,7 +351,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             "x-v":"1",
             "Accept":"application/json",
             "Content-Type":"application/json",
-            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
             "x-fapi-interaction-id":uuid.v4(),
             Authorization: `Bearer ${(await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
         },
@@ -369,7 +369,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
             "x-v":"1",
             "Accept":"application/json",
             "Content-Type":"application/json",
-            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
             "x-fapi-interaction-id":uuid.v4(),
             Authorization: `Bearer ${(await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
         },
@@ -394,7 +394,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                             "x-v":"1",
                             "Accept":"application/json",
                             "Content-Type":"application/json",
-                            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                             "x-fapi-interaction-id":uuid.v4(),
                             Authorization: `Bearer ${(await ctx.GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
                         },
@@ -553,7 +553,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                             "x-v":"1",
                             "Accept":"application/json",
                             "Content-Type":"application/json",
-                            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                             Authorization: `Bearer ${(await ctx.GetResult(NewGatewayConsent)).consent!.accessToken}`
                         },
                         url: urljoin((await TestData()).dataHolder.resourceEndpoint,"cds-au/v1/banking/accounts?product-category=TRANS_AND_SAVINGS_ACCOUNTS&open-status=OPEN"),
@@ -576,7 +576,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                             "x-v":"1",
                             "Accept":"application/json",
                             "Content-Type":"application/json",
-                            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                             "x-fapi-interaction-id":uuid.v4(),
                             Authorization: `Bearer ${(await ctx.GetResult(NewGatewayConsent)).consent!.accessToken}`
                         },
@@ -852,7 +852,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                             "x-v":"1",
                             "Accept":"application/json",
                             "Content-Type":"application/json",
-                            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                             Authorization: `Bearer ${(await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
                         },
                         params: {
@@ -914,7 +914,7 @@ const Tests = (async(env:E2ETestEnvironment) => {
                             "x-v":"1",
                             "Accept":"application/json",
                             "Content-Type":"application/json",
-                            "x-fapi-auth-date":"2019-12-03T06:23:59.885Z",
+                            "x-fapi-auth-date":moment().utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
                             Authorization: `Bearer ${(await ctx.GetTestContext(ApiSymbols.contexts.GetAccounts).GetResult(GatewayConsentWithCurrentAccessToken)).consent!.accessToken}`
                         },
                         params: {
