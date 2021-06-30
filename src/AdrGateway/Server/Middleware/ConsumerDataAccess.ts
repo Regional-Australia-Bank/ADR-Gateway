@@ -171,7 +171,7 @@ class ConsumerDataAccessMiddleware {
             "content-type":"application/json",
             "accept":"application/json",
             "x-fapi-interaction-id":requestId,
-            "x-fapi-auth-date":moment(params.user.lastAuthenticated).utc().format('ddd, DD MMM YYYY, HH:mm:ss [GMT]'),
+            "x-fapi-auth-date":moment(params.user.lastAuthenticated).utc().format('ddd, DD MMM YYYY HH:mm:ss [GMT]'),
         }
 
         if (params.user.present) {

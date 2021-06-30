@@ -84,7 +84,7 @@
     "chokidar": "^3.4.2",
     "chokidar-cli": "^2.1.0",
     "cpx": "^1.5.0",
-    "cross-env": "^7.0.2",
+    "cross-env": "^7.0.3",
     "get-port": "^5.1.1",
     "handlebars": "^4.7.6",
     "mocha": "^6.2.1",

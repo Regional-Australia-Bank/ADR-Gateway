@@ -21,7 +21,7 @@ class BadDateError extends Error {
 function GetRequiredResourceRequestHeaders(req:IncomingMessage) {
     const authDateValue = SingleHeader(req,'x-fapi-auth-date')
 
-    if (!(/^\w\w\w, \d\d \w\w\w \d\d\d\d, \d\d:\d\d:\d\d GMT$/.test(authDateValue))) {
+    if (!(/^\w\w\w, \d\d \w\w\w \d\d\d\d \d\d:\d\d:\d\d GMT$/.test(authDateValue))) {
         throw new BadDateError()   
     }
 
