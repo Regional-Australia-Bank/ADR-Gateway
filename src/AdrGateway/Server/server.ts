@@ -61,6 +61,21 @@ class AdrGateway {
             
         } );
 
+        app.get( "/cdr/data-holders/:dataholderbrandid", async ( req, res ) => {
+            try {
+                const dh = await this.dataHolderMetadataProvider.getDataHolder(req.params.dataholderbrandid);
+                const oidc = await this.connector.DataHolderOidc(req.params.dataholderbrandid).GetWithHealing();
+
+                res.json({
+                    ..._.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn'),
+                    scopes_supported: oidc.scopes_supported
+                });    
+            } catch {
+                res.status(500).json({error:"error getting data holder oidc"})
+            }
+            
+        } );
+
         app.get( "/cdr/consents",
             this.consentListingMiddleware.handler()
         );
