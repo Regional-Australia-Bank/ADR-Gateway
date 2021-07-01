@@ -158,7 +158,7 @@ const RegistrationRequestObject = ($:{
       "software_statement":$.SoftwareStatementAssertion
     }
 
-  o.grant_types.push("urn:ietf:params:oauth:grant-type:jwt-bearer") // TODO remove after release 1.1.1 https://github.com/cdr-register/register/issues/54#issuecomment-597368382
+  //o.grant_types.push("urn:ietf:params:oauth:grant-type:jwt-bearer") // TODO remove after release 1.1.1 https://github.com/cdr-register/register/issues/54#issuecomment-597368382
 
   return o;
 
