@@ -97,12 +97,13 @@ const createLocalHttpsAgent = (mtls?:MtlsOptions) => {
 
 
 const axiosClient = (() => {
-    let defaultOptions = {
-        proxy: false,
+    let defaultOptions:Parameters<(typeof axios)["create"]>[0] = {
+        proxy: <false>false,
         timeout: parseInt(process.env.REQUEST_TIMEOUT || "0"),
+        maxRedirects: 0,
         httpsAgent: createLocalHttpsAgent(),
     };
-    let client = axios.create(<any>defaultOptions)
+    let client = axios.create(defaultOptions)
 
     client.interceptors.response.use(response => response,error => {
         if ((!error) || (!error.toJSON)) throw error;
