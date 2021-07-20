@@ -6,7 +6,7 @@ const _ = require("lodash")
 const dependenciesTemplate = Handlebars.compile(fs.readFileSync("src/Common/Connectivity/DependencyGraph.template.hbs","utf8"))
 const connectorTemplate = Handlebars.compile(fs.readFileSync("src/Common/Connectivity/Connector.template.hbs","utf8"))
 
-let dependencies = yaml.safeLoad(fs.readFileSync("src/Common/Connectivity/Dependencies.yml","utf8"));
+let dependencies = yaml.load(fs.readFileSync("src/Common/Connectivity/Dependencies.yml","utf8"));
 
 // augment dependencies
 dependencies = Object.fromEntries(Object.entries(dependencies).map(([k,p]) => {

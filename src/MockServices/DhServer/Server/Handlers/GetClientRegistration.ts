@@ -1,7 +1,6 @@
 import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
-import { getType } from "mime";
 
 import { validationResult, matchedData, checkSchema, Schema, body} from 'express-validator'
 import { TokenIssuer } from "../Helpers/TokenIssuer";
