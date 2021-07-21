@@ -84,7 +84,7 @@ export const spawnHttpsProxy = (config: { ProxyConfig: Dictionary<ProxySpec> }, 
     requestCert: tlsConfig.requestCert
   }) || {}
 
-  let httpsPort = defaultHttpsPort || routeConfig.listeningPort
+  let httpsPort = routeConfig?.listeningPort || defaultHttpsPort
 
   let server = https.createServer(serverOpts, app).listen(httpsPort, () => logger.info(`${name} listening on HTTPS port ${httpsPort}!`))
 
