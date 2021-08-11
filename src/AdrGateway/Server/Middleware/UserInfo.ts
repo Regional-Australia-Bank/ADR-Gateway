@@ -11,6 +11,7 @@ import { DefaultConnector } from "../../../Common/Connectivity/Connector.generat
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
 import { DataholderOidcResponse } from "../../../Common/Connectivity/Types";
+import { TraceRecorder as AxiosTraceRecorder } from "../../../Common/Axios/AxiosTrace";
 
 class UserInfoAccessError extends Error {
     constructor(public err:any, public res?:AxiosResponse<any>) {
@@ -23,6 +24,7 @@ class UserInfoProxyMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("TraceRecorder") private traceRecorder: AxiosTraceRecorder,
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         private consentManager:ConsentRequestLogManager,
         private connector:DefaultConnector
@@ -85,7 +87,8 @@ class UserInfoProxyMiddleware {
                 });
             } catch (err) {
                 this.logger.error("UserInfoAccess error",err)
-                res.status(500).send();
+                let traceDetails = this.traceRecorder.formatErrorTrace(err, "Error accessing user info");
+                return res.status(500).json(traceDetails);
             }
 
         };

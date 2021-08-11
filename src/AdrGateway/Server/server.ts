@@ -19,11 +19,14 @@ import { ConsentDetailsMiddleware } from "./Middleware/ConsentDetails";
 import URLParse from "url-parse";
 import qs from "qs";
 import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
+import { TraceRecorder as AxiosTraceRecorder } from "../../Common/Axios/AxiosTrace";
+
 
 @injectable()
 class AdrGateway {
     constructor(
         @inject("Logger") private logger:winston.Logger,
+        @inject("TraceRecorder") private traceRecorder: AxiosTraceRecorder,
         @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<DataholderMetadata>,
         private consentConfirmationMiddleware: ConsentConfirmationMiddleware,
         private consentRequestMiddleware: ConsentRequestMiddleware,
@@ -43,20 +46,18 @@ class AdrGateway {
                
         app.get( "/jwks", async ( req, res ) => {
             // output the public portion of the key
-          
             res.setHeader("content-type","application/json");
             let jwks = await this.connector.DataRecipientJwks().GetWithHealing();
             res.json(jwks.toJWKS());
             this.logger.info("Someone requested JWKS")
-            
         } );
 
         app.get( "/cdr/data-holders", async ( req, res ) => {
             try {
                 let dataholders = await this.dataHolderMetadataProvider.getDataHolders();
                 res.json(_.map(dataholders,dh => _.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn')));    
-            } catch {
-                res.status(500).json({error:"ecosystem_outage"})
+            } catch(err) {
+                res.status(500).json(this.traceRecorder.formatErrorTrace(err,"Error getting list of data holder brands from the register"))
             }
             
         } );
@@ -70,8 +71,8 @@ class AdrGateway {
                     ..._.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn'),
                     scopes_supported: oidc.scopes_supported
                 });    
-            } catch {
-                res.status(500).json({error:"error getting data holder oidc"})
+            } catch(err) {
+                res.status(500).json(this.traceRecorder.formatErrorTrace(err,"Error getting OIDC discovery document from data holder"))
             }
             
         } );
@@ -154,6 +155,11 @@ class AdrGateway {
         )
 
         app.get("/cdr/consents/:consentId/accounts/balances",
+            this.consumerDataAccess.handler('/cds-au/v1/banking/accounts/balances','bank:accounts.basic:read')
+        )
+
+        app.post("/cdr/consents/:consentId/accounts/balances",
+            bodyParser.json(),
             this.consumerDataAccess.handler('/cds-au/v1/banking/accounts/balances','bank:accounts.basic:read')
         )
 

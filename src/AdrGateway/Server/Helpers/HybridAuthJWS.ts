@@ -61,7 +61,14 @@ const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $
     ...options
   });
 
-  let response = await axios.request(options);
+  console.log('PAR options', options)
+  var response;
+  try {
+    response = await axios.request(options);
+  } catch (err) {
+    console.log('PAR result', response.request.socket)
+    throw err;
+  }
  
   return {request_uri: response.data.request_uri}
 }

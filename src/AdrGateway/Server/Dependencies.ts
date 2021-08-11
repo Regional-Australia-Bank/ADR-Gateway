@@ -10,6 +10,8 @@ import { SelfHealingDataHolderMetadataProvider } from "../../Common/Services/Dat
 import { DefaultCache } from "../../Common/Connectivity/Cache/DefaultCache";
 import { configReplacer, axiosReplacer, errorReplacer, combineReplacers } from "../../Common/LogReplacers";
 import { AdrConnectivityConfig } from "../../Common/Config";
+import { TraceRecorder } from "../../Common/Axios/AxiosTrace";
+
 
 export const EntityDefaults = {
     type: "sqlite",
@@ -59,6 +61,8 @@ async function RegisterDependencies(configFn:() => Promise<AdrConnectivityConfig
         });
 
     container.register("Logger", { useValue: logger })
+
+    container.register("TraceRecorder", { useClass: TraceRecorder })
 
     container.register("DataHolderMetadataProvider", { useClass: SelfHealingDataHolderMetadataProvider })
 
