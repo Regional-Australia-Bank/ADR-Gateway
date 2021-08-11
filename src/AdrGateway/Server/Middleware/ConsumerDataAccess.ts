@@ -16,6 +16,8 @@ import { URL } from "url";
 import urljoin from "url-join";
 import { DataHolderRegisterMetadata } from "../../../Common/Connectivity/Types";
 import moment from "moment";
+import { TraceRecorder as AxiosTraceRecorder } from "../../../Common/Axios/AxiosTrace";
+
 
 interface DataAccessRequestParams {
     user: {
@@ -56,6 +58,7 @@ class ConsumerDataAccessMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("TraceRecorder") private traceRecorder: AxiosTraceRecorder,
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager,
@@ -134,7 +137,8 @@ class ConsumerDataAccessMiddleware {
                 });
             } catch (err) {
                 this.logger.error("ConsumerDataAccess error",err)
-                res.status(500).send();
+                let traceDetails = this.traceRecorder.formatErrorTrace(err, "Error accessing consumer data");
+                return res.status(500).json(traceDetails);
             }
 
         };

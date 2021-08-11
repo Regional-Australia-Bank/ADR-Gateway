@@ -7,6 +7,7 @@ import _ from "lodash";
 import { NoneFoundError } from "../../../Common/Connectivity/Errors";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { ConsentRequestParams } from "../../../Common/Connectivity/Types";
+import { TraceRecorder as AxiosTraceRecorder } from "../../../Common/Axios/AxiosTrace";
 
 const bodySchema:Schema = {
     sharingDuration: {
@@ -46,6 +47,7 @@ class ConsentRequestMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("TraceRecorder") private traceRecorder: AxiosTraceRecorder,
         private connector: DefaultConnector
     ) { }
 
@@ -81,7 +83,8 @@ class ConsentRequestMiddleware {
                     return res.status(404).send();
                 }
                 this.logger.error("Could not generate consent URL",e)
-                return res.status(500).send();
+                let traceDetails = this.traceRecorder.formatErrorTrace(e, "Could not generate consent URL");
+                return res.status(500).json(traceDetails);
             }
             // TODO do redirect instead of merely describing one
         };

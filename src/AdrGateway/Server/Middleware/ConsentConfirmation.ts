@@ -7,12 +7,14 @@ import { isHttpCodeError, formatErrorPayload } from "../../../Common/Server/Erro
 import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
 import { Dictionary } from "../../../Common/Server/Types";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { TraceRecorder as AxiosTraceRecorder } from "../../../Common/Axios/AxiosTrace";
 
 @injectable()
 class ConsentConfirmationMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("TraceRecorder") private traceRecorder: AxiosTraceRecorder,
         private consentManager:ConsentRequestLogManager,
         private connector:DefaultConnector
     ) { }
@@ -107,11 +109,15 @@ class ConsentConfirmationMiddleware {
         } catch (err) {
             if (isHttpCodeError(err)) {
                 this.logger.warn(err.message,err);
+                /*
                 res.status(err.httpCode)
                 let payload = err.payload;
                 if (payload) {res.json(formatErrorPayload(payload))};
                 res.send();
                 return;    
+                */
+                let traceDetails = this.traceRecorder.formatErrorTrace(err, "Could not exchange code for tokens at data holder");
+                return res.status(500).json(traceDetails);
             } else {
                 this.logger.error(err);
                 res.status(500).send();
