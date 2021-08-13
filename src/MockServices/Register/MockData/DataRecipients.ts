@@ -45,7 +45,7 @@ const OriginalDataRecipients = [
                             ],
                             "tos_uri": "https://regaustbank.io/tos.html",
                             "policy_uri": "https://regaustbank.io/policy.html",
-                            "jwks_uri": "https://regaustbank.io/jwks",
+                            "jwks_uri": "http://localhost:8102/jwks",
                             "revocation_uri": "https://regaustbank.io/revocation",
                             "scope": "bank:accounts.basic:read bank:accounts.detail:read bank:transactions:read bank:payees:read bank:regular_payments:read common:customer.basic:read common:customer.detail:read cdr:registration"
                         }

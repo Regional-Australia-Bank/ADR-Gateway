@@ -2,7 +2,7 @@ import "reflect-metadata";
 
 import { injectable } from "tsyringe";
 import _ from "lodash"
-
+import {stringify} from 'flatted';
 
 @injectable()
 class TraceRecorder {
@@ -25,8 +25,18 @@ class TraceRecorder {
     }
 
     formatErrorTrace(err:any, message:String) {
+        // handling internal error
+        if(err.innerError) {
+            // not axios error, plattern the error 
+            return {
+                message : err.message,
+                innerError : stringify(err.innerError.lastError)
+            }
+        }
         //Find embedded axios errors
         let axiosError = this.findAxiosError(err);
+
+       
         let details = {
             message: message,
             source: 'Dr G',

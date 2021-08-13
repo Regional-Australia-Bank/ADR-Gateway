@@ -19,6 +19,7 @@
     "express-basic-auth": "^1.2.0",
     "express-validator": "^6.2.0",
     "flat": "^5.0.0",
+    "flatted": "3.2.2",
     "html-entities": "^1.2.1",
     "http-proxy": "^1.18.0",
     "jose": "^1.10.1",
