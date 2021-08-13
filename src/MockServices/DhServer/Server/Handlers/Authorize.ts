@@ -2,11 +2,9 @@ import { Dictionary } from "../../../../Common/Server/Types";
 import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
-import { getType } from "mime";
 
-import {check, validationResult, query, ValidationChain, body, matchedData} from 'express-validator'
-import { TokenIssuer } from "../Helpers/TokenIssuer";
-import { JWK, JWS } from "jose";
+import { validationResult, query, body, matchedData} from 'express-validator'
+import { JWS } from "jose";
 import { injectable, inject } from "tsyringe";
 import winston from "winston";
 import { ConsentManager } from "../../Entities/Consent";

@@ -1,23 +1,13 @@
 import _ from "lodash";
 import express from "express";
 import { NextFunction } from "connect";
-import { getType } from "mime";
 
-import { validationResult, matchedData, checkSchema, Schema, body} from 'express-validator'
-import { TokenIssuer } from "../Helpers/TokenIssuer";
 import { inject, injectable } from "tsyringe";
 import winston from "winston";
-import { ConsentManager } from "../../Entities/Consent";
-import uuid from "uuid";
-import { readFileSync } from "fs";
-import { JWT, JWS, JWKS, JSONWebKeySet } from "jose";
-import bodyParser from "body-parser";
-import { TryOrUndefined } from "../../../../Common/ScriptUtil";
-import { IsJWT } from "class-validator";
+import { JWKS, JSONWebKeySet } from "jose";
 import { ClientRegistrationManager } from "../../Entities/ClientRegistration";
-import moment from "moment";
 import { ScopeMiddleware } from "../../../../Common/Server/Middleware/TokenVerification";
-import { OIDCConfiguration, DhServerConfig, testIssuer } from "../Config";
+import { OIDCConfiguration, DhServerConfig } from "../Config";
 import { StandardSerializeDrRegistration } from "./ClientRegistration";
 
 // TODO, probably a lot of other things to check here
