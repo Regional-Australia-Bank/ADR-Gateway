@@ -2,7 +2,6 @@ import "reflect-metadata";
 
 import { injectable } from "tsyringe";
 import _ from "lodash"
-import { stringify } from 'flatted';
 
 @injectable()
 class TraceRecorder {
@@ -57,7 +56,7 @@ class TraceRecorder {
             const mostInnerError = this.getInnerMostError(err.innerError)
             return {
                 message: err.message,
-                innerError: JSON.parse(JSON.stringify(mostInnerError, this.getCircularReplacer()))
+                innerError: JSON.parse(JSON.stringify(mostInnerError, this.getCircularReplacer()))  
             }
         }
         //Find embedded axios errors
