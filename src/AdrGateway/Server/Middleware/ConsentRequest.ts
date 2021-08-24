@@ -65,7 +65,7 @@ class ConsentRequestMiddleware {
             let m:Omit<ConsentRequestParams,'softwareProductId'> = <any>matchedData(req);
 
             let configs = await this.connector.SoftwareProductConfigs().Evaluate();
-            let softwareProductId = configs.byKey[m.productKey].ProductId;
+            let softwareProductId = await configs.byKey[m.productKey].ProductId;
             if (typeof softwareProductId !== "string") {
                 return res.status(400).json({
                     error: `productKey not recognised: ${m.productKey}`
@@ -80,7 +80,7 @@ class ConsentRequestMiddleware {
                 return res.json(redirect_uri)          
             } catch (e) {
                 if (e instanceof NoneFoundError) {
-                    return res.status(404).send();
+                    return res.status(404).send(e);
                 }
                 this.logger.error("Could not generate consent URL",e)
                 let traceDetails = this.traceRecorder.formatErrorTrace(e, "Could not generate consent URL");
