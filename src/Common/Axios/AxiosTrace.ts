@@ -36,6 +36,9 @@ class TraceRecorder {
             if(key === 'httpsAgent'){
                 return;
             }
+            if (key.toLowerCase() === 'authorization' || key.toLowerCase() === 'apikey') { //Mask these headers entirely
+                return 'xxxxxxx REDACTED xxxxxxx';
+            }
             return value;
         };
     };
