@@ -11,7 +11,7 @@ class TraceRecorder {
         } else {
             var axiosError;
             _.forOwn(err, (value, key) => {
-                if (typeof (value) == 'object') {
+                if (typeof (value) == 'object' && value !== null) {
                     if (value.isAxiosError) {
                         axiosError = value;
                     } else {
@@ -57,10 +57,7 @@ class TraceRecorder {
         if (err.innerError) {
             // not axios error, plattern the error 
             const mostInnerError = this.getInnerMostError(err.innerError)
-            return {
-                message: err.message,
-                innerError: JSON.parse(JSON.stringify(mostInnerError, this.getCircularReplacer()))  
-            }
+            err = JSON.parse(JSON.stringify(mostInnerError, this.getCircularReplacer()))  
         }
         //Find embedded axios errors
         let axiosError = this.findAxiosError(err);
@@ -73,12 +70,12 @@ class TraceRecorder {
             trace: axiosError ? {
                 step: axiosError.node,
                 request: {
-                    url: axiosError.response.config.url,
-                    data: axiosError.response.config.data,
-                    method: axiosError.response.config.method,
-                    headers: _.forOwn(axiosError.response.config.headers, (headerValue, headerKey) => {
+                    url: axiosError.config.url,
+                    data: axiosError.config.data,
+                    method: axiosError.config.method,
+                    headers: _.forOwn(axiosError.config.headers, (headerValue, headerKey) => {
                         if (_.indexOf(['authorization'], headerKey.toLowerCase()) != -1) { //Mask these headers entirely
-                            axiosError.response.config.headers[headerKey] = 'xxxxxxx REDACTED xxxxxxx'
+                            axiosError.config.headers[headerKey] = 'xxxxxxx REDACTED xxxxxxx'
                         }
                     })
                 },
