@@ -109,8 +109,10 @@ class ConsumerDataAccessMiddleware {
                 if (consent.HasCurrentRefreshToken()) {
                     try {
                         consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
-                    } catch {
-                        return res.status(500).json("Unable to get access token")
+                    } catch (err) {
+                        this.logger.error("ConsumerDataAccess error",err)
+                        let traceDetails = this.traceRecorder.formatErrorTrace(err, "Error accessing consumer data: Unable to get access token");
+                        return res.status(500).json(traceDetails)
                     }
                 } else {
                     if (consent.revocationDate) {
