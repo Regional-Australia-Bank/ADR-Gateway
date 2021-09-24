@@ -15,11 +15,11 @@ class ConsentConfirmationMiddleware {
     constructor(
         @inject("Logger") private logger: winston.Logger,
         @inject("TraceRecorder") private traceRecorder: AxiosTraceRecorder,
-        private consentManager:ConsentRequestLogManager,
-        private connector:DefaultConnector
+        private consentManager: ConsentRequestLogManager,
+        private connector: DefaultConnector
     ) { }
 
-    handle = async (req:IncomingMessage & {body:any, params:Dictionary<string>},res:express.Response) => {
+    handle = async (req: IncomingMessage & { body: any, params: Dictionary<string> }, res: express.Response) => {
 
         try {
             const getBodyString = (key: string) => {
@@ -50,7 +50,7 @@ class ConsentConfirmationMiddleware {
                     authCode: getBodyString('code'),
                     idToken: getBodyString('id_token'),
                     state: getBodyString('state')
-                }  
+                }
             }
 
             const getErrorParams = () => {
@@ -59,11 +59,11 @@ class ConsentConfirmationMiddleware {
                     error_description: getOptionalBodyString('error_description'),
                     error_uri: getOptionalBodyString('error_uri'),
                     state: getBodyString('state')
-                }  
+                }
             }
 
-            let params:ReturnType<typeof getNominalParams>|undefined = undefined;
-            let errorParams:ReturnType<typeof getErrorParams>|undefined = undefined;
+            let params: ReturnType<typeof getNominalParams> | undefined = undefined;
+            let errorParams: ReturnType<typeof getErrorParams> | undefined = undefined;
             try {
                 params = getNominalParams()
             } catch {
@@ -80,18 +80,18 @@ class ConsentConfirmationMiddleware {
                 res.sendStatus(400);
                 return;
             }
-            
+
             let consentRequest: ConsentRequestLog;
             try {
                 consentRequest = await this.consentManager.FindAuthRequest({
                     id: consentId,
-                })    
+                })
             } catch {
                 res.sendStatus(404);
                 return;
             }
 
-            let updatedConsent = await this.connector.FinaliseConsent(consentRequest,params.authCode,params.idToken,params.state).GetWithHealing();
+            let updatedConsent = await this.connector.FinaliseConsent(consentRequest, params.authCode, params.idToken, params.state).GetWithHealing();
             let missingScopes = updatedConsent.MissingScopes();
             let isActive = updatedConsent.IsCurrent()
             let scopesFulfilled = (missingScopes.length == 0)
@@ -105,10 +105,10 @@ class ConsentConfirmationMiddleware {
                 isActive: isActive,
                 success
             })
-            
+
         } catch (err) {
             if (isHttpCodeError(err)) {
-                this.logger.warn(err.message,err);
+                this.logger.warn(err.message, err);
                 /*
                 res.status(err.httpCode)
                 let payload = err.payload;
@@ -116,16 +116,14 @@ class ConsentConfirmationMiddleware {
                 res.send();
                 return;    
                 */
-                let traceDetails = this.traceRecorder.formatErrorTrace(err, "Could not exchange code for tokens at data holder");
-                return res.status(500).json(traceDetails);
             } else {
                 this.logger.error(err);
-                res.status(500).send();
-                return;
             }
+            let traceDetails = this.traceRecorder.formatErrorTrace(err, "Could not exchange code for tokens at data holder");
+            return res.status(500).json(traceDetails);
         }
-    };   
+    };
 
 }
 
-export {ConsentConfirmationMiddleware}
+export { ConsentConfirmationMiddleware }
