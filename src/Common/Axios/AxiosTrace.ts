@@ -33,7 +33,7 @@ class TraceRecorder {
                 seen.add(value);
             }
             // trying to filter out the httpsAgent which cause circular ref
-            if(key === 'httpsAgent'){
+            if(key === 'httpsAgent' || key === '_httpMessage' || key ==='socket'){
                 return;
             }
             if (key.toLowerCase() === 'authorization' || key.toLowerCase() === 'apikey') { //Mask these headers entirely

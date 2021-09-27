@@ -109,13 +109,6 @@ class ConsentConfirmationMiddleware {
         } catch (err) {
             if (isHttpCodeError(err)) {
                 this.logger.warn(err.message, err);
-                /*
-                res.status(err.httpCode)
-                let payload = err.payload;
-                if (payload) {res.json(formatErrorPayload(payload))};
-                res.send();
-                return;    
-                */
             } else {
                 this.logger.error(err);
             }
