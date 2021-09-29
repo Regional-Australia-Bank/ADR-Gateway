@@ -33,7 +33,7 @@ class TraceRecorder {
                 seen.add(value);
             }
             // trying to filter out the httpsAgent which cause circular ref
-            if(key === 'httpsAgent' || key === '_httpMessage' || key ==='socket'){
+            if (key === 'httpsAgent' || key === '_httpMessage' || key === 'socket') {
                 return;
             }
             if (key.toLowerCase() === 'authorization' || key.toLowerCase() === 'apikey') { //Mask these headers entirely
@@ -57,11 +57,26 @@ class TraceRecorder {
         if (err.innerError) {
             // not axios error, plattern the error 
             const mostInnerError = this.getInnerMostError(err.innerError)
-            err = JSON.parse(JSON.stringify(mostInnerError, this.getCircularReplacer()))  
+            err = JSON.parse(JSON.stringify(mostInnerError, this.getCircularReplacer()))
         }
         //Find embedded axios errors
         let axiosError = this.findAxiosError(err);
 
+        let finalError = null // use for internal error
+        if (!axiosError) {
+            // grab out the internal error
+            const { innerError = null } = err.lastError
+            if (innerError) {
+                if (innerError.innerError) {
+                    finalError = innerError.innerError
+                } else {
+                    finalError = innerError
+                }
+            }
+            if (finalError === null) {
+                finalError = err
+            }
+        }
 
         let details = {
             message: message,
@@ -85,7 +100,10 @@ class TraceRecorder {
                     data: axiosError.response.data,
                     respHeaders: axiosError.response.headers,
                 }
-            } : {}
+            } : {
+                payload: finalError ? finalError.payload : null,
+                parameters: finalError ? finalError.parameters : null
+            }
         };
         return details;
     }
