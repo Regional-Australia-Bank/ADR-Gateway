@@ -490,7 +490,7 @@ const transactionDates = _.shuffle(_.map(_.map(range, r => r/(rMax)),z => {
 export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.map(testAccountList, acc => {
     return _.map(range, r => {
 
-        let amount = Math.abs(transactionAmounts[r]).toFixed(2);
+        let amount = transactionAmounts[r].toFixed(2);
         let type:"TRANSFER_INCOMING"|"TRANSFER_OUTGOING" = transactionAmounts[r] >= 0 ? "TRANSFER_INCOMING" : "TRANSFER_OUTGOING";
         let _detail:any = undefined;
 
