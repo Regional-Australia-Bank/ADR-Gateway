@@ -36,6 +36,7 @@ const env = {
   // ADR_REGISTER_RESOURCE_URI: 'https://localhost:9301/',
   // ADR_REGISTER_SECURE_RESOURCE_URI: 'https://localhost:9301/',
   // ADR_SOFTWARE_PRODUCT_CONFIG_URIS: '{"sandbox": "http://localhost:8401/software.product.config"}'
+  // ADR_SOFTWARE_PRODUCT_CONFIG_URIS: '{"mycdrdata":"http://localhost:8701/software.product.config"}'
   // DATAHOLDER_META_EXPIRY_SECONDS: "3600", // TODO place this in the schema in Config.ts
 
   /** Mock Register options */
@@ -140,7 +141,8 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production
+    env_production,
+    node_args: "--inspect --inspect-port 9293"
   },{
     name: 'HttpsProxy',
     script: 'dist/HttpsProxy/start.js',
@@ -149,6 +151,7 @@ module.exports = {
     watch: false,
     max_memory_restart: '1G',
     env,
-    env_production
+    env_production,
+    node_args: "--inspect --inspect-port 9292"
   }]
 };

@@ -32,7 +32,7 @@ export class MockRegister {
         private connector:DefaultConnector
     ) {}
 
-    private paginationMiddleware:PaginationMiddleware = new PaginationMiddleware(this.configFn)
+    private paginationMiddleware:PaginationMiddleware = new PaginationMiddleware(this.configFn,logger)
     
     async init(): Promise<any> {
         const app = express();

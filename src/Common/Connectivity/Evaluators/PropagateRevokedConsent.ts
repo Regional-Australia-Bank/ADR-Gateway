@@ -37,7 +37,7 @@ export const PropagateRevokedConsent = async (logger: winston.Logger, cert: Clie
       })
     }
 
-    cert.inject(options);
+    cert.inject(options,$.Consent.softwareProductId);
     let response = await axios.request(options);
 
     if (!response.status.toString().startsWith("2")) throw 'Revocation was not successful'
@@ -56,7 +56,7 @@ export const PropagateRevokedConsent = async (logger: winston.Logger, cert: Clie
       })
     }
 
-    cert.inject(options);
+    cert.inject(options,$.Consent.softwareProductId);
     let response = await axios.request(options);
 
     if (!response.status.toString().startsWith("2")) throw 'Revocation was not successful'

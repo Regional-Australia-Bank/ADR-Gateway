@@ -1,13 +1,13 @@
-import request = require("request");
-import { singleton, injectable } from "tsyringe";
-import fs from "fs"
+import { injectable } from "tsyringe";
 import { AxiosRequestConfig } from "axios";
 import https from "https"
 import _ from "lodash"
 import { CertsFromFilesOrStrings } from "../../Common/SecurityProfile/Util";
 
+const mtlsByProduct = JSON.parse(process.env.MTLS_BY_PRODUCT || "{}")
+
 interface ClientCertificateInjector {
-    inject(options: AxiosRequestConfig):AxiosRequestConfig
+    inject(options: AxiosRequestConfig, softwareProductId?:string):AxiosRequestConfig
     injectCa(options: AxiosRequestConfig):AxiosRequestConfig
 }
 
@@ -45,15 +45,30 @@ class DefaultClientCertificateInjector implements ClientCertificateInjector{
         this.passphrase = options?.passphrase;
     }
 
-    inject = (options: AxiosRequestConfig):AxiosRequestConfig => {
+    inject = (options: AxiosRequestConfig & {softwareProductId?:string}):AxiosRequestConfig => {
 
-        options.httpsAgent = new https.Agent({
-            cert: this.cert,
-            key: this.key,
-            ca: this.ca,
-            passphrase: this.passphrase,
-        })        
-        return options;
+
+        if (options.softwareProductId) {
+            options.httpsAgent = new https.Agent({
+                cert: mtlsByProduct[options.softwareProductId]?.cert ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].cert): this.cert,
+                key: mtlsByProduct[options.softwareProductId]?.key ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].key): this.key,
+                ca: mtlsByProduct[options.softwareProductId]?.ca ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].ca): this.ca,
+                passphrase: mtlsByProduct[options.softwareProductId]?.passphrase || this.passphrase,
+            })        
+    
+            return _.omit(options,"softwareProductId");   
+            
+        } else {
+            options.httpsAgent = new https.Agent({
+                cert: this.cert,
+                key: this.key,
+                ca: this.ca,
+                passphrase: this.passphrase,
+            })        
+    
+            return options;   
+        }
+
     }
 
     injectCa = (options: AxiosRequestConfig):AxiosRequestConfig => {

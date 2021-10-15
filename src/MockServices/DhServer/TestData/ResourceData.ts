@@ -1,13 +1,16 @@
 import moment from "moment"
 import _ from "lodash"
 import { ConsumerForbiddenError } from "../Server/Middleware/OAuth2ScopeAuth"
+import { EnumType } from "typescript"
 
 type URIString = string
 type MaskedAccountString = string
+type MaskedPANString = string
 type ASCIIString = string
 type DateString = string
 type NaturalNumber = number
 type PositiveInteger = number
+type ExternalRef = string
 
 interface Validatable<T> extends String {
     validate(): boolean;
@@ -91,6 +94,204 @@ interface BankAccountTransactionInternal extends BankAccountTransaction {
     _detail: any
 }
 
+interface BankingAuthorisedEntity {
+    description: string
+    financialInstitution: string
+    abn: string
+    acn: string
+    arbn: string
+}
+
+interface BankingDirectDebit {
+    accountId: ASCIIString
+    authorisedEntity: BankingAuthorisedEntity
+    lastDebitDateTime: DateString
+    lastDebitAmount: string
+    consentStatus: AccountConsentStatus
+}
+
+interface BankingScheduledPaymentFrom {
+    accountId: string
+}
+
+interface BankingDomesticPayeeAccount {
+    accountName?: string
+    bsb: string
+    accountNumber: string
+}
+
+interface BankingDomesticPayeeCard {
+    cardNumber: MaskedPANString
+}
+
+enum BankingDomesticPayeePayIdTypes {
+    Abn = 'ABN',
+    Email = 'EMAIL',
+    Org_identifier = 'ORG_IDENTIFIER',
+    Telephone = 'TELEPHONE'
+}
+
+interface BankingDomesticPayeePayId {
+    name?: string
+    identifier: string
+    type: BankingDomesticPayeePayIdTypes
+}
+
+enum BankingDomesticPayeeUTypes {
+    Account = 'account',
+    Card = 'card',
+    PayId = 'payId'
+}
+
+interface BankingDomesticPayee {
+    payeeAccountUType: BankingDomesticPayeeUTypes
+    account?: BankingDomesticPayeeAccount
+    card?: BankingDomesticPayeeCard
+    payId?: BankingDomesticPayeePayId
+}
+
+interface BankingBillerPayee {
+    billerCode: string
+    crn?: string
+    billerName: string
+}
+
+interface BankingInternationalPayeeBeneficiaryDetails {
+    name?: string
+    country: ExternalRef
+    message?: string
+}
+
+interface BankingInternationalPayeeBankDetails {
+    country: ExternalRef
+    accountNumber: string
+    bankAddress?: {
+        name: string
+        address: string
+    }
+    beneficiaryBankBIC?: ExternalRef
+    fedWireNumber?: string
+    sortCode?: string
+    chipNumber?: string
+    routingNumber?: string
+    legalEntityIdentifier?: ExternalRef
+}
+
+interface BankingInternationalPayee {
+    beneficiaryDetails: BankingInternationalPayeeBeneficiaryDetails
+    bankDetails: BankingInternationalPayeeBankDetails
+}
+
+enum BankingScheduledPaymentToUTypes {
+    AccountId = 'accountId',
+    PayeeId = 'payeeId',
+    Domestic = 'domestic',
+    Biller = 'biller',
+    International = 'international'
+}
+
+interface BankingScheduledPaymentTo {
+    toUType: BankingScheduledPaymentToUTypes
+    accountId?: ASCIIString
+    payeeId?: ASCIIString
+    domestic?: BankingDomesticPayee
+    biller?: BankingBillerPayee
+    international?: BankingInternationalPayee
+}
+
+interface BankingScheduledPaymentSet {
+    to: BankingScheduledPaymentTo
+    isAmountCalculated?: boolean
+    amount?: string
+    currency?: string
+}
+
+interface BankingScheduledPaymentRecurrenceOnceOff {
+    paymentDate: DateString
+}
+
+interface BankingScheduledPaymentInterval {
+    interval: ExternalRef
+    dayInInterval?: ExternalRef
+}
+
+enum BankingScheduledPaymentRecurrenceIntervalScheduleNonBusinessDayTreatments {
+    After = 'AFTER',
+    Before = 'BEFORE',
+    On = 'ON',
+    Only = 'ONLY'
+}
+
+interface BankingScheduledPaymentRecurrenceIntervalSchedule {
+    finalPaymentDate?: DateString
+    paymentsRemaining?: PositiveInteger
+    nonBusinessDayTreatment?: BankingScheduledPaymentRecurrenceIntervalScheduleNonBusinessDayTreatments
+    intervals: BankingScheduledPaymentInterval[]
+
+}
+
+enum BankingScheduledPaymentRecurrenceLastWeekdayLastWeekDays {
+    Mon = 'MON',
+    Tue = 'TUE',
+    Wed = 'WED',
+    Thu = 'THU',
+    Fri = 'FRI',
+    Sat = 'SAT',
+    Sum = 'SUN'
+}
+
+enum BankingScheduledPaymentRecurrenceLastWeekdayNonBusinessDayTreatment {
+    After = 'AFTER',
+    Before = 'BEFORE',
+    On = 'ON',
+    Only = 'ONLY'
+}
+
+interface BankingScheduledPaymentRecurrenceLastWeekday {
+    finalPaymentDate?: DateString
+    paymentsRemaining?: PositiveInteger
+    interval: ExternalRef
+    lastWeekDay: BankingScheduledPaymentRecurrenceLastWeekdayLastWeekDays
+    nonBusinessDayTreatment?: BankingScheduledPaymentRecurrenceLastWeekdayNonBusinessDayTreatment
+}
+
+interface BankingScheduledPaymentRecurrenceEventBased {
+    desription: string
+}
+
+enum BankingScheduledPaymentRecurrenceUTypes {
+    OnceOff = 'onceOff',
+    IntervalSchedule = 'intervalSchedule',
+    LastWeekDay = 'lastWeekDay',
+    EventBased = 'eventBased'
+}
+
+interface BankingScheduledPaymentRecurrence {
+    nextPaymentDate?: DateString
+    recurrenceUType: BankingScheduledPaymentRecurrenceUTypes
+    onceOff?: BankingScheduledPaymentRecurrenceOnceOff
+    intervalSchedule?: BankingScheduledPaymentRecurrenceIntervalSchedule
+    lastWeekDay?: BankingScheduledPaymentRecurrenceLastWeekday
+    eventBased?: BankingScheduledPaymentRecurrenceEventBased
+}
+
+enum BankScheduledPaymentStatus {
+    Active = 'ACTIVE',
+    Inactive = 'INACTIVE',
+    Skip = 'SKIP'
+}
+
+interface BankScheduledPayment {
+    scheduledPaymentId: ASCIIString
+    nickname?: string
+    payerReference: string
+    payeeReference: string
+    status: BankScheduledPaymentStatus
+    from: BankingScheduledPaymentFrom
+    paymentSet: BankingScheduledPaymentSet[]
+    recurrence: BankingScheduledPaymentRecurrence
+}
+
 const padLeft = (n:number,width:number,decWidth=0,padChar='0') => {
     let right = n.toFixed(decWidth);
     let padWidth = width - right.length;
@@ -111,19 +312,19 @@ const masked = (s:string) => {
 }
 
 export enum AccountConsentStatus {
-    "CONSENTED",
-    "INVALID",
-    "NOT_CONSENTED"
+    Consented = "CONSENTED",
+    Invalid = "INVALID",
+    Not_consented = "NOT_CONSENTED"
 }
 
 const DetermineAccountConsentStatus = (accountId:string):AccountConsentStatus => {
     if (accountId == 'account-5') {
-        return AccountConsentStatus.NOT_CONSENTED
+        return AccountConsentStatus.Not_consented
     }
     if (accountId == 'account-78') {
-        return AccountConsentStatus.INVALID
+        return AccountConsentStatus.Invalid
     }
-    return AccountConsentStatus.CONSENTED
+    return AccountConsentStatus.Consented
 }
 
 export const testAccountDetailList:BankAccountDetail[] = _.map(_.range(1,6),ind => {
@@ -146,6 +347,54 @@ export const testAccountDetailList:BankAccountDetail[] = _.map(_.range(1,6),ind 
     return accountDetail
 })
 
+export const testDirectDebitList:BankingDirectDebit[] = _.map(_.range(1,6),ind => {
+    let directDebits = {
+        accountId: `account-${ind}`,
+        authorisedEntity: {
+            description: `Telstra-${ind}`,
+            financialInstitution: "ANZ",
+            abn: (123456789*ind).toString(),
+            acn: (987654321*ind).toString(),
+            arbn: (192837465*ind).toString()
+        },
+        lastDebitDateTime: moment().subtract(5,'months').format('YYYY-MM-DD'),
+        lastDebitAmount: "123.45",
+        consentStatus: DetermineAccountConsentStatus(`account-${ind}`)
+    }
+
+    return directDebits;
+})
+
+export const testScheduledPaymentsList:BankScheduledPayment[] = _.map(_.range(1,16),ind => {
+    let scheduledPayment = {
+        scheduledPaymentId: `payment-${ind}`,
+        nickname: `payment-${ind}-nickname`,
+        payerReference: `payer-ref-${ind}`,
+        payeeReference: `payee-ref-${ind}`,
+        status: BankScheduledPaymentStatus[Math.floor(Math.random() * 3)],
+        from: {
+            accountId: `account-${ind}`
+        },
+        paymentSet: [{
+            to: {
+                toUType: BankingScheduledPaymentToUTypes.AccountId,
+                accountId: (12345 * ind).toString()
+            },
+            isAmountCalculated: false,
+            amount: '123.45',
+            currency: 'AUD'
+        }],
+        recurrence: {
+            recurrenceUType: BankingScheduledPaymentRecurrenceUTypes.OnceOff,
+            onceOff: {
+                paymentDate: moment().add(1,'months').format('YYYY-MM-DD')
+            }
+        }
+    }
+
+    return scheduledPayment;
+})
+
 export const testCustomer = {
     customerUType: "person",
     person: {
@@ -159,10 +408,67 @@ export const testCustomer = {
     }
 }
 
+export const testCustomerDetail = {
+    customerUType: "person",
+    person: {
+        lastUpdateTime: testCustomer.person.lastUpdateTime,
+        firstName: testCustomer.person.firstName,
+        lastName: testCustomer.person.lastName,
+        middleNames: testCustomer.person.middleNames,
+        prefix: testCustomer.person.prefix,
+        suffix: testCustomer.person.suffix,
+        occupationCode: testCustomer.person.occupationCode,
+        phoneNumbers: [{
+            isPreferred: true,
+            purpose: "MOBILE", //MOBILE, HOME, INTERNATIONAL, WORK, OTHER, UNSPECIFIED
+            countryCode: "+61",
+            number: "0412345678",
+            fullNumber: "tel:+61-412-345-678"
+        },
+        {
+            purpose: "HOME", //MOBILE, HOME, INTERNATIONAL, WORK, OTHER, UNSPECIFIED
+            countryCode: "+61",
+            areaCode: "2",
+            number: "67786778",
+            fullNumber: "tel:+61-2-6778-6778"
+        }],
+        emailAddresses: [{
+            isPreferred: true,
+            purpose: "HOME", //WORK, HOME, OTHER, UNSPECIFIED
+            address: "jsmith@example.com"
+        },
+        {
+            purpose: "WORK", //WORK, HOME, OTHER, UNSPECIFIED
+            address: "jsmith2@examplework.com.au"
+        }],
+        physicalAddresses: [{
+            addressUType: "simple", //simple, paf
+            simple: {
+                addressLine1: "Amaroo",
+                addressLine2: "12345 Wingwabinda Road",
+                postcode: "2345",
+                city:   "Whoop Whoop",
+                state: "NSW"
+            },
+            purpose: "PHYSICAL" //MAIL, PHYSICAL, REGISTERED, WORK, OTHER
+        },
+        {
+            addressUType: "simple", //simple, paf
+            simple: {
+                addressLine1: "PO Box 123",
+                postcode: "2345",
+                city:   "Whoop Whoop",
+                state: "NSW"
+            },
+            purpose: "MAIL" //MAIL, PHYSICAL, REGISTERED, WORK, OTHER
+        }]
+    }
+}
+
 export const testBalanceList:BankAccountBalance[] = _.map(testAccountDetailList,acc => ({
     accountId: acc.accountId,
     currentBalance: ((Math.random()-0.5)*5000).toFixed(2),
-    availableBalance: ((Math.random()-0.5)*5000).toFixed(2)
+    availableBalance: Math.abs(((Math.random()-0.5)*5000)).toFixed(2)
 }))
 
 const testAccountList:BankAccount[] = _.map(testAccountDetailList,det => _.pick(det,'accountId','displayName','nickname','isOwned','maskedNumber','productCategory','productName','consentStatus'));
@@ -192,7 +498,12 @@ export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.
             _detail = {
                 extendedData: {
                     payer: "Payer",
-                    service: "X2P1.01"
+                    service: "X2P1.01",
+                    extensionUType: "x2p101Payload",
+                    x2p101Payload: {
+                        extendedDescription: `${r} - An extended message as sent by the payer, up to 250 characters.`,
+                        endToEndId: `abcd123${r}`
+                    }
                 }
             }
         }
@@ -201,7 +512,12 @@ export const testTransactionList:BankAccountTransactionInternal[] = _.flatten(_.
             _detail = {
                 extendedData: {
                     payee: "Payee",
-                    service: "X2P1.01"
+                    service: "X2P1.01",
+                    extensionUType: "x2p101Payload",
+                    x2p101Payload: {
+                        extendedDescription: `${r} - An extended message as sent to the payee, up to 250 characters.`,
+                        endToEndId: `abcd123${r}`
+                    }
                 }
             }        
         }
@@ -241,12 +557,13 @@ export const GetTransactions = (subjectId:string, accountId: string) => {
         })
     }
 
-    let transactions = _.filter(testTransactionList, t => t.accountId == accountId)
+    let transactions = _.map(_.filter(testTransactionList, t => t.accountId == accountId), (t) => _.omit(t,'_detail'))
     return transactions;
 }
 
 export const TransactionDetail = (subjectId:string, accountId: string, transactionId: string) => {
-    if (!_.find(testAccountList, acc => acc.accountId == accountId)) {
+    let accountInt = _.find(testAccountList, acc => acc.accountId == accountId);
+    if (!accountInt) {
         throw new ConsumerForbiddenError("Account does not exist",{
             code: "NO_ACCOUNT",
             detail: "The account does not exist or is not consented",
@@ -266,6 +583,7 @@ export const TransactionDetail = (subjectId:string, accountId: string, transacti
     let detail = transactionInt._detail
 
     let transaction = _.merge(_.omit(transactionInt,'_detail'),detail)
+    transaction.accountId = accountInt.accountId;
 
     return transaction
 
@@ -312,6 +630,114 @@ class GetAccountsRequest implements FilterableRequest {
         }
     ]
 }
+
+enum BankingDomesticPayeeTypes {
+    Biller = 'BILLER',
+    Domestic = 'DOMESTIC',
+    International = 'INTERNATIONAL'
+}
+
+enum BankingPayeeDetailPayeeUTypes {
+    Biller = 'biller',
+    Domestic = 'domestic',
+    International = 'international'
+}
+
+interface BankingPayee {
+    payeeId: ASCIIString
+    nickname: string
+    description?: string
+    type: BankingDomesticPayeeTypes
+    creationDate: DateString
+    _detail: {
+        payeeUType: BankingPayeeDetailPayeeUTypes,
+        domestic?: BankingDomesticPayee,
+        biller?: BankingBillerPayee,
+        international?: BankingInternationalPayee
+    }
+}
+
+export const testPayeesList:BankingPayee[] = _.map(_.range(1,16),ind => {
+    let getType = ():BankingDomesticPayeeTypes => { switch(ind % (Object.keys(BankingDomesticPayeeTypes).length)) {
+        case 0: return BankingDomesticPayeeTypes.Biller; break;
+        case 1: return BankingDomesticPayeeTypes.Domestic; break;
+        case 2: return BankingDomesticPayeeTypes.International; break;
+        default: return BankingDomesticPayeeTypes.Domestic; break;
+    }};
+    let type = getType();
+
+    let getDetails = (type: BankingDomesticPayeeTypes) => {
+        switch(type) {
+            case BankingDomesticPayeeTypes.Biller:
+                return {
+                    payeeUType: BankingPayeeDetailPayeeUTypes.Biller,
+                    biller: {
+                        billerCode: "123456",
+                        crn: '987654321',
+                        billerName: 'Big Bad Biller'
+                    }
+                }
+            break;
+
+            case BankingDomesticPayeeTypes.Domestic:
+                return {
+                    payeeUType: BankingPayeeDetailPayeeUTypes.Domestic,
+                    domestic: {
+                        payeeAccountUType: BankingDomesticPayeeUTypes.Account,
+                        account: {
+                            accountName: 'J & J Smith',
+                            bsb: '012-345',
+                            accountNumber: '123456789'
+                        }
+                    }
+                }
+            break;
+
+            case BankingDomesticPayeeTypes.International:
+                return {
+                    payeeUType: BankingPayeeDetailPayeeUTypes.International,
+                    international: {
+                        beneficiaryDetails: {
+                            name: 'Kiwi Joe',
+                            country: 'NZ'
+                        },
+                        bankDetails: {
+                            country: 'NZ',
+                            accountNumber: '123456789'
+                        }
+                    }
+                }
+            break;
+
+            default:
+                throw "Unrecognised value for BankingDomesticPayeeTypes: " + type
+            break;
+        }
+    }
+
+    let payee = {
+        payeeId: `payee-${ind}`,
+        nickname: `payee-${ind}-nickname`,
+        description: `payee-description-${ind}`,
+        type: type,
+        creationDate: moment().subtract(5,'months').format('YYYY-MM-DD'),
+        _detail: getDetails(type)
+    }
+
+    return payee;
+})
+
+export const PayeeDetail = (subjectId:string, payeeId: string) => {
+    let payeeInt = _.find(testPayeesList, t => t.payeeId == payeeId)
+
+    let detail = payeeInt._detail
+
+    let payeeDetail = _.merge(_.omit(payeeInt,'_detail'),detail)
+
+    return payeeDetail
+
+}
+
 
 // results.ApplyFilter(new ProductCategoryAccountsFilter(ProductCategory.TRANS_AND_SAVINGS_ACCOUNTS),"productCategory")
 // results.ApplyFilter(ProductCategoryFilter,"openStatus",params["open-status"])

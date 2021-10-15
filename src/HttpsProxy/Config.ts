@@ -59,7 +59,7 @@ export const GetConfig = (configFile?:string):MockInfrastructureConfig => {
                 },
                 DhServerMtlsPublicProtected: {
                     users: { "dh-user": "dh-password" },
-                    noAuthPattern: /^(GET|POST) \//
+                    noAuthPattern: /^(GET|POST|PUT) \//
                 }
             },
             env: 'MOCK_INFRASTRUCTURE_PROXY_ROUTES'

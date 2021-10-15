@@ -7,6 +7,7 @@ import _ from "lodash";
 import { NoneFoundError } from "../../../Common/Connectivity/Errors";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
 import { ConsentRequestParams } from "../../../Common/Connectivity/Types";
+import { EcosystemErrorFilter } from "../Helpers/EcosystemErrorFilter";
 
 const bodySchema:Schema = {
     sharingDuration: {
@@ -32,7 +33,8 @@ const bodySchema:Schema = {
     systemId: { isString: { errorMessage: "systemId must be a string" }, isLength: {options: {min: 1}, errorMessage: "systemId must be at least length 1"} },
     state: { isString: { errorMessage: "state must be a string" }, isLength: {options: {min: 5}, errorMessage: "state must be at least length 5"} },
     scopes: {isArray:true, errorMessage: "authorized scopes must be presented as an array"},
-    'scopes.*': {isString: true, errorMessage: "all scopes must be strings"}
+    'scopes.*': {isString: true, errorMessage: "all scopes must be strings"},
+    redirectUri: {optional: true, isString: { errorMessage: "redirectUri must be a URI string"}}
 };
 
 const querySchema:Schema = {
@@ -45,6 +47,7 @@ class ConsentRequestMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("EcosystemErrorFilter") private ecosystemErrorFilter: EcosystemErrorFilter,
         private connector: DefaultConnector
     ) { }
 
@@ -59,17 +62,33 @@ class ConsentRequestMiddleware {
     
         let Responder = async (req:express.Request,res:express.Response) => {
     
-            let m:ConsentRequestParams = <any>matchedData(req);
+            let m:Omit<ConsentRequestParams,'softwareProductId'> = <any>matchedData(req);
+
+            let configs = await this.connector.SoftwareProductConfigs().Evaluate();
+            let softwareProductId = await configs.byKey[m.productKey].ProductId;
+            if (typeof softwareProductId !== "string") {
+                return res.status(400).json({
+                    error: `productKey not recognised: ${m.productKey}`
+                });
+            }
 
             try {
-                let redirect_uri = await this.RequestConsent(m);
+                let redirect_uri = await this.RequestConsent({
+                    ...m,
+                    softwareProductId
+                });
                 return res.json(redirect_uri)          
             } catch (e) {
                 if (e instanceof NoneFoundError) {
                     return res.status(404).send();
                 }
                 this.logger.error("Could not generate consent URL",e)
-                return res.status(500).send();
+                const formattedError = this.ecosystemErrorFilter.formatEcosystemError(e, "Could not generate consent URL");
+                if (formattedError) {
+                    return res.status(500).json(formattedError);
+                } else {
+                    return res.status(500).json("Could not generate consent URL");
+                }
             }
             // TODO do redirect instead of merely describing one
         };
@@ -90,7 +109,7 @@ class ConsentRequestMiddleware {
     }
 
     RequestConsent = async (p: ConsentRequestParams) =>{
-        this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.productKey}`);
+        this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.softwareProductId} (${p.productKey})`);
         let requestor = this.connector.GetAuthorizationRequest(p);
         return (await requestor.Evaluate())
 

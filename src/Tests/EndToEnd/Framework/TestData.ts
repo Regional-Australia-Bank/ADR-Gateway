@@ -168,7 +168,7 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
                 clientId: () => {
                     if (clientIdPromise) return clientIdPromise;
                     let dataholder = env.Config.SystemUnderTest.Dataholder;
-                    clientIdPromise = (env.OnlySoftwareProduct()).then(softwareProduct => {
+                    clientIdPromise = (env.OnlySoftwareProductId()).then(softwareProduct => {
                         return env.TestServices.adrGateway!.connectivity.BootstrapClientRegistration(softwareProduct,dataholder).Evaluate().then(reg => reg.clientId)
                     })
                     return clientIdPromise;

@@ -7,12 +7,14 @@ import { isHttpCodeError, formatErrorPayload } from "../../../Common/Server/Erro
 import { ConsentRequestLogManager, ConsentRequestLog } from "../../../Common/Entities/ConsentRequestLog";
 import { Dictionary } from "../../../Common/Server/Types";
 import { DefaultConnector } from "../../../Common/Connectivity/Connector.generated";
+import { EcosystemErrorFilter } from "../Helpers/EcosystemErrorFilter";
 
 @injectable()
 class ConsentConfirmationMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("EcosystemErrorFilter") private ecosystemErrorFilter: EcosystemErrorFilter,
         private consentManager:ConsentRequestLogManager,
         private connector:DefaultConnector
     ) { }
@@ -105,17 +107,22 @@ class ConsentConfirmationMiddleware {
             })
             
         } catch (err) {
-            if (isHttpCodeError(err)) {
-                this.logger.warn(err.message,err);
-                res.status(err.httpCode)
-                let payload = err.payload;
-                if (payload) {res.json(formatErrorPayload(payload))};
-                res.send();
-                return;    
+            const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err,"Could not exchange code for tokens at data holder");
+            if (formattedError) {
+                res.status(500).json(formattedError)
             } else {
-                this.logger.error(err);
-                res.status(500).send();
-                return;
+                if (isHttpCodeError(err)) {
+                    this.logger.warn(err.message,err);
+                    res.status(err.httpCode)
+                    let payload = err.payload;
+                    if (payload) {res.json(formatErrorPayload(payload))};
+                    res.send();
+                    return;    
+                } else {
+                    this.logger.error(err);
+                    res.status(500).send();
+                    return;
+                }
             }
         }
     };   

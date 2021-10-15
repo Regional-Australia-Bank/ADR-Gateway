@@ -19,11 +19,14 @@ import { ConsentDetailsMiddleware } from "./Middleware/ConsentDetails";
 import URLParse from "url-parse";
 import qs from "qs";
 import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
+import { EcosystemErrorFilter } from "./Helpers/EcosystemErrorFilter";
+
 
 @injectable()
 class AdrGateway {
     constructor(
         @inject("Logger") private logger:winston.Logger,
+        @inject("EcosystemErrorFilter") private ecosystemErrorFilter: EcosystemErrorFilter,
         @inject("DataHolderMetadataProvider") private dataHolderMetadataProvider: DataHolderMetadataProvider<DataholderMetadata>,
         private consentConfirmationMiddleware: ConsentConfirmationMiddleware,
         private consentRequestMiddleware: ConsentRequestMiddleware,
@@ -55,10 +58,34 @@ class AdrGateway {
             try {
                 let dataholders = await this.dataHolderMetadataProvider.getDataHolders();
                 res.json(_.map(dataholders,dh => _.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn')));    
-            } catch {
-                res.status(500).json({error:"ecosystem_outage"})
+            } catch(err) {
+                const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err,"Error getting list of data holder brands from the register");
+                if (formattedError) {
+                    res.status(500).json(formattedError)
+                } else {
+                    res.status(500).json({error:"ecosystem_outage"})
+                }
             }
             
+        } );
+
+        app.get( "/cdr/data-holders/:dataholderbrandid", async ( req, res ) => {
+            try {
+                const dh = await this.dataHolderMetadataProvider.getDataHolder(req.params.dataholderbrandid);
+                const oidc = await this.connector.DataHolderOidc(req.params.dataholderbrandid).GetWithHealing();
+
+                res.json({
+                    ..._.pick(dh,'dataHolderBrandId','brandName','logoUri','industry','legalEntityName','websiteUri','abn','acn'),
+                    scopes_supported: oidc.scopes_supported
+                });    
+            } catch(err) {
+                const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err,"Error getting list of data holder details from the register");
+                if (formattedError) {
+                    res.status(500).json(formattedError)
+                } else {
+                    res.status(500).json({error:"ecosystem_outage"})
+                }
+            }            
         } );
 
         app.get( "/cdr/consents",
@@ -142,6 +169,24 @@ class AdrGateway {
             this.consumerDataAccess.handler('/cds-au/v1/banking/accounts/balances','bank:accounts.basic:read')
         )
 
+        app.post("/cdr/consents/:consentId/accounts/balances",
+            bodyParser.json(),
+            this.consumerDataAccess.handler('/cds-au/v1/banking/accounts/balances','bank:accounts.basic:read')
+        )
+
+        app.get("/cdr/consents/:consentId/accounts/direct-debits",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/direct-debits`,'bank:regular_payments:read')
+        )
+
+        app.post("/cdr/consents/:consentId/accounts/direct-debits",
+            bodyParser.json(),
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/direct-debits`,'bank:regular_payments:read')
+        )
+
+        app.get("/cdr/consents/:consentId/accounts/:accountId/direct-debits",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/direct-debits`,'bank:regular_payments:read')
+        )
+
         app.get("/cdr/consents/:consentId/accounts/:accountId/balance",
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/balance`,'bank:accounts.basic:read')
         )
@@ -154,14 +199,50 @@ class AdrGateway {
             this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/transactions`,'bank:transactions:read')
         )
 
+        app.get("/cdr/consents/:consentId/accounts/:accountId/transactions/:transactionId",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/transactions/${p.transactionId}`,'bank:transactions:read')
+        )
+
+        app.get("/cdr/consents/:consentId/accounts/:accountId/payments/scheduled",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/accounts/${p.accountId}/payments/scheduled`,'bank:regular_payments:read')
+        )
+
+        app.get("/cdr/consents/:consentId/payments/scheduled",
+            this.consumerDataAccess.handler('/cds-au/v1/banking/payments/scheduled','bank:regular_payments:read')
+        )
+
+        app.post("/cdr/consents/:consentId/payments/scheduled",
+            bodyParser.json(),
+            this.consumerDataAccess.handler('/cds-au/v1/banking/payments/scheduled','bank:regular_payments:read')
+        )
+
+        app.get("/cdr/consents/:consentId/payees",
+            this.consumerDataAccess.handler('/cds-au/v1/banking/payees','bank:payees:read')
+        )
+
+        app.get("/cdr/consents/:consentId/payees/:payeeId",
+            this.consumerDataAccess.handler(p => `/cds-au/v1/banking/payees/${p.payeeId}`,'bank:payees:read')
+        )
+
         app.get("/cdr/consents/:consentId/consumerInfo",
             this.consumerDataAccess.handler('/cds-au/v1/common/customer','common:customer.basic:read')
+        )
+
+        app.get("/cdr/consents/:consentId/consumerInfo/detail",
+            this.consumerDataAccess.handler('/cds-au/v1/common/customer/detail','common:customer.detail:read')
         )
 
         app.get("/cdr/consents/:consentId/userInfo",
             this.userInfo.handler()
         );
       
+        /** TODO
+         * Endpoints yet to implement
+         * * GET /discovery/outages
+         * * GET /banking/products
+         * * GET /banking/products/{productId}
+         */
+
         // Test hook
         (<any>app).connector = this.connector;
 

@@ -28,7 +28,7 @@ export const GetDataHolderRegistrationAccessToken = async (cert:ClientCertificat
   DataHolderOidc: DataholderOidcResponse,
   BootstrapClientRegistration: DataHolderRegistration
 }): Promise<AccessToken> => {
-  let options:AxiosRequestConfig = {
+  const options:AxiosRequestConfig = {
       method: "POST",
       url: $.DataHolderOidc.token_endpoint,
       responseType: "json",
@@ -40,7 +40,7 @@ export const GetDataHolderRegistrationAccessToken = async (cert:ClientCertificat
           client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
       })
   }
-  let response = await axios.request(cert.inject(options));
+  const response = await axios.request(cert.inject(options,$.BootstrapClientRegistration.softwareProductId));
   return new AccessToken(response.data.access_token,response.data.expires_in);
 }
 
@@ -153,8 +153,6 @@ const RegistrationRequestObject = ($:{
       "software_statement":$.SoftwareStatementAssertion
     }
 
-  o.grant_types.push("urn:ietf:params:oauth:grant-type:jwt-bearer") // TODO remove after release 1.1.1 https://github.com/cdr-register/register/issues/54#issuecomment-597368382
-
   return o;
 
 }
@@ -169,7 +167,14 @@ const NewRegistrationAtDataholder = async (cert:ClientCertificateInjector, $: {
   let registrationRequest = RegistrationRequestObject($)
   let registrationRequestJwt = JWT.sign(registrationRequest,$.DataRecipientJwks.get({alg:'PS256',use:'sig'}),{header:{typ:"JWT"}})
 
-  let options = cert.inject({method:"POST", url: $.DataHolderOidc.registration_endpoint, responseType: "json", data: registrationRequestJwt, headers: {"content-type":"application/jwt"}});
+  let options = cert.inject({
+    method:"POST",
+    url: $.DataHolderOidc.registration_endpoint,
+    responseType: "json",
+    data: registrationRequestJwt,
+    headers: {"content-type":"application/jwt"},
+  },$.SoftwareProductConfig.ProductId);
+
   let responseRaw = await axios.request(options)
   let response:DataholderRegistrationResponse = responseRaw.data;
 
@@ -189,9 +194,9 @@ const DeleteRegistrationAtDataholder = async (cert:ClientCertificateInjector, $:
     method:"DELETE",
     url: $.DataHolderOidc.registration_endpoint+'/'+$.CurrentClientRegistration.clientId,
     headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
-  });
+  },$.SoftwareProductConfig.ProductId);
   try {
-    await axios.request(options)
+    await axios.request(options)  
   } catch (err) {
     throw `Expected 204 from DELETE registration endpoint but received ${err.response.status}`;
   }  
@@ -239,8 +244,8 @@ export const CurrentRegistrationAtDataholder = async (cert:ClientCertificateInje
 
   let response:AxiosResponse<DataholderRegistrationResponse> = await axios.get($.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration.clientId,cert.inject({
       responseType: "json",
-      headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
-  }))
+      headers: {Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`},
+  },$.BootstrapClientRegistration.softwareProductId))
   return response.data;
 }
 
@@ -257,12 +262,15 @@ export const UpdateRegistrationAtDataholder = async (cert:ClientCertificateInjec
   let registrationRequestJwt = JWT.sign(registrationRequest,$.DataRecipientJwks.get({alg:'PS256',use:'sig'}))
 
   let response = await axios.request(cert.inject({
-      method:"PUT",
-      url:$.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration.clientId,
-      data:registrationRequestJwt,
-      responseType: "json",
-      headers: {"content-type":"application/jwt", Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`}
-  }))
+    method:"PUT",
+    url:$.DataHolderOidc.registration_endpoint+'/'+$.BootstrapClientRegistration.clientId,
+    data:registrationRequestJwt,
+    responseType: "json",
+    headers: {
+      "content-type":"application/jwt",
+      Authorization: `Bearer ${$.DhRegAccessToken.accessToken}`
+    },
+  },$.SoftwareProductConfig.ProductId))
 
   return response.data;
 }

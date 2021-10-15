@@ -5,6 +5,7 @@ import { query, matchedData } from "express-validator";
 import _ from "lodash"
 import { isHttpCodeError, formatErrorPayload } from "../ErrorHandling";
 import { URL } from "url";
+import winston from "winston";
 
 interface PaginationOptions {
     baseUrl:string | ((req:express.Request) => string)
@@ -24,7 +25,8 @@ const handle = (req:express.Request,res:express.Response,next: NextFunction) => 
 @injectable()
 class PaginationMiddleware {
     constructor(
-        @inject("PaginationConfig") private configFn:() => Promise<{FrontEndUrl:string,FrontEndMtlsUrl:string}>
+        @inject("PaginationConfig") private configFn:() => Promise<{FrontEndUrl:string,FrontEndMtlsUrl:string}>,
+        @inject("Logger") private logger:winston.Logger,
     ) {}
 
     Paginate = (options:PaginationOptions) => {
@@ -148,6 +150,7 @@ class PaginationMiddleware {
             }
     
             if (!(<any>res).responseData) {
+                this.logger.error('No response data found while trying to wrap the data', res)
                 return res.status(404).send();
             }
 

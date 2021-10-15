@@ -25,7 +25,7 @@ export const spawnHttpsProxy = (config: { ProxyConfig: Dictionary<ProxySpec> }, 
       'Content-Type': 'text/plain'
     });
  
-    res.end('Something went wrong. And we are reporting a custom error message.');
+    res.end('An unexpected problem was encountered that can not be handled nicely. Sorry!');
   });
 
   const routeConfig = config.ProxyConfig[name];

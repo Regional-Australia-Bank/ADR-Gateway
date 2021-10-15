@@ -6,6 +6,7 @@ import _ from "lodash"
 export type IndexedSoftwareProductConfigs = {
   byKey: Types.Dictionary<Types.SoftwareProductConnectivityConfig>
   byId: Types.Dictionary<Types.SoftwareProductConnectivityConfig>
+  byIndex: Types.Dictionary<Types.SoftwareProductConnectivityConfig>
 }
 
 export const GetSoftwareProductConfigs = (async ({AdrConnectivityConfig}:{AdrConnectivityConfig: Types.AdrConnectivityConfig}):Promise<IndexedSoftwareProductConfigs> => {
@@ -20,24 +21,26 @@ export const GetSoftwareProductConfigs = (async ({AdrConnectivityConfig}:{AdrCon
 
   let byKey:Types.Dictionary<Types.SoftwareProductConnectivityConfig> = {}
   let byId:Types.Dictionary<Types.SoftwareProductConnectivityConfig> = {}
+  let byIndex:Types.Dictionary<Types.SoftwareProductConnectivityConfig> = {}
 
+  let index = 0;
   for (let [k,promise] of Object.entries(promises)) {
     let value = <Partial<Types.SoftwareProductConnectivityConfig>><any>(await promise).data;
+    byIndex[index] = <any>value;
     byKey[k] = <any>value;
     if (value.ProductId) {
       byId[value.ProductId] = <any>value;
     }
+    index++;
   }
 
-  return {byKey,byId};
+  return {byKey,byId,byIndex};
 });
 
-export const GetSoftwareProductConfig = async ($:{SoftwareProductConfigs: IndexedSoftwareProductConfigs, SoftwareProductKey?:string, SoftwareProductId?:string}):Promise<Types.SoftwareProductConnectivityConfig> => {
-  if (typeof $.SoftwareProductKey == "string") {
-    return $.SoftwareProductConfigs.byKey[$.SoftwareProductKey]
-  } else if (typeof $.SoftwareProductId == "string") {
+export const GetSoftwareProductConfig = async ($:{SoftwareProductConfigs: IndexedSoftwareProductConfigs, SoftwareProductId:string}):Promise<Types.SoftwareProductConnectivityConfig> => {
+  if (typeof $.SoftwareProductId == "string") {
     return $.SoftwareProductConfigs.byId[$.SoftwareProductId]
   } else {
-    throw 'Must supply a SoftwareProductId or SoftwareProductKey as a parameter'
+    throw 'Must supply a SoftwareProductId as a parameter'
   }
 };

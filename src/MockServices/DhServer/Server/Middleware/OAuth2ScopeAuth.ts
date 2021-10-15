@@ -12,11 +12,23 @@ import { HttpCodeError, ErrorPayload, isHttpCodeError, formatErrorPayload} from 
 import { ExtractBearerToken, SingleHeader } from "../../../../Common/Server/Validation";
 import { DhGatewayRequest } from "../Types";
 
+class BadDateError extends Error {
+    constructor() {
+        super()
+    }
+}
+
 function GetRequiredResourceRequestHeaders(req:IncomingMessage) {
+    const authDateValue = SingleHeader(req,'x-fapi-auth-date')
+
+    if (!(/^\w\w\w, \d\d \w\w\w \d\d\d\d \d\d:\d\d:\d\d GMT$/.test(authDateValue))) {
+        throw new BadDateError()   
+    }
+
     return {
         bearerToken: ExtractBearerToken(SingleHeader(req,'authorization')),
         xCdsSubject: undefined, // removed as per https://consumerdatastandardsaustralia.github.io/standards/includes/releasenotes/releasenotes.1.1.1.html#high-level-standards
-        xFapiAuthDate: moment(SingleHeader(req,'x-fapi-auth-date')).toDate(),
+        xFapiAuthDate: moment.utc(authDateValue,'ddd, DD MMM YYYY, HH:mm:ss [GMT]').toDate(),
     }
 }
 
@@ -105,6 +117,13 @@ class HokBoundTokenScopeVerificationMiddleware {
                     throw 'Invalid request type';
                 }
             } catch (err) {
+                if (err instanceof BadDateError) {
+                    res.status(400);
+                    res.json({
+                        error: "x-fapi-auth-date must be as per rfc7231 7.1.1.1"
+                    })
+                }
+
                 res.status(401);
                 this.logger.warn("Required auth params not supplied",err);
                 res.send();

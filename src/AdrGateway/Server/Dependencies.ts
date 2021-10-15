@@ -10,6 +10,8 @@ import { SelfHealingDataHolderMetadataProvider } from "../../Common/Services/Dat
 import { DefaultCache } from "../../Common/Connectivity/Cache/DefaultCache";
 import { configReplacer, axiosReplacer, errorReplacer, combineReplacers } from "../../Common/LogReplacers";
 import { AdrConnectivityConfig } from "../../Common/Config";
+import { EcosystemErrorFilter, GenerousEcosystemErrorFilter, SecretiveEcosystemErrorFilter } from "./Helpers/EcosystemErrorFilter";
+
 
 export const EntityDefaults = {
     type: "sqlite",
@@ -59,6 +61,12 @@ async function RegisterDependencies(configFn:() => Promise<AdrConnectivityConfig
         });
 
     container.register("Logger", { useValue: logger })
+
+    if (process.env.ADR_BACKEND_EXPOSE_ECOSYSTEM_ERRORS === "true") {
+        container.register("EcosystemErrorFilter", { useValue: GenerousEcosystemErrorFilter })
+    } else {
+        container.register("EcosystemErrorFilter", { useValue: SecretiveEcosystemErrorFilter })
+    }
 
     container.register("DataHolderMetadataProvider", { useClass: SelfHealingDataHolderMetadataProvider })
 

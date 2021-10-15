@@ -35,6 +35,18 @@
         {
             "type": "node",
             "request": "attach",
+            "name": "Attach MTLS Mock DH proxy PM2",
+            "port": 9292
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach MockRegister PM2",
+            "port": 9293
+        },
+        {
+            "type": "node",
+            "request": "attach",
             "name": "Attach to a process",
             "processId": "${command:PickProcess}"
         },

@@ -11,6 +11,7 @@ import { DefaultConnector } from "../../../Common/Connectivity/Connector.generat
 import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
 import { DataholderOidcResponse } from "../../../Common/Connectivity/Types";
+import { EcosystemErrorFilter } from "../Helpers/EcosystemErrorFilter";
 
 class UserInfoAccessError extends Error {
     constructor(public err:any, public res?:AxiosResponse<any>) {
@@ -23,6 +24,7 @@ class UserInfoProxyMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("EcosystemErrorFilter") private ecosystemErrorFilter: EcosystemErrorFilter,
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         private consentManager:ConsentRequestLogManager,
         private connector:DefaultConnector
@@ -85,7 +87,8 @@ class UserInfoProxyMiddleware {
                 });
             } catch (err) {
                 this.logger.error("UserInfoAccess error",err)
-                res.status(500).send();
+                const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err, "Error accessing user info");
+                return res.status(500).json(formattedError || "Error accessing user info");
             }
 
         };
@@ -118,7 +121,7 @@ class UserInfoProxyMiddleware {
             responseType:"json"
         }
 
-        this.clientCertInjector.inject(options);
+        this.clientCertInjector.inject(options,consent.softwareProductId);
 
         try {
             let dhRes = await axios.request(options);

@@ -20,7 +20,7 @@ export const GetUserInfo = async (clientCertInjector:ClientCertificateInjector, 
         responseType:"json"
     }
 
-    clientCertInjector.inject(options);
+    clientCertInjector.inject(options,$.ConsentCurrentAccessToken.softwareProductId);
     let response:Types.UserInfoResponse = (await axios.request(options)).data;
     return response
 }

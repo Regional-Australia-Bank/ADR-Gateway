@@ -15,6 +15,9 @@ import { axios } from "../../../Common/Axios/axios";
 import { URL } from "url";
 import urljoin from "url-join";
 import { DataHolderRegisterMetadata } from "../../../Common/Connectivity/Types";
+import moment from "moment";
+import { EcosystemErrorFilter } from "../Helpers/EcosystemErrorFilter";
+
 
 interface DataAccessRequestParams {
     user: {
@@ -55,6 +58,7 @@ class ConsumerDataAccessMiddleware {
 
     constructor(
         @inject("Logger") private logger: winston.Logger,
+        @inject("EcosystemErrorFilter") private ecosystemErrorFilter: EcosystemErrorFilter,
         @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
         @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
         private consentManager:ConsentRequestLogManager,
@@ -105,8 +109,10 @@ class ConsumerDataAccessMiddleware {
                 if (consent.HasCurrentRefreshToken()) {
                     try {
                         consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
-                    } catch {
-                        return res.status(500).json("Unable to get access token")
+                    } catch (err) {
+                        this.logger.error("ConsumerDataAccess error",err)
+                        const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err, "Error accessing consumer data: Unable to get access token");
+                        return res.status(500).json(formattedError || "Error accessing consumer data: Unable to get access token")
                     }
                 } else {
                     if (consent.revocationDate) {
@@ -133,7 +139,8 @@ class ConsumerDataAccessMiddleware {
                 });
             } catch (err) {
                 this.logger.error("ConsumerDataAccess error",err)
-                res.status(500).send();
+                const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err, "Error accessing consumer data");
+                return res.status(500).json(formattedError || "Error accessing consumer data");
             }
 
         };
@@ -170,7 +177,7 @@ class ConsumerDataAccessMiddleware {
             "content-type":"application/json",
             "accept":"application/json",
             "x-fapi-interaction-id":requestId,
-            "x-fapi-auth-date":params.user.lastAuthenticated,
+            "x-fapi-auth-date":moment(params.user.lastAuthenticated).utc().format('ddd, DD MMM YYYY HH:mm:ss [GMT]'),
         }
 
         if (params.user.present) {
@@ -180,7 +187,8 @@ class ConsumerDataAccessMiddleware {
 
 
         let options:AxiosRequestConfig = {
-            method: "GET",
+            method: <AxiosRequestConfig["method"]>req.method,
+            data: req.body,
             url: url.toString(),
             headers: headers,
             responseType:"json"
@@ -190,12 +198,12 @@ class ConsumerDataAccessMiddleware {
             requestStatus: "sending",
             consentId: consent.id,
             url: url.toString(),
-            method: "GET",
+            method: req.method,
             requestId,
             headers,
         })
 
-        this.clientCertInjector.inject(options);
+        this.clientCertInjector.inject(options,consent.softwareProductId);
 
         try {
             let dhRes = await axios.request(options);
@@ -227,7 +235,7 @@ class ConsumerDataAccessMiddleware {
                         oldUrl.searchParams.forEach((v,k) => {
                             newUrl.searchParams.append(k,v);
                         });
-                        newLinks[k] = newUrl.toString();
+                        newLinks[k] = decodeURIComponent(newUrl.toString());
                     }
                 }
 
