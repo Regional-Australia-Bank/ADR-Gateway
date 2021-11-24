@@ -101,7 +101,7 @@ class TraceRecorder {
                     respHeaders: axiosError.response.headers,
                 }
             } : {
-                payload: finalError ? finalError.payload : null,
+                payload: finalError ? (finalError.payload || finalError) : null,
                 parameters: finalError ? finalError.parameters : null
             }
         };
