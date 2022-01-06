@@ -22,15 +22,16 @@ export class ClientBearerJwtVerificationMiddleware {
     verifyClientId = async (
         acceptableClientId:string|undefined,
         authHeaderValue:string | undefined,
-        audienceBaseUri:string,
+        requestedUri:string,
+        recipientBaseUri:string,
         GetJwks: (assumedClientId:string) => {
             GetWithHealing: ($?: GetOpts<any>) => Promise<JWKS.KeyStore>
         }
     ) => {
 
-        this.logger.debug("ClientBearerJwtVerification: Auth header.", {acceptableClientId, authHeaderValue, audienceBaseUri})
+        this.logger.debug("ClientBearerJwtVerification: Auth header.", {acceptableClientId, authHeaderValue, audienceBaseUri: requestedUri})
 
-        return await this.jwtVerifier.verifyClientId(acceptableClientId, authHeaderValue, audienceBaseUri, GetJwks)
+        return await this.jwtVerifier.verifyClientId(acceptableClientId, authHeaderValue, requestedUri, recipientBaseUri, GetJwks)
 
     }
 
@@ -46,16 +47,16 @@ export class ClientBearerJwtVerificationMiddleware {
             try {
                 let config = await this.configFn()
 
-                let audienceBaseUri:string;
+                let requestedUri:string;
+                let applicationBase:string = config.SecurityProfile.JoseApplicationBaseUrl;
                 try {
-                    let applicationBase:string = config.SecurityProfile.JoseApplicationBaseUrl;
                     if (typeof applicationBase == 'undefined') throw new Error("JoseApplicationBaseUrl is not configured");
                     if (typeof req?.route?.path == 'undefined') throw new Error("Request cannot be parsed")
                     
                     if (config.SecurityProfile.AudienceRewriteRules && config.SecurityProfile.AudienceRewriteRules[req.path]) {
-                        audienceBaseUri = urljoin(applicationBase,config.SecurityProfile.AudienceRewriteRules[req.path]);
+                        requestedUri = urljoin(applicationBase,config.SecurityProfile.AudienceRewriteRules[req.path]);
                     } else {
-                        audienceBaseUri = urljoin(applicationBase,req.path);    
+                        requestedUri = urljoin(applicationBase,req.path);    
                     }
                 }
                 catch (err) {
@@ -64,7 +65,7 @@ export class ClientBearerJwtVerificationMiddleware {
             
     
                 try {
-                    let verifiedClientId = await this.verifyClientId(acceptableClientId,req.headers['authorization'],audienceBaseUri,GetJwks);
+                    let verifiedClientId = await this.verifyClientId(acceptableClientId,req.headers['authorization'],requestedUri,applicationBase,GetJwks);
                     (req as GatewayRequest).gatewayContext = (req as GatewayRequest).gatewayContext || {};
                     (req as GatewayRequest).gatewayContext.verifiedBearerJwtClientId = verifiedClientId;
     

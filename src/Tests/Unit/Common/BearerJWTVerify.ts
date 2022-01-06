@@ -58,17 +58,25 @@ export const Tests = (() => {
   }
 
   verifier = new BearerJwtVerifier(<any>jtiLogManager)
+  const recipientBaseUri = "http://localhost:3000/";
 
-
-  async function BearerJwtVerify(audience: string, assumedClientId:string|undefined, authHeaderValue:string|undefined) {
-    await verifier.verifyClientId(assumedClientId,authHeaderValue,audience,(clientId:string) => {
+  async function BearerJwtVerify(requestedUri: string, recipientBaseUri, assumedClientId:string|undefined, authHeaderValue:string|undefined) {
+    await verifier.verifyClientId(assumedClientId,authHeaderValue,requestedUri,recipientBaseUri,(clientId:string) => {
       return <any>pw.DataHolderJwks(<any>clientId)
     })
   }
 
-  const ConformingData = () => {
+  const ConformingDataWithResourcePath = () => {
+    return ConformingData({"aud": "http://localhost:3000/revoke"})
+  }
+
+  const ConformingDataWithBaseURI = () => {
+    return ConformingData({"aud": recipientBaseUri})
+  }
+
+  const ConformingData = (options) => {
     return {
-      payload: (clientId:string = "cdr-register",audience:string = "http://localhost:3000/revoke"):{iss:string,aud:string,exp:number,sub:string,iat?:number,nbf?:number,jti:string} => {
+      payload: (clientId:string = "cdr-register",audience:string = options.aud):{iss:string,aud:string,exp:number,sub:string,iat?:number,nbf?:number,jti:string} => {
         return {
             aud: audience,
             iss: clientId,
@@ -95,39 +103,49 @@ export const Tests = (() => {
       // container.reset();
     })
 
-    it('Works given conforming request', () => {
-      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingData().payload(), ConformingData().jwks());
+    it('Works given conforming request with aud = resource path', () => { //Standard
+      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingDataWithResourcePath().payload(), ConformingDataWithResourcePath().jwks());
+      const requestedUri = "http://localhost:3000/revoke";
 
-      return assert.isFulfilled(BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue))
+      return assert.isFulfilled(BearerJwtVerify(requestedUri, recipientBaseUri, "cdr-register", authHeaderValue))
+    });
+
+    it('Works given conforming request with aud = base URI', () => { //Must accept until July 31, 2022
+      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingDataWithBaseURI().payload(), ConformingDataWithBaseURI().jwks());
+      const requestedUri = "http://localhost:3000/revoke";
+
+      return assert.isFulfilled(BearerJwtVerify(requestedUri, recipientBaseUri, "cdr-register", authHeaderValue))
     });
 
     it('Denies audience not matching request', () => {
+      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingDataWithResourcePath().payload(), ConformingDataWithResourcePath().jwks());
+      const requestedUri = "http://localhost:3000/some-wierd-resource";
 
-      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingData().payload(), ConformingData().jwks());
-
-      return BearerJwtVerify("http://localhost:3000/some-other-audience", "cdr-register", authHeaderValue).should.be.rejectedWith('unexpected "aud" claim value');
+      return BearerJwtVerify(requestedUri, recipientBaseUri, "cdr-register", authHeaderValue).should.be.rejectedWith('unexpected "aud" claim value');
 
     });
 
     it('Requires iss AND sub are equal to the supplied clientId (and therefore sub iss == sub)', () => {
 
-      const payloadWrongIss = ConformingData().payload();
+      const payloadWrongIss = ConformingDataWithResourcePath().payload();
       payloadWrongIss.iss = "wrong-iss"
 
-      const payloadWrongSub = ConformingData().payload();
+      const payloadWrongSub = ConformingDataWithResourcePath().payload();
       payloadWrongSub.sub = "client1"
 
       return Promise.all(
         [
           BearerJwtVerify(
             <string>payloadWrongIss.aud,
+            recipientBaseUri,
             "cdr-register",
-            "Bearer " + GetSignedJWT(payloadWrongIss, ConformingData().jwks())
+            "Bearer " + GetSignedJWT(payloadWrongIss, ConformingDataWithResourcePath().jwks())
           ).should.be.rejectedWith('unexpected "iss" claim value'),
           BearerJwtVerify(
             <string>payloadWrongSub.aud,
+            recipientBaseUri,
             "cdr-register",
-            "Bearer " + GetSignedJWT(payloadWrongSub, ConformingData().jwks())
+            "Bearer " + GetSignedJWT(payloadWrongSub, ConformingDataWithResourcePath().jwks())
           ).should.be.rejectedWith('clientId from sub claim does not match the acceptable')
         ]
       )
@@ -135,11 +153,11 @@ export const Tests = (() => {
     });
 
     it('Does not allow the same jti to be used twice', async () => {
-      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingData().payload(), ConformingData().jwks());
+      const authHeaderValue = "Bearer " + GetSignedJWT(ConformingDataWithResourcePath().payload(), ConformingDataWithResourcePath().jwks());
 
-      let firstUsePromise = BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue);
+      let firstUsePromise = BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue);
       await firstUsePromise;
-      let secondUsePromise = BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue);
+      let secondUsePromise = BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue);
 
       return Promise.all([
         firstUsePromise.should.be.fulfilled,
@@ -149,37 +167,37 @@ export const Tests = (() => {
     });
 
     it('Does not allow an exp in the past', () => {
-      let payload = ConformingData().payload();
+      let payload = ConformingDataWithResourcePath().payload();
       payload.exp = moment.utc().unix() - 30; // 30 seconds ago
 
-      const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
+      const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks());
 
-      let promise = BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue);
+      let promise = BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue);
 
       return promise.should.be.rejectedWith("\"exp\" claim timestamp check failed");
     });
 
     it('Does not allow an iat in the future', () => {
-      let payload = ConformingData().payload();
+      let payload = ConformingDataWithResourcePath().payload();
 
       delete payload.exp; // modified to match the behaviour of jose/lib/jwt/verify.js, which only checks iat if exp is not supplied. This is reasonable and matches the expectation of https://tools.ietf.org/html/rfc7519#section-4.1.6
 
       payload.iat = moment.utc().unix() + 300; // 300 seconds in the future
 
-      const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks(), { iat: false });
+      const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks(), { iat: false });
 
-      let promise = BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue);
+      let promise = BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue);
 
       return promise.should.be.rejectedWith("\"iat\" claim timestamp check failed (it should be in the past)");
     });
 
     it('Does not allow an nbf in the future', () => {
-      let payload = ConformingData().payload();
+      let payload = ConformingDataWithResourcePath().payload();
       payload.nbf = moment.utc().unix() + 30; // 30 seconds ago
 
-      const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks(), { iat: false });
+      const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks(), { iat: false });
 
-      let promise = BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue);
+      let promise = BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue);
 
       return promise.should.be.rejectedWith("\"nbf\" claim timestamp check failed");
     });
@@ -187,47 +205,47 @@ export const Tests = (() => {
     describe('MandatoryValues', () => {
 
       it('Rejects if iss is not supplied', () => {
-        let payload = ConformingData().payload();
+        let payload = ConformingDataWithResourcePath().payload();
         delete payload.iss;
 
-        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
+        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks());
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("\"iss\" claim is missing")
+        return (BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue)).should.be.rejectedWith("\"iss\" claim is missing")
       });
 
       it('Rejects if sub is not supplied', () => {
-        let payload = ConformingData().payload();
+        let payload = ConformingDataWithResourcePath().payload();
         delete payload.sub;
 
-        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
+        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks());
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("JWT sub claim is not a string")
+        return (BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue)).should.be.rejectedWith("JWT sub claim is not a string")
       });
       it('Rejects if aud is not supplied', () => {
-        let payload = ConformingData().payload();
+        let payload = ConformingDataWithResourcePath().payload();
         delete payload.aud;
 
-        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
+        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks());
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("\"aud\" claim is missing")
+        return (BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue)).should.be.rejectedWith("\"aud\" claim is missing")
 
       });
       it('Rejects if exp is not supplied', () => {
-        let payload = ConformingData().payload();
+        let payload = ConformingDataWithResourcePath().payload();
         delete payload.exp;
 
-        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
+        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks());
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("exp mandatory but not supplied")
+        return (BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue)).should.be.rejectedWith("exp mandatory but not supplied")
 
       });
       it('Rejects if jti is not supplied', () => {
-        let payload = ConformingData().payload();
+        let payload = ConformingDataWithResourcePath().payload();
         delete payload.jti;
 
-        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingData().jwks());
+        const authHeaderValue = "Bearer " + GetSignedJWT(payload, ConformingDataWithResourcePath().jwks());
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "cdr-register", authHeaderValue)).should.be.rejectedWith("jti mandatory but not supplied")
+        return (BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "cdr-register", authHeaderValue)).should.be.rejectedWith("jti mandatory but not supplied")
 
       })
     });
@@ -236,9 +254,9 @@ export const Tests = (() => {
     describe('BearerJwtVerify.SigningAlgorithm', () => {
       it('Only allows PS256', () => {
         // P-384 is not a whitelisted algorithm
-        const ecHeaderValue = "Bearer " + JWT.sign(ConformingData().payload("client3"), jwks["client3"].get({alg:"RS256"}));
+        const ecHeaderValue = "Bearer " + JWT.sign(ConformingDataWithResourcePath().payload("client3"), jwks["client3"].get({alg:"RS256"}));
 
-        return (BearerJwtVerify("http://localhost:3000/revoke", "client3", ecHeaderValue)).should.be.rejectedWith('alg not whitelisted');
+        return (BearerJwtVerify("http://localhost:3000/revoke", recipientBaseUri, "client3", ecHeaderValue)).should.be.rejectedWith('alg not whitelisted');
 
       });
 
@@ -251,10 +269,11 @@ export const Tests = (() => {
         let client1ResultFulfilled = assert.isFulfilled(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client1",
             "Bearer " + GetSignedJWT(
-              ConformingData().payload("client1"),
-              ConformingData().jwks("client1")
+              ConformingDataWithResourcePath().payload("client1"),
+              ConformingDataWithResourcePath().jwks("client1")
             )
           ))
 
@@ -263,10 +282,11 @@ export const Tests = (() => {
         let client2ResultFulfilled = assert.isFulfilled(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client2",
             "Bearer " + GetSignedJWT(
-              ConformingData().payload("client2"),
-              ConformingData().jwks("client2")
+              ConformingDataWithResourcePath().payload("client2"),
+              ConformingDataWithResourcePath().jwks("client2")
             )
           ))
 
@@ -274,10 +294,11 @@ export const Tests = (() => {
         let sneakyResultRejected = assert.isRejected(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client1",
             "Bearer " + GetSignedJWT(
-              ConformingData().payload("client2"),
-              ConformingData().jwks("client2")
+              ConformingDataWithResourcePath().payload("client2"),
+              ConformingDataWithResourcePath().jwks("client2")
             )
           ), "clientId from sub claim does not match the acceptable")
 
@@ -293,10 +314,11 @@ export const Tests = (() => {
         let client1ResultFulfilled = assert.isFulfilled(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client1",
             "Bearer " + GetSignedJWT(
-              ConformingData().payload("client1"),
-              ConformingData().jwks("client1")
+              ConformingDataWithResourcePath().payload("client1"),
+              ConformingDataWithResourcePath().jwks("client1")
             )
           ))
 
@@ -305,20 +327,22 @@ export const Tests = (() => {
         let client2ResultFulfilled = assert.isFulfilled(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client2",
             "Bearer " + GetSignedJWT(
-              ConformingData().payload("client2"),
-              ConformingData().jwks("client2")
+              ConformingDataWithResourcePath().payload("client2"),
+              ConformingDataWithResourcePath().jwks("client2")
             )
           ))
         // Check that sneaky request from Client 1 (with JWT; iss,sub=Client 1, signed with Client 2 private key) is rejected
         let sneakyResultRejected = assert.isRejected(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client1",
             "Bearer " + GetSignedJWT(
-              ConformingData().payload("client1"),
-              ConformingData().jwks("client2")
+              ConformingDataWithResourcePath().payload("client1"),
+              ConformingDataWithResourcePath().jwks("client2")
             )
           ), "no matching key found in the KeyStore")
 
@@ -329,8 +353,8 @@ export const Tests = (() => {
       it('Rejects a none algorithm signature', () => {
 
         let originalToken = GetSignedJWT(
-          ConformingData().payload("client1"),
-          ConformingData().jwks("client1")
+          ConformingDataWithResourcePath().payload("client1"),
+          ConformingDataWithResourcePath().jwks("client1")
         )
 
         let parts = originalToken.split(".");
@@ -346,6 +370,7 @@ export const Tests = (() => {
         return assert.isRejected(
           BearerJwtVerify(
             "http://localhost:3000/revoke",
+            recipientBaseUri,
             "client1",
             "Bearer " + tamperedToken
           ), "no matching key found in the KeyStore")

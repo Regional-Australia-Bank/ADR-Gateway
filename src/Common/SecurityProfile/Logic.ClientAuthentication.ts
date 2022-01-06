@@ -1,7 +1,8 @@
 import { JWKS, JWT, JWS } from "jose";
 import { JtiLogManager } from "../Entities/JtiLog";
-import {injectable} from "tsyringe";
+import { injectable} from "tsyringe";
 import { GetOpts } from "../../Common/Connectivity/Types";
+import { JoseBindingConfig } from "../Server/Config";
 
 interface ClientJWTPayload {
     iss:string;
@@ -17,19 +18,19 @@ interface ClientJWTPayload {
 class BearerJwtVerifier {
 
     constructor(
-        private jtiLogManager:JtiLogManager,
+        private jtiLogManager:JtiLogManager
     ) {}
 
     // TODO acceptableClientId can be removed
     verifyClientId = async (
         acceptableClientId: string|undefined,
         authHeaderValue:string|undefined,
-        audienceBaseUri:string,
+        requestedUri:string,
+        recipientBaseUri:string,
         GetJwks: (assumedClientId:string) => {
             GetWithHealing: ($?: GetOpts<any>) => Promise<JWKS.KeyStore>
         }
     ):Promise<string> => {
-    
         if (typeof authHeaderValue == 'undefined') throw new Error("Authorization header is not present");
     
         if (!authHeaderValue.startsWith("Bearer ")) throw new Error("Bearer token expected but not supplied");
@@ -58,7 +59,7 @@ class BearerJwtVerifier {
 
         verified = JWT.verify(bearerTokenJwt,jwks,{
             complete: true,
-            audience: audienceBaseUri,
+            audience: [requestedUri, recipientBaseUri],
             issuer: assumedClientId,
             subject: assumedClientId,
             algorithms: ["PS256","ES256"]
