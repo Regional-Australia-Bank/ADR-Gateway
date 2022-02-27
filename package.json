@@ -33,7 +33,7 @@
     "typeorm": "^0.2.19",
     "typescript": "3.7.x",
     "url-join": "^4.0.1",
-    "url-parse": "^1.5.2",
+    "url-parse": "^1.5.8",
     "uuid": "^3.3.3",
     "winston": "^3.2.1"
   },
