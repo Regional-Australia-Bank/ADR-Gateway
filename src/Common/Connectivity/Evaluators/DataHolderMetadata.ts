@@ -23,7 +23,7 @@ const GetDataHoldersResponse = async (accessToken:string, nextUrl:string, cert:C
 
 
 export const GetDataholders = async (cert: ClientCertificateInjector, $:{AdrConnectivityConfig:AdrConnectivityConfig, RegisterAccessCredentialsDHB:AccessToken}): Promise<DataHolderRegisterMetadata[]> => {
-  let nextUrl = $.AdrConnectivityConfig.RegisterBaseUris.SecureResource + '/v1/banking/data-holders/brands?page-size=20'; // TODO move the page limitation to an integration test and config option
+  let nextUrl = $.AdrConnectivityConfig.RegisterBaseUris.SecureResource + '/v1/banking/data-holders/brands?page-size=100'; // TODO move the page limitation to an integration test and config option
 
   let dataholders = await GetDataHoldersResponse($.RegisterAccessCredentialsDHB.accessToken,nextUrl,cert);
 

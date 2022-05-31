@@ -14,6 +14,7 @@ const DecryptIdToken = (nestedToken:string, decryptionKey: Types.JWKS.KeyStore) 
   try {
     return JWE.decrypt(nestedToken,decryptionKey).toString();
   } catch (err) {
+    console.error('Encrypted ID token could not be decrypted', nestedToken);
     throw 'Decryption of the ID Token failed'
   }    
 }
@@ -28,6 +29,7 @@ export const ValidateIdToken = (IdToken: string,$:{
   decryptedIdToken = DecryptIdToken(IdToken,$.DataRecipientJwks); 
 
   // TODO log decrypted id token claims for regfresh-token retrieval
+  console.info('Decrypted ID Token', decryptedIdToken);
 
   let verifiedIdToken = <Types.IdTokenValidationParts>JWT.verify(decryptedIdToken,$.DataHolderJwks,{
       issuer: $.DataHolderOidc.issuer, // OIDC 3.1.3.7. Point 2. must match known data holder issuer
