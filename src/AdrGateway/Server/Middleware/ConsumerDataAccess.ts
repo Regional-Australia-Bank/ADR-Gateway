@@ -187,11 +187,11 @@ class ConsumerDataAccessMiddleware {
             headers["x-cds-User-Agent"] = params.user.userAgent
         }
         // add support multiple versions
-        if (typeof req.headers["x-v"] === "string") {
-            headers["x-v"] = req.headers["x-v"];
+        if (typeof req.header("x-v") === "string") {
+            headers["x-v"] = req.header("x-v");
         }
-        if (typeof req.headers["x-min-v"] === "string") {
-            headers["x-min-v"] = req.headers["x-min-v"];
+        if (typeof req.header("x-min-v") === "string") {
+            headers["x-min-v"] = req.header("x-min-v");
         }
 
         let options: AxiosRequestConfig = {
@@ -208,7 +208,7 @@ class ConsumerDataAccessMiddleware {
             url: url.toString(),
             method: <AxiosRequestConfig["method"]>req.method,
             requestId,
-            headers,
+            headers
         })
 
         options = this.clientCertInjector.inject({

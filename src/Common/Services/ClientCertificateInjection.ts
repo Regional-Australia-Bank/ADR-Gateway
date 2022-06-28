@@ -1,4 +1,3 @@
-import request = require("request");
 import { singleton, injectable } from "tsyringe";
 import fs from "fs"
 import { AxiosRequestConfig } from "axios";
