@@ -72,6 +72,16 @@ export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
         }
     });
     let url = urljoin($.DataHolderBrandMetadata.endpointDetail.publicBaseUri,'cds-au/v1/discovery/status')
+
+    // add another if statement if a new flag to skip this call
+    // return status of "Ok" or Skop 
+    // use similar logic to this
+    // if (skip flag is true from PRO user) {
+    //     return "OK"
+    // }
+
+    // or front end to call the discorvery endpoint upfront to see if the endpoint is up or down
+    // Check the bubble up error if one of them is data holder status (only PRO version)
     
     try {
         let response = await axios.get(url,options)

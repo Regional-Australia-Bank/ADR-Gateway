@@ -140,7 +140,7 @@ class AdrGateway {
 
         app.options( "/cdr/consents/:consentId",
             cors({
-                methods:['GET','PATCH','POST']
+                methods:['GET','PATCH','POST', 'DELETE']
             })
         );
 
