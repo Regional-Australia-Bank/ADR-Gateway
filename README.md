@@ -10,9 +10,17 @@ Dr G is being used within the Australian CDR ecosystem today and includes a set 
 
 ## Docker (recommended)
 
-```
-npm run build:docker
-npm run start:docker
+```shell
+$ npm run build:docker
+
+# if starting afresh - no containers
+$ npm run up:docker
+
+# if existing containers are stopped
+$ npm run start:docker
+
+# stop containers
+$ npm run stop:docker
 ```
 
 ## PM2
@@ -55,8 +63,8 @@ A collection of mock/test components are also provided
 
 Note that it is not needed to start a server before testing (tests create their own execution context).
 
-```
-npm run test
+```shell
+$ npm run test
 ```
 
 # Working in VS Code
