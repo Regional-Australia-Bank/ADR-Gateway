@@ -2,7 +2,7 @@ import * as Types from "../Types"
 import { ClientCertificateInjector } from "../../Services/ClientCertificateInjection";
 import { AxiosRequestConfig } from "axios";
 import qs from "qs";
-import { CreateAssertion } from "../../Connectivity/Assertions";
+import { CreateAssertion, CreateCDRArrangementJWTAssertion } from "../../Connectivity/Assertions";
 import moment from "moment";
 import { axios } from "../../Axios/axios";
 import { ConsentRequestLogManager } from "../../Entities/ConsentRequestLog";
@@ -30,13 +30,13 @@ export const PropagateRevokedConsent = async (logger: winston.Logger, cert: Clie
       url,
       responseType: "json",
       data: qs.stringify({
-        "cdr_arrangement_id": $.Consent.arrangementId,
+        // "cdr_arrangement_id": $.Consent.arrangementId,
+        "cdr_arrangement_jwt": CreateCDRArrangementJWTAssertion($.Consent.arrangementId, $.DataRecipientJwks),
         "client_id": $.CheckAndUpdateClientRegistration.clientId,
         "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
         "client_assertion": CreateAssertion($.CheckAndUpdateClientRegistration.clientId, url, $.DataRecipientJwks),
       })
     }
-
     cert.inject(options,$.Consent.softwareProductId);
     let response = await axios.request(options);
 

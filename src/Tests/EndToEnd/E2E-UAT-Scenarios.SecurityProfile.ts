@@ -49,7 +49,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
     const CreateAssertion = async (...args:any[]) => (await GenerateTestData(env)).CreateAssertion.apply(undefined,<any>args)
     const CreateDhBearerAuthJwt = async (...args:any[]) => (await GenerateTestData(env)).CreateDhBearerAuthJwt.apply(undefined,<any>args)
     const CreateAssertionWithoutKey = async (...args:any[]) => (await GenerateTestData(env)).CreateAssertionWithoutKey.apply(undefined,<any>args)
-
+    const CreateCDRArrangementJWTAssertion = async (...args:any[]) => (await GenerateTestData(env)).CreateDhCdrArrangementIdJwt.apply(undefined,<any>args)
 
 
     describe('Security Profile', async () => {
@@ -307,7 +307,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     expect(introspection1Result.body.active).to.be.true
 
                     let revocationResult:HttpLogEntry = (await ctx.GetResult(SetValue,"Revocation")).value
-                    expect(revocationResult.config.data).to.match(/cdr_arrangement_id=/);
+                    expect(revocationResult.config.data).to.match(/cdr_arrangement_jwt=/);  // change from cdr_arrangment_id to cdr_arrangement_jwt
                     expect(revocationResult.response.status).to.equal(204);
 
                     let introspection2Result = await ctx.GetResult(DoRequest,"Introspection2")
@@ -690,7 +690,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                 },600)
 
-            Scenario($ => it.apply(this,$('Revocation (cdr_arrangement_id)')), undefined, 'Data recipient honours valid revocation request')
+            Scenario($ => it.apply(this,$('wip Revocation (cdr_arrangement_id)')), undefined, 'Data recipient honours valid revocation request')
                 .Given('New Authorization')
                 .Precondition("DH private JWKS available", ctx => {
                     if (!ctx.environment.Config.SystemUnderTest.DhRevokePrivateJwks) {
@@ -736,12 +736,14 @@ export const Tests = ((env:E2ETestEnvironment) => {
 
                     const arrangementId = (await ctx.GetResult(NewGatewayConsent,"Consent2")).consent!.arrangementId
                     let url = urljoin(`https://localhost:${ctx.environment.TestServices.httpsProxy.adrServer.port}`,"arrangements/revoke");
-
+                    
+                    // TODO: need to change cdr_arrangement_id to cdr_arrangement_jwt
                     let options = DoRequest.Options({
                         method: "POST",
                         url,
                         data: qs.stringify({
-                            cdr_arrangement_id: arrangementId
+                            cdr_arrangement_jwt: await CreateCDRArrangementJWTAssertion(arrangementId)
+                            // cdr_arrangement_id: arrangementId
                         }),
                         headers: {
                             "Authorization": "Bearer "+await CreateDhBearerAuthJwt(url)
@@ -782,7 +784,8 @@ export const Tests = ((env:E2ETestEnvironment) => {
                     let options = DoRequest.Options({
                         method: "POST",
                         data: qs.stringify({
-                            cdr_arrangement_id: arrangementId
+                            cdr_arrangement_jwt: await CreateCDRArrangementJWTAssertion(arrangementId)
+                            // cdr_arrangement_id: arrangementId
                         }),
                         url,
                         headers: {
