@@ -30,10 +30,10 @@
     "seedrandom": "^3.0.5",
     "tsyringe": "^3.4.0",
     "tunnel": "^0.0.6",
-    "typeorm": "^0.2.19",
+    "typeorm": "0.2.25",
     "typescript": "3.7.x",
     "url-join": "^4.0.1",
-    "url-parse": "^1.5.2",
+    "url-parse": "1.5.2",
     "uuid": "^3.3.3",
     "winston": "^3.2.1"
   },
@@ -52,7 +52,8 @@
     "build:docker": "npm run copy-proj && docker build --build-arg HTTP_PROXY --build-arg HTTPS_PROXY examples/deployment/docker -t adr-gateway",
     "watch-templates": "node node_modules/chokidar-cli/index.js src/**/*template.hbs src/**/Dependencies.yml src/**/Dependencies.generator.js -c \"npm run build-templates\"",
     "build-templates": "node ./src/Common/Connectivity/Dependencies.generator.js",
-    "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha \"dist/Tests/**/*spec.js\"",
+    "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=1 LOG_SILENT=1 mocha \"dist/Tests/**/*spec.js\" ",
+    "test-wip": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=1 LOG_SILENT=1 mocha --grep wip \"dist/Tests/**/*spec.js\" ",
     "test-live": "cross-env TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha --grep \"Live environments\" \"dist/Tests/**/*spec.js\"",
     "test-coverage": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 nyc --reporter text --reporter html --reporter cobertura npm run test",
     "copy-proj": "npx rimraf examples/deployment/docker/.work && npx cpx \"src/**\" \"examples/deployment/docker/.work/src\" && npx cpx \"{package,package-lock,tsconfig}.json\" \"examples/deployment/docker/.work\""
@@ -94,7 +95,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
     "source-map-support": "^0.5.19",
-    "sqlite3": "^5.0.0",
+    "sqlite3": "5.0.0",
     "ts-node": "^8.10.2",
     "util.promisify": "^1.0.1",
     "validatorjs": "^3.18.1"

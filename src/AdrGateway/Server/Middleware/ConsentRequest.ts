@@ -72,11 +72,14 @@ class ConsentRequestMiddleware {
                 });
             }
 
+            // if DataHolderStatus ignore flag is on, this will ignore the dh holder status
+            let ignoreDHStatus = false
+
             try {
                 let redirect_uri = await this.RequestConsent({
                     ...m,
                     softwareProductId
-                });
+                }, ignoreDHStatus);
                 return res.json(redirect_uri)          
             } catch (e) {
                 if (e instanceof NoneFoundError) {
@@ -108,9 +111,9 @@ class ConsentRequestMiddleware {
             ])
     }
 
-    RequestConsent = async (p: ConsentRequestParams) =>{
+    RequestConsent = async (p: ConsentRequestParams, ignoreDHStatus : boolean) =>{
         this.logger.info(`Request for new consent at data holder: ${p.dataholderBrandId} for software product: ${p.softwareProductId} (${p.productKey})`);
-        let requestor = this.connector.GetAuthorizationRequest(p);
+        let requestor = this.connector.GetAuthorizationRequest(p, ignoreDHStatus);
         return (await requestor.Evaluate())
 
     }

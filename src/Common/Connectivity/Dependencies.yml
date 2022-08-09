@@ -121,6 +121,7 @@ AssertDataHolderActiveAtRegister:
 DataHolderStatus:
   parameters:
     DataHolderBrandId: string
+    IgnoreDHStatus: boolean
   output: Types.DataHolderStatus
   dependencies:
     - AdrConnectivityConfig
@@ -282,6 +283,7 @@ CheckAndUpdateClientRegistration:
 GetAuthorizationRequest:
   parameters:
     ConsentRequestParams: Types.ConsentRequestParams
+    IgnoreDHStatus: boolean
   project:
     SoftwareProductId: $ => $.ConsentRequestParams.softwareProductId
     DataHolderBrandId: $ => $.ConsentRequestParams.dataholderBrandId

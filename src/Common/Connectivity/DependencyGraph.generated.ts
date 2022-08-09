@@ -12,6 +12,7 @@ import * as Serial from "./Cache/Serializers";
 
 const Identifiers = {
   string: s => s,
+  boolean: s => s,
   Types: {
     ConsentRequestLog: (x:Types.ConsentRequestLog) => x.id.toString(),
     ConsentRequestParams: (x:Types.ConsentRequestParams) => { throw 'Do not cache consent request'},
@@ -247,11 +248,12 @@ export class DependencyGraph {
       },
     })
 
-    const DataHolderStatus = new Dependency<{DataHolderBrandId: string}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}, Types.DataHolderStatus>({
+    const DataHolderStatus = new Dependency<{DataHolderBrandId: string, IgnoreDHStatus: boolean}, {AdrConnectivityConfig: Types.AdrConnectivityConfig, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}, Types.DataHolderStatus>({
       name: "DataHolderStatus",
       evaluator: util.DataHolderStatus.bind(undefined,factory.cert),
       parameters: {
-        DataHolderBrandId:Identifiers.string
+        DataHolderBrandId:Identifiers.string,
+        IgnoreDHStatus:Identifiers.boolean
       },
       dependencies: [
         AdrConnectivityConfig,
@@ -503,7 +505,7 @@ export class DependencyGraph {
       },
     })
 
-    const GetAuthorizationRequest = new Dependency<{ConsentRequestParams: Types.ConsentRequestParams}, {DataHolderOidc: Types.DataholderOidcResponse, DataHolderUpAndReady: void, CheckAndUpdateClientRegistration: Types.DataHolderRegistration, AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}, {redirectUrl: string, consentId: number, softwareProductId: string}>({
+    const GetAuthorizationRequest = new Dependency<{ConsentRequestParams: Types.ConsentRequestParams, IgnoreDHStatus: boolean}, {DataHolderOidc: Types.DataholderOidcResponse, DataHolderUpAndReady: void, CheckAndUpdateClientRegistration: Types.DataHolderRegistration, AdrConnectivityConfig: Types.AdrConnectivityConfig, SoftwareProductConfig: Types.SoftwareProductConnectivityConfig, DataRecipientJwks: Types.JWKS.KeyStore, DataHolderBrandMetadata: Types.DataHolderRegisterMetadata}, {redirectUrl: string, consentId: number, softwareProductId: string}>({
       name: "GetAuthorizationRequest",
       evaluator: util.GetAuthorizationRequest.bind(undefined,factory.cert,factory.consentManager),
       preassertions: [
@@ -512,7 +514,8 @@ export class DependencyGraph {
         {do: DataHolderUpAndReady, disableCache: true}
       ],
       parameters: {
-        ConsentRequestParams:Identifiers.Types.ConsentRequestParams
+        ConsentRequestParams:Identifiers.Types.ConsentRequestParams,
+        IgnoreDHStatus:Identifiers.boolean
       },
       project: {
         SoftwareProductId:$ => $.ConsentRequestParams.softwareProductId,

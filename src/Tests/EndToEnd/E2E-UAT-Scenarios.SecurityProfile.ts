@@ -174,7 +174,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
         })
 
         describe('Arrangement management', async () => {    
-            Scenario($ => it.apply(this,$('Update arrangement')), undefined, 'The cdr_arrangement_id provided in the request object for the first consent must be played back at the token endpoint for the following consent')
+            Scenario($ => it.apply(this,$('wip Update arrangement')), undefined, 'The cdr_arrangement_id provided in the request object for the first consent must be played back at the token endpoint for the following consent')
                 .Given('Cold start')
                 // TODO change to NewGatewayConsent
                 .PreTask(NewGatewayConsent,async (ctx) => {
@@ -186,8 +186,7 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         userId: "arrangement-tester",
 
                         dataholderBrandId: (await TestData()).dataHolder.id
-                    }            
-                    
+                    }     
                     return params;
                 },"firstConsent")
                 .PreTask(SetValue,async ctx => {
@@ -204,7 +203,6 @@ export const Tests = ((env:E2ETestEnvironment) => {
                         arrangementId: await ctx.GetValue("original_cdr_arrangement_id"),
                         dataholderBrandId: (await TestData()).dataHolder.id
                     }            
-                    
                     return params;
                 },"secondConsent")
                 .Then(async ctx => {

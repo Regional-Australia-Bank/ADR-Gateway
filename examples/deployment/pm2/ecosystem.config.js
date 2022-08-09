@@ -31,12 +31,12 @@ const env = {
   // ADR_JOSE_AUDIENCE_MAP: "{'/revoke':'/revoke'}"
 
   /** Common Connectivity options */
-  ADR_JWKS: 'http://localhost:8402/private.jwks'
+  ADR_JWKS: 'http://localhost:8402/private.jwks',
   // ADR_REGISTER_OIDC_URI: 'https://localhost:9301/oidc',
   // ADR_REGISTER_RESOURCE_URI: 'https://localhost:9301/',
   // ADR_REGISTER_SECURE_RESOURCE_URI: 'https://localhost:9301/',
   // ADR_SOFTWARE_PRODUCT_CONFIG_URIS: '{"sandbox": "http://localhost:8401/software.product.config"}'
-  // ADR_SOFTWARE_PRODUCT_CONFIG_URIS: '{"mycdrdata":"http://localhost:8701/software.product.config"}'
+  ADR_SOFTWARE_PRODUCT_CONFIG_URIS: '{"mycdrdata":"http://localhost:8701/software.product.config"}'
   // DATAHOLDER_META_EXPIRY_SECONDS: "3600", // TODO place this in the schema in Config.ts
 
   /** Mock Register options */

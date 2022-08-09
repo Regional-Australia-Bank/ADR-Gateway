@@ -9,6 +9,7 @@ import { axios } from "../../../Common/Axios/axios";
 import qs from "qs"
 import { ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
 import { CreateAssertion } from "../../../Common/Connectivity/Assertions";
+import moment from 'moment'
 
 interface AuthSignatureRequest {
   adrSigningJwk: JWK.Key,
@@ -120,21 +121,17 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
 
   let payload = _.merge(queryParams, claimsPart);
 
-  const signingOptions = {
+  // change to let to allow adding of Not before
+  let signingOptions : {algorithm : string, audience : string, expiresIn: string, header: object, issuer: string, notBefore? : string } = {
     algorithm: 'PS256',
     audience: req.issuer,
     expiresIn: '1 hour',
     header: {
       typ: 'JWT'
     },
-    issuer: req.clientId
+    issuer: req.clientId,
+    notBefore : '0s' // NBF bug 2919 //
   }
-
-  const signed = JWT.sign(
-    payload,
-    req.adrSigningJwk,
-    signingOptions
-  )
 
   let usePar: boolean = false;
   if ($.DataHolderOidc.pushed_authorization_request_endpoint) {
@@ -142,6 +139,12 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
       usePar = true;
     }
   }
+
+  const signed = JWT.sign(
+    payload,
+    req.adrSigningJwk,
+    signingOptions
+  )
 
   if (usePar) {
     const {request_uri} = await FetchRequestUri(cert,signed,$,payload)

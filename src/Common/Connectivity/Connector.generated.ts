@@ -81,9 +81,9 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertDataHolderActiveAtRegister,{ DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<void>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertDataHolderActiveAtRegister,{ DataHolderBrandId }, $)
   })
-  public DataHolderStatus = (DataHolderBrandId: string) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderStatus,{ DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderStatus>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderStatus,{ DataHolderBrandId }, $)
+  public DataHolderStatus = (DataHolderBrandId: string, IgnoreDHStatus: boolean) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderStatus,{ DataHolderBrandId, IgnoreDHStatus }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<Types.DataHolderStatus>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.DataHolderStatus,{ DataHolderBrandId, IgnoreDHStatus }, $)
   })
   public AssertDataHolderIsUp = (DataHolderBrandId: string) => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.AssertDataHolderIsUp,{ DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
@@ -133,9 +133,9 @@ export class DefaultConnector {
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductId, DataHolderBrandId }, _.merge({maxHealingIterations: 0},$)),
     GetWithHealing: ($?: Types.GetOpts<Types.DataHolderRegistration>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.CheckAndUpdateClientRegistration,{ SoftwareProductId, DataHolderBrandId }, $)
   })
-  public GetAuthorizationRequest = (ConsentRequestParams: Types.ConsentRequestParams) => ({
-    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.GetAuthorizationRequest,{ ConsentRequestParams }, _.merge({maxHealingIterations: 0},$)),
-    GetWithHealing: ($?: Types.GetOpts<{redirectUrl: string, consentId: number, softwareProductId: string}>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.GetAuthorizationRequest,{ ConsentRequestParams }, $)
+  public GetAuthorizationRequest = (ConsentRequestParams: Types.ConsentRequestParams, IgnoreDHStatus: boolean) => ({
+    Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.GetAuthorizationRequest,{ ConsentRequestParams, IgnoreDHStatus }, _.merge({maxHealingIterations: 0},$)),
+    GetWithHealing: ($?: Types.GetOpts<{redirectUrl: string, consentId: number, softwareProductId: string}>) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.GetAuthorizationRequest,{ ConsentRequestParams, IgnoreDHStatus }, $)
   })
   public SyncRefreshTokenStatus = (Consent: Types.ConsentRequestLog) => ({
     Evaluate: ($?: Types.EvalOpts) => new CommsDependencyEvaluator(this.cache, this.graph.logger).get(this.graph.Dependencies.SyncRefreshTokenStatus,{ Consent }, _.merge({maxHealingIterations: 0},$)),

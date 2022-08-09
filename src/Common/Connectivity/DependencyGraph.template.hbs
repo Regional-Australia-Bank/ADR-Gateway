@@ -35,6 +35,7 @@ import * as Serial from "./Cache/Serializers";
 
 const Identifiers = {
   string: s => s,
+  boolean: s => s,
   Types: {
     ConsentRequestLog: (x:Types.ConsentRequestLog) => x.id.toString(),
     ConsentRequestParams: (x:Types.ConsentRequestParams) => { throw 'Do not cache consent request'},

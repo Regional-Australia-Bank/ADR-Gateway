@@ -53,10 +53,13 @@ export const AssertDataHolderActiveAtRegister = async ($:{
 
 export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
     DataHolderBrandMetadata:DataHolderRegisterMetadata,
-    AdrConnectivityConfig:Types.AdrConnectivityConfig
+    AdrConnectivityConfig:Types.AdrConnectivityConfig,
+    IgnoreDHStatus: boolean
 }) => {
 
-    if (!$.AdrConnectivityConfig.CheckDataholderStatusEndpoint) {
+    console.log("Data holder status is ignore or not", $.IgnoreDHStatus)
+
+    if (!$.AdrConnectivityConfig.CheckDataholderStatusEndpoint || $.IgnoreDHStatus) {
         return "OK"
     }
 

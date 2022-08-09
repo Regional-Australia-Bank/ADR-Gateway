@@ -134,6 +134,10 @@ class AuthorizeMiddleware {
                     // TODO return appropriate status code (not 500)
                 }
 
+                // TODO: similar to push auth request
+                // // BUG 2919 NBF (not before flag)
+                // check the notBefore is before currentTime, and if Notbefore is not supply reject the msg. 
+
 
             } catch (err) {
                 this.logger.warn("Authorize request not valid. ",err);

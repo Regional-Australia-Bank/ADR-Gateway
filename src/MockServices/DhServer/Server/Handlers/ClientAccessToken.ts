@@ -89,7 +89,8 @@ class ClientAccessTokenMiddleware {
                     aud: oidcConfig.token_endpoint,
                     exp: authTime + expires_in, // TODO clarify the CDR requirement for exp time (assuming 120 seconds)
                     iat: authTime,
-                    scope: "cdr:registration"
+                    scope: "cdr:registration",
+                    // nbf: authTime // BUG 2919 not before need to be sent
                 },(await this.ownKeystore()).get({use:"sig",alg:"PS256"}))
     
                 res.status(200).json(
