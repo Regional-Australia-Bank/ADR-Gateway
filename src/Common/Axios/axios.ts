@@ -16,7 +16,7 @@ interface MtlsOptions {
 const tunnels:{config?:MtlsOptions, agents:{http:httpAgent,https:httpAgent}}[] = []
 const localAgents:{config?:MtlsOptions, agents:{https:httpAgent}}[] = []
 
-const shallNotProxy = (url:URLParse<any>) => {
+const shallNotProxy = (url:URLParse) => {
     const noProxyHostExp = process.env.NO_PROXY_HOST_EXP || 'localhost|127.0.0.1';
     return (RegExp(noProxyHostExp).test(url.hostname)) 
 }
@@ -28,7 +28,7 @@ const getProxyOptions = () => {
     return proxyUrl;
 }
 
-const createTunnelAgents = (proxy:URLParse<any>,mtls?:HttpsOverHttpOptions) => {
+const createTunnelAgents = (proxy:URLParse,mtls?:HttpsOverHttpOptions) => {
     let match = _.find(tunnels,t => t.config?.ca == mtls?.ca && t.config?.key == mtls?.key && t.config?.cert == mtls?.cert && t.config?.passphrase == mtls)
     if (match) return match.agents;
 
