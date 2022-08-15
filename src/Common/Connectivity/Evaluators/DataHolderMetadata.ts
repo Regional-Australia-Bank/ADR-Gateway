@@ -79,7 +79,7 @@ export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
                 status: Types.DataHolderStatus
             }
         } = response.data;
-      
+        console.log("Data holder status response -->", response.data)
         if (responseObject && responseObject.data && responseObject.data.status) {
             return responseObject.data.status
         } else {

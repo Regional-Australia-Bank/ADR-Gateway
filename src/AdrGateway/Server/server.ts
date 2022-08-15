@@ -90,8 +90,9 @@ class AdrGateway {
 
         app.get("/cdr/data-holders/:dataholderbrandid/status", async (req, res) => {
             try {
-                const holderStatus = await this.connector.DataHolderStatus(req.params.dataholderbrandid, true).GetWithHealing();
-
+                
+                const holderStatus = await this.connector.DataHolderStatus(req.params.dataholderbrandid, false).GetWithHealing();
+                console.log(`CDR -- ${req.params.dataholderbrandid} --`,holderStatus)
                 res.json({ status: holderStatus });
             } catch (err) {
                 const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err, "Error getting data holder status");

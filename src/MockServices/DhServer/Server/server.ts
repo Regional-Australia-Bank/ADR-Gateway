@@ -485,7 +485,7 @@ class DhServer {
             res.setHeader("content-type", "application/json");
             res.send({
                 "data": {
-                  "status": "OK",
+                  "status": "UNAVAILABLE",
                   "updateTime": moment().toISOString()
                 },
                 "links": {
