@@ -8,24 +8,24 @@ import { DefaultConnector } from "../../../Common/Connectivity/Connector.generat
 import uuid from "uuid";
 import moment from "moment";
 
-export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector):Promise<any[]> => {
+export const DataHolders = async (config: MockRegisterConfig, pw: DefaultConnector): Promise<any[]> => {
 
     let certs = await TestPKI.TestConfig();
-    let mtls = new DefaultClientCertificateInjector({ca:certs.caCert});   
-    let testDhUrls:Dictionary<string> = config.TestDataHolders;
+    let mtls = new DefaultClientCertificateInjector({ ca: certs.caCert });
+    let testDhUrls: Dictionary<string> = config.TestDataHolders;
 
-    let promises:Promise<any[]>[] = [];
-    let testDhs = Promise.all(_.map(Object.entries(testDhUrls), async ([id,url]) => {
+    let promises: Promise<any[]>[] = [];
+    let testDhs = Promise.all(_.map(Object.entries(testDhUrls), async ([id, url]) => {
         return await _.merge({
             "dataHolderBrandId": id
-        },(await axios.get(url,mtls.inject({responseType:"json"}))).data)
+        }, (await axios.get(url, mtls.inject({ responseType: "json" }))).data)
     }))
     promises.push(testDhs)
 
     if (config.LiveRegisterProxy.BrandId) {
         promises.push(pw.DataHolderBrands().GetWithHealing());
     }
-    
+
     let results = await Promise.all(promises)
 
     // Add a non-conformant payload to test robustness of DR. https://github.com/Regional-Australia-Bank/ADR-Gateway/issues/23
@@ -42,7 +42,15 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
         },
         "status": "ACTIVE",
         "authDetails": [],
-        "lastUpdated": moment().utc().toISOString()
+        "lastUpdated": moment().utc().toISOString(),
+        "endpointDetail": {
+            "version": "string",
+            "publicBaseUri": "https://bad.bank",
+            "resourceBaseUri": "string",
+            "infosecBaseUri": "string",
+            "extensionBaseUri": "string",
+            "websiteUri": "string"
+        }
     }
 
     const inactiveBank = {
@@ -61,11 +69,19 @@ export const DataHolders = async (config:MockRegisterConfig,pw:DefaultConnector)
         },
         "status": "INACTIVE",
         "authDetails": [],
-        "lastUpdated": moment().utc().toISOString()
+        "lastUpdated": moment().utc().toISOString(),
+        "endpointDetail": {
+            "version": "string",
+            "publicBaseUri": "https://bad.bank",
+            "resourceBaseUri": "string",
+            "infosecBaseUri": "string",
+            "extensionBaseUri": "string",
+            "websiteUri": "string"
+        }
     }
 
 
-    results.push([badBank,inactiveBank])
+    results.push([badBank, inactiveBank])
 
 
     return _.flatten(results);

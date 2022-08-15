@@ -13,6 +13,7 @@ interface DataholderMetadata{
     "legalEntityName": string,
     "abn": string,
     "acn": string,
+    "publicBaseUri": string
 }
 
 abstract class DataHolderMetadataProvider<T extends DataholderMetadata> {
@@ -30,6 +31,7 @@ class EcosystemDataholder implements DataholderMetadata {
         this.websiteUri = dm.endpointDetail?.websiteUri
         this.abn = dm.legalEntity?.abn
         this.acn = dm.legalEntity?.acn
+        this.publicBaseUri = dm.endpointDetail?.publicBaseUri
     }
 
     "dataHolderBrandId": string;
@@ -40,6 +42,7 @@ class EcosystemDataholder implements DataholderMetadata {
     "legalEntityName": string;
     "abn": string;
     "acn": string;
+    "publicBaseUri": string;
 
 }
 
