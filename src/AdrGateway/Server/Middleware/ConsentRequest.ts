@@ -73,7 +73,11 @@ class ConsentRequestMiddleware {
             }
 
             // if DataHolderStatus ignore flag is on, this will ignore the dh holder status
-            let ignoreDHStatus = false
+            let ignoreDHStatus = false // default not skip data holder status
+            if(m.ignoreDataholderStatus !== null && typeof m.ignoreDataholderStatus !== 'undefined') {
+                // overwrite ignore data holder status from the adrIdentities
+                ignoreDHStatus = m.ignoreDataholderStatus
+            }
 
             try {
                 let redirect_uri = await this.RequestConsent({

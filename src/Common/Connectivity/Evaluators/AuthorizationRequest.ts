@@ -18,6 +18,7 @@ export interface ConsentRequestParams {
   redirectUri?: string,
   softwareProductId: string,
   additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
+  ignoreDataholderStatus? : boolean
 }
 
 export const GetAuthorizationRequest = async (cert:ClientCertificateInjector,consentManager:ConsentRequestLogManager,$:{
