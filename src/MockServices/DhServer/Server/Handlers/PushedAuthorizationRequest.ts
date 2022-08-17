@@ -11,6 +11,7 @@ import { axios } from "../../../../Common/Axios/axios";
 import { ClientCertificateInjector } from "../../../../Common/Services/ClientCertificateInjection";
 import { Dictionary } from "../../../../Common/Server/Types";
 import uuid from "uuid";
+import moment from 'moment'
 
 const storedRequests:Dictionary<string> = {};
 
@@ -60,10 +61,11 @@ export class PushedAuthorizationRequestMiddleware {
             let payload:any;
             try {
                 payload = JWT.verify(params.client_assertion,client_jwks,{algorithms:["PS256"]})
-                for (let key of ['aud','jti','exp','iss','sub'])
-                if (typeof payload[key] === 'undefined')  {
-                    throw `key ${key} is missing from JWT`
-                }
+                for (let key of ['aud','jti','exp','iss','sub']){
+                    if (typeof payload[key] === 'undefined')  {
+                        throw `key ${key} is missing from JWT`
+                    }
+                } 
 
                 if (payload.sub !== params.client_id) throw "client_id mismatch"
             } catch (e) {
@@ -75,12 +77,16 @@ export class PushedAuthorizationRequestMiddleware {
             try {
                 // payload = JWT.decode(params.request)
                 requestObject = JWT.verify(params.request,client_jwks,{algorithms:["PS256"]})
-                for (let key of ['aud','exp','iss']) {
-                    if (typeof payload[key] === 'undefined')  {
+                for (let key of ['aud','exp','iss','nbf']) {// add nbf BUG 2919
+                    if (typeof requestObject[key] === 'undefined')  {
                         throw `key ${key} is missing from JWT`
                     }    
                 }
 
+                // BUG 2919 NBF (not before flag) // TODO
+                if(!moment(requestObject['nbf']).isSameOrBefore(moment())){
+                    throw `nbf is after current time` 
+                }
                 if (requestObject.client_id !== params.client_id) throw "client_id mismatch"
             } catch (e) {
                 return res.status(401).json({error:"invalid_client"})
@@ -97,7 +103,6 @@ export class PushedAuthorizationRequestMiddleware {
             const request_uri = "par:"+uuid.v4();
 
             storedRequests[request_uri] = requestObject;
-
             return res.json({
                 request_uri,
                 expiry: 90 // this is not enforced
