@@ -53,6 +53,7 @@
     "watch-templates": "node node_modules/chokidar-cli/index.js src/**/*template.hbs src/**/Dependencies.yml src/**/Dependencies.generator.js -c \"npm run build-templates\"",
     "build-templates": "node ./src/Common/Connectivity/Dependencies.generator.js",
     "test": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha \"dist/Tests/**/*spec.js\"",
+    "test-wip": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha --grep wip \"dist/Tests/**/*spec.js\"",
     "test-live": "cross-env TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 mocha --grep \"Live environments\" \"dist/Tests/**/*spec.js\"",
     "test-coverage": "cross-env TEST_SUITE_MOCK_ONLY=1 TEST_SUITE_HEADLESS=1 LOG_LEVEL=silent LOG_SILENT=1 nyc --reporter text --reporter html --reporter cobertura npm run test",
     "copy-proj": "npx rimraf examples/deployment/docker/.work && npx cpx \"src/**\" \"examples/deployment/docker/.work/src\" && npx cpx \"{package,package-lock,tsconfig}.json\" \"examples/deployment/docker/.work\""
