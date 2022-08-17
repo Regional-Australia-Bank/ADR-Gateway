@@ -17,11 +17,11 @@ export interface ConsentRequestParams {
   productKey: string,
   redirectUri?: string,
   softwareProductId: string,
-  additionalClaims?: AdrConnectivityConfig["DefaultClaims"]
-  ignoreDataholderStatus? : boolean
+  additionalClaims?: AdrConnectivityConfig["DefaultClaims"],
+  ignoreDataholderStatus?: boolean
 }
 
-export const GetAuthorizationRequest = async (cert:ClientCertificateInjector,consentManager:ConsentRequestLogManager,$:{
+export const GetAuthorizationRequest = async (cert: ClientCertificateInjector, consentManager: ConsentRequestLogManager, $: {
   ConsentRequestParams: ConsentRequestParams,
   DataHolderOidc: Types.DataholderOidcResponse,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
@@ -40,49 +40,49 @@ export const GetAuthorizationRequest = async (cert:ClientCertificateInjector,con
   }
 
   // ensure the openin scope is included
-  const requestedScopes = _.uniqBy(_.union(["openid"],p.scopes),e=>e);
+  const requestedScopes = _.uniqBy(_.union(["openid"], p.scopes), e => e);
 
   let additionalClaims = {
-      userinfo: _.merge($.AdrConnectivityConfig.DefaultClaims?.userinfo, p.additionalClaims?.userinfo),
-      id_token: _.merge($.AdrConnectivityConfig.DefaultClaims?.id_token, p.additionalClaims?.id_token)
+    userinfo: _.merge($.AdrConnectivityConfig.DefaultClaims?.userinfo, p.additionalClaims?.userinfo),
+    id_token: _.merge($.AdrConnectivityConfig.DefaultClaims?.id_token, p.additionalClaims?.id_token)
   }
 
   let redirectUri = $.ConsentRequestParams.redirectUri || $.SoftwareProductConfig.redirect_uris[0];
   //let redirectUri = $.SoftwareProductConfig.redirect_uris[0];
 
   // Get a request URL
-  let authUrl = await getAuthPostGetRequestUrl(cert,{
-      clientId: $.CheckAndUpdateClientRegistration.clientId,
-      callbackUrl: redirectUri,
-      sharingDuration: p.sharingDuration || 0,
-      existingArrangementId: p.existingArrangementId,
-      issuer: $.DataHolderOidc.issuer,
-      authorizeEndpointUrl: $.DataHolderOidc.authorization_endpoint,
-      scopes: requestedScopes,
-      adrSigningJwk: $.DataRecipientJwks.get({use:'sig',alg:"PS256"}),
-      nonce: stateParams.nonce,
-      state: stateParams.state,
-      additionalClaims
-  },$);
+  let authUrl = await getAuthPostGetRequestUrl(cert, {
+    clientId: $.CheckAndUpdateClientRegistration.clientId,
+    callbackUrl: redirectUri,
+    sharingDuration: p.sharingDuration || 0,
+    existingArrangementId: p.existingArrangementId,
+    issuer: $.DataHolderOidc.issuer,
+    authorizeEndpointUrl: $.DataHolderOidc.authorization_endpoint,
+    scopes: requestedScopes,
+    adrSigningJwk: $.DataRecipientJwks.get({ use: 'sig', alg: "PS256" }),
+    nonce: stateParams.nonce,
+    state: stateParams.state,
+    additionalClaims
+  }, $);
 
   // log to the DB
   let logManager = consentManager;
   let newConsent = await logManager.LogAuthRequest({
-      adrSystemId: p.systemId,
-      adrSystemUserId: p.userId,
-      dataHolderId: p.dataholderBrandId,
-      productKey: p.productKey,
-      softwareProductId: $.SoftwareProductConfig.ProductId,
-      requestedSharingDuration: p.sharingDuration || 0,
-      arrangementId: p.existingArrangementId,
-      nonce: stateParams.nonce,
-      state: stateParams.state,
-      scopes: requestedScopes,
-      redirectUri
+    adrSystemId: p.systemId,
+    adrSystemUserId: p.userId,
+    dataHolderId: p.dataholderBrandId,
+    productKey: p.productKey,
+    softwareProductId: $.SoftwareProductConfig.ProductId,
+    requestedSharingDuration: p.sharingDuration || 0,
+    arrangementId: p.existingArrangementId,
+    nonce: stateParams.nonce,
+    state: stateParams.state,
+    scopes: requestedScopes,
+    redirectUri
   });
 
   // return the redirect URI to the caller
 
-  return {redirectUrl: authUrl, consentId:newConsent.id, softwareProductId: newConsent.softwareProductId};
+  return { redirectUrl: authUrl, consentId: newConsent.id, softwareProductId: newConsent.softwareProductId };
 
 }
