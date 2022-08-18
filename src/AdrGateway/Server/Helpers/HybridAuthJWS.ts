@@ -129,14 +129,15 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
     header: {
       typ: 'JWT'
     },
-    issuer: req.clientId,
-    notBefore : '0s' // NBF bug 2919 //
+    issuer: req.clientId
   }
 
   let usePar: boolean = false;
   if ($.DataHolderOidc.pushed_authorization_request_endpoint) {
     if ($.AdrConnectivityConfig.UsePushedAuthorizationRequest || req.existingArrangementId) {
       usePar = true;
+      // add not before only for usePar  notBefore : '0s' // NBF bug 2919 //
+      signingOptions.notBefore = '0s';
     }
   }
 
