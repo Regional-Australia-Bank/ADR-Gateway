@@ -103,7 +103,8 @@ class ConsentConfirmationMiddleware {
                 requestedScopes: JSON.parse(updatedConsent.requestedScopesJson),
                 missingScopes: missingScopes,
                 isActive: isActive,
-                success
+                success,
+                arrangementId: updatedConsent.arrangementId
             })
 
         } catch (err) {

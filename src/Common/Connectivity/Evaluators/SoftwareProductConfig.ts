@@ -39,7 +39,11 @@ export const GetSoftwareProductConfigs = (async ({AdrConnectivityConfig}:{AdrCon
 
 export const GetSoftwareProductConfig = async ($:{SoftwareProductConfigs: IndexedSoftwareProductConfigs, SoftwareProductId:string}):Promise<Types.SoftwareProductConnectivityConfig> => {
   if (typeof $.SoftwareProductId == "string") {
-    return $.SoftwareProductConfigs.byId[$.SoftwareProductId]
+    const byId = $.SoftwareProductConfigs.byId[$.SoftwareProductId];
+    if (byId) return byId;
+    const byKey = $.SoftwareProductConfigs.byKey[$.SoftwareProductId];
+    if (byKey) return byKey;
+    throw new Error(`Could not locate SoftwareProductConfig by key or ID: ${$.SoftwareProductId}`);
   } else {
     throw 'Must supply a SoftwareProductId as a parameter'
   }
