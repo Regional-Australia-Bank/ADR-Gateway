@@ -57,7 +57,39 @@ export class SelfHealingDataHolderMetadataProvider extends DataHolderMetadataPro
 
     getDataHolder = async (dataHolderBrandId: string):Promise<EcosystemDataholder> => {
         let oneDataHolder = _.filter(await this.getDataHolders(),dh => dh.dataHolderBrandId == dataHolderBrandId);
-        if (oneDataHolder.length != 1) throw 'Expected exactly 1 matching dataholder';
+        if (oneDataHolder.length == 0) return new EcosystemDataholder({
+            "brandName": "Dataholder not found",
+            "dataHolderBrandId": dataHolderBrandId,
+            "industry": "Dataholder not found",
+            "logoUri": "Dataholder not found",
+            "endpointDetail": {
+                "extensionBaseUri": "Dataholder not found",
+                "infosecBaseUri": "Dataholder not found",
+                "publicBaseUri": "Dataholder not found",
+                "resourceBaseUri": "Dataholder not found",
+                "version": "Dataholder not found",
+                "websiteUri": "Dataholder not found"
+            },
+            "authDetails": [{
+                "jwksEndpoint": "Dataholder not found",
+                "registerUType": "Dataholder not found"
+            }],
+            "lastUpdated": "Dataholder not found",
+            "legalEntity": {
+                "legalEntityId": "",
+                "abn": "",
+                "acn": "",
+                "arbn": "",
+                "industryCode": "",
+                "legalEntityName": "",
+                "organisationType": "",
+                "registeredCountry": "",
+                "registrationDate": "",
+                "registrationNumber": ""
+            },
+            "status": "Dataholder not found"
+        });
+        if (oneDataHolder.length != 1) throw 'Expected exactly 1 matching dataholder for ' + dataHolderBrandId + '. Found ' + oneDataHolder.length + ' instead.';
         return oneDataHolder[0];
     }
 
