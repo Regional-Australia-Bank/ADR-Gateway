@@ -46,7 +46,9 @@ export class PushedAuthorizationRequestMiddleware {
                 client_id: string,
                 client_assertion: string,
                 scope?: string,
-                response_type?: string
+                response_type?: string,
+                code_challenge: string,
+                code_challenge_method : string
             } = <any>matchedData(req)
 
             // TODO move this client credntial check to an auth middleware
@@ -116,6 +118,8 @@ export class PushedAuthorizationRequestMiddleware {
             bodyParser.urlencoded({extended:true}),
             body("request").isJWT(),
             body("client_id").isString(),
+            body("code_challenge").isString(),
+            body("code_challenge_method").isString(),
             body('client_assertion_type').isString().equals("urn:ietf:params:oauth:client-assertion-type:jwt-bearer").withMessage("invalid client_assertion_type"),
             body("client_assertion").isJWT(),
             body("scope").optional().isString(),

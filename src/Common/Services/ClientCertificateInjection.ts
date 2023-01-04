@@ -7,7 +7,7 @@ import { CertsFromFilesOrStrings } from "../../Common/SecurityProfile/Util";
 const mtlsByProduct = JSON.parse(process.env.MTLS_BY_PRODUCT || "{}")
 
 interface ClientCertificateInjector {
-    inject(options: AxiosRequestConfig, softwareProductId?:string):AxiosRequestConfig
+    inject(options: AxiosRequestConfig, softwareProductId: string | null):AxiosRequestConfig
     injectCa(options: AxiosRequestConfig):AxiosRequestConfig
 }
 
@@ -22,7 +22,7 @@ class DevClientCertificateInjector implements ClientCertificateInjector{
 
 export const MTLSInject = (request:AxiosRequestConfig,options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) => {
     let inj = new DefaultClientCertificateInjector(options);
-    return inj.inject(request)
+    return inj.inject(request,null)
 }
 
 export const TLSInject = (request:AxiosRequestConfig,options:{key?:string|string[], cert?:string|string[],ca?: string|string[], passphrase?:string}) => {
@@ -45,15 +45,15 @@ class DefaultClientCertificateInjector implements ClientCertificateInjector{
         this.passphrase = options?.passphrase;
     }
 
-    inject = (options: AxiosRequestConfig & {softwareProductId?:string}):AxiosRequestConfig => {
+    inject = (options: AxiosRequestConfig , softwareProductId:string | null):AxiosRequestConfig => {
 
 
-        if (options.softwareProductId) {
+        if (typeof(softwareProductId) !== null) {
             options.httpsAgent = new https.Agent({
-                cert: mtlsByProduct[options.softwareProductId]?.cert ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].cert): this.cert,
-                key: mtlsByProduct[options.softwareProductId]?.key ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].key): this.key,
-                ca: mtlsByProduct[options.softwareProductId]?.ca ? CertsFromFilesOrStrings(mtlsByProduct[options.softwareProductId].ca): this.ca,
-                passphrase: mtlsByProduct[options.softwareProductId]?.passphrase || this.passphrase,
+                cert: mtlsByProduct[softwareProductId]?.cert ? CertsFromFilesOrStrings(mtlsByProduct[softwareProductId].cert): this.cert,
+                key: mtlsByProduct[softwareProductId]?.key ? CertsFromFilesOrStrings(mtlsByProduct[softwareProductId].key): this.key,
+                ca: mtlsByProduct[softwareProductId]?.ca ? CertsFromFilesOrStrings(mtlsByProduct[softwareProductId].ca): this.ca,
+                passphrase: mtlsByProduct[softwareProductId]?.passphrase || this.passphrase,
             })        
     
             return _.omit(options,"softwareProductId");   

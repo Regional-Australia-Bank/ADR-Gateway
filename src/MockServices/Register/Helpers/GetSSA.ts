@@ -16,7 +16,7 @@ export const GetSSA = async (dataRecipientBrandId:string, dataRecipientProductId
         const dataRecipientBrand = dataRecipientBrands[0];
     
         const softwareProducts = _.filter(dataRecipientBrand.softwareProducts,p => p.softwareProductId == dataRecipientProductId);
-        if (softwareProducts.length != 1) throw {statusCode:404, errorMessage:"Expected exactly 1 matching softwareProduct"};
+        if (softwareProducts.length != 1) throw {statusCode:404, errorMessage:`Expected exactly 1 matching softwareProduct but I have ${softwareProducts.length} software products`};
         const softwareProduct = softwareProducts[0];            
 
         const claims = {

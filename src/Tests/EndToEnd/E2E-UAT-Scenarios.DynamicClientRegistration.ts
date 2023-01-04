@@ -560,6 +560,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                             CheckDataholderStatusEndpoint: origConfig.CheckDataholderStatusEndpoint,
                             Database: origConfig.Database,                            
                             RegisterBaseUris: origConfig.RegisterBaseUris,
+                            RegisterBaseScope: origConfig.RegisterBaseScope,
                             RegisterEndpointVersions: origConfig.RegisterEndpointVersions,
                             Jwks: origConfig.Jwks,
                             mtls: origConfig.mtls,

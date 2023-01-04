@@ -27,10 +27,6 @@ export const ValidateIdToken = (IdToken: string,$:{
 }) => {
   let decryptedIdToken:string;
   decryptedIdToken = DecryptIdToken(IdToken,$.DataRecipientJwks); 
-
-  // TODO log decrypted id token claims for regfresh-token retrieval
-  console.info('Decrypted ID Token', decryptedIdToken);
-
   let verifiedIdToken = <Types.IdTokenValidationParts>JWT.verify(decryptedIdToken,$.DataHolderJwks,{
       issuer: $.DataHolderOidc.issuer, // OIDC 3.1.3.7. Point 2. must match known data holder issuer
       audience: $.CheckAndUpdateClientRegistration.clientId, // OIDC 3.1.3.7. Point 3,4,5 //TODO Unit test handling of multiple audiences

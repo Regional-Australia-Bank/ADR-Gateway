@@ -27,14 +27,14 @@ export const GetRegisterAccessToken = async (cert:ClientCertificateInjector, par
       data: qs.stringify({
           grant_type: "client_credentials",
           client_assertion: CreateAssertion(client_id,params.RegisterOidc.token_endpoint,params.DataRecipientJwks),
-          scope: "cdr-register:bank:read",
+          scope: params.AdrConnectivityConfig.RegisterBaseScope,
           client_id: client_id,
           client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
       }),
       softwareProductId:client_id
   }
 
-  const response = await axios.request(cert.inject(options));
+  const response = await axios.request(cert.inject(options,client_id));
 
   return new AccessToken(response.data.access_token,response.data.expires_in);
 }
@@ -53,14 +53,14 @@ export const GetRegisterAccessTokenDHB = async (cert:ClientCertificateInjector, 
     data: qs.stringify({
       grant_type: "client_credentials",
       client_assertion: CreateAssertion(client_id,params.RegisterOidc.token_endpoint,params.DataRecipientJwks),
-      scope: "cdr-register:bank:read",
+      scope: params.AdrConnectivityConfig.RegisterBaseScope,
       client_id: client_id,
       client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
     }),
     softwareProductId:client_id
   }
 
-  const response = await axios.request(cert.inject(options));
+  const response = await axios.request(cert.inject(options,client_id));
 
   return new AccessToken(response.data.access_token,response.data.expires_in);
 }

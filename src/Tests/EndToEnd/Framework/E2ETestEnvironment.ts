@@ -152,7 +152,7 @@ export class E2ETestEnvironment {
         SoftwareProduct: () => Promise<MockSoftwareProductConfig>
         AdrJwks: () => Promise<AdrJwksConfig>
         Connectivity: () => Promise<AdrConnectivityConfig>
-        AdrGateway: () => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>
+        AdrGateway: () => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port"|"DefaultAPIVersion">>
         AdrServer: () => Promise<AdrServerConfig>
         MockDhServer: () => Promise<DhServerConfig>
     }
@@ -195,12 +195,36 @@ export class E2ETestEnvironment {
 
                 return config;
             }),
-            AdrGateway: <() => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>> this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrGateway,async (config) => {
+            AdrGateway: <() => Promise<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port"|"DefaultAPIVersion">>> this.PromiseFunctionify(this.Config.TestServiceDefinitions.AdrGateway,async (config) => {
                 if (typeof config.Port == 'undefined') {
                     config.Port = await getPort()
                 }
                 if (typeof config.BackEndBaseUri == 'undefined') {
                     config.BackEndBaseUri = `http://localhost:${config.Port}`   
+                }
+                if (typeof config.DefaultAPIVersion == 'undefined') {
+                    config.DefaultAPIVersion =  {
+                        getAccounts: 1,
+                        getBulkBalance: 1,
+                        getBalancesForSpecificAccount: 1,
+                        getAccountBalance: 1,
+                        getAccountDetail: 1,
+                        getTransactionsForAccount: 1,
+                        getTransactionDetail: 1,
+                        getDirectDebitsForAccount: 1,
+                        getBulkDirectDebits: 1,
+                        getDirectDebitsForSpecificAccounts: 1,
+                        getScheduledPaymentsForAccount: 1,
+                        getScheduledPaymentsBulk: 1,
+                        getScheduledPaymentsForSpecificAccount: 1,
+                        getPayees: 1,
+                        getPayeeDetail: 1,
+                        getProduct: 1,
+                        getProductDetail: 1,
+                        getCustomer: 1,
+                        getCustomerDetail: 1,
+                        getStatus: 1
+                    }   
                 }
                 return config;
             }),
@@ -273,11 +297,13 @@ export class E2ETestEnvironment {
         // Start AdrGateway (depends on AdrDb)
         if (serviceDefinitions.AdrGateway) {
             let configFn:() => Promise<AdrGatewayConfig> = async () => {
+                
                 let connConfig = await this.GetServiceDefinition.Connectivity();
                 this._clientCert = connConfig.mtls
                 let r = _.merge(await this.GetServiceDefinition.AdrGateway(),connConfig)
                 return r;
             }
+            let test = await configFn()
             this.TestServices.adrGateway = await AdrGatewayStartup.Start(configFn, this.TestServices.adrDbConn)
         }
 
@@ -307,20 +333,55 @@ export class E2ETestEnvironment {
         if (serviceDefinitions.TestHttpsProxy) {
             this.TestServices.httpsProxy = this.TestServices.httpsProxy || {}
             if (this.TestServices.mockRegister) {
+                console.log("Starting mock register")
+                try {
                 this.TestServices.httpsProxy.mockRegister = await TestHttpsProxy.Start(this.TestServices.mockRegister,tlsConfig)
+                }
+                catch (ex)
+                {
+                    console.log(`Mock register exception ${ex}`)
+                }
             }
             if (this.TestServices.adrGateway) {
+                console.log("Starting adrGateway")
+                try {
                 // TODO add configuration point for back end TLS server cert
                 this.TestServices.httpsProxy.adrGateway = await TestHttpsProxy.Start(this.TestServices.adrGateway,tlsConfig)
+                }
+                catch (ex)
+                {
+                    console.log(`adrGateway exception ${ex}`)
+                }
             }
             if (this.TestServices.adrServer) {
+                console.log("Starting adrServer")
+                try {
                 // TODO add configuration point for front end TLS server cert
                 this.TestServices.httpsProxy.adrServer = await TestHttpsProxy.Start(this.TestServices.adrServer,tlsConfig)
+                }
+                catch (ex)
+                {
+                    console.log(`adrServer exception ${ex}`)
+                }
                 SetDataRecipientBaseUri(`https://localhost:${this.TestServices.httpsProxy.adrServer.port}`)
             }
             if (this.TestServices.mockDhServer) {
+                console.log("Starting mockDhServer")
+                try {
                 this.TestServices.httpsProxy.mockDhServer = await TestHttpsProxy.Start(this.TestServices.mockDhServer,tlsConfig)
+                }
+                    catch (ex)
+                {
+                console.log(`mockDhServer exception ${ex}`)
+            }
+            console.log("Starting mockDhServerMTLS")
+                try {
                 this.TestServices.httpsProxy.mockDhServerMTLS = await TestHttpsProxy.Start(this.TestServices.mockDhServer,mtlsConfig)
+                }
+                catch (ex)
+                {
+                    console.log(`mockDhServerMTLS exception ${ex}`)
+                }
             }
 
         }
@@ -334,7 +395,7 @@ export class E2ETestEnvironment {
                 if (typeof testService?.server != 'undefined')
                 testService.server.close((err) => {
                     if (err) reject(err);
-                    resolve();
+                    resolve(null);
                 })
             })
         }
@@ -356,7 +417,7 @@ export class E2ETestEnvironment {
             if (typeof this.TestServices.adrDbConn != 'undefined') {
                 this.TestServices.adrDbConn.then(conn => conn.close().then(() => {
                     logger.debug("Closed database")
-                    resolve()
+                    resolve(null)
                 },(err) => {
                     logger.debug("Error closing database")
                     reject(err)
@@ -389,7 +450,7 @@ export class E2ETestEnvironment {
         return await InTestConfigBase(async () => {
             let mtls = (await this.GetServiceDefinition.Connectivity()).mtls
             let inj = new DefaultClientCertificateInjector(mtls);
-            o = inj.inject(o);
+            o = inj.inject(o,null);
             return o                
         })
     }

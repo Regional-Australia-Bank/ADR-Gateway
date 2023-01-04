@@ -49,6 +49,7 @@ export interface AdrConnectivityConfig {
       Resource: string
       SecureResource: string
   },
+  RegisterBaseScope: string,
   RegisterEndpointVersions: {
     GetSoftwareStatementAssertion: string | false
   },
@@ -94,6 +95,11 @@ export const ConnectivityConvictOptions = () => {
               default: 'https://localhost:9301/',
               env: 'ADR_REGISTER_SECURE_RESOURCE_URI'
           },            
+      },
+      RegisterBaseScope: {
+            env: 'ADR_REGISTER_OIDC_SCOPE',
+            format: 'String',
+            default: 'cdr-register:bank:read',
       },
       RegisterEndpointVersions: {
         GetSoftwareStatementAssertion: {
