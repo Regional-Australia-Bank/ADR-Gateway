@@ -22,7 +22,7 @@
     "flat": "^5.0.0",
     "html-entities": "^1.2.1",
     "http-proxy": "^1.18.0",
-    "jose": "^1.28.1",
+    "jose": "^1.28.2",
     "lodash": "^4.17.21",
     "lru-cache": "6.0.0",
     "moment": "^2.24.0",
