@@ -34,6 +34,7 @@ const TestAdrConnectivityConfig = async (env:E2ETestEnvironment):Promise<AdrConn
         Resource: env.SystemUnderTest.Register().PublicUri,
         SecureResource: env.SystemUnderTest.Register().SecureUri
     },
+    RegisterBaseScope: 'cdr-register:bank:read',
     RegisterEndpointVersions: {
         GetSoftwareStatementAssertion: false
     },

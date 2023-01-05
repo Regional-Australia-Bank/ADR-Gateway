@@ -147,7 +147,7 @@ export const Tests = ((environment:E2ETestEnvironment) => {
                 ,"token")
             .Then(async ctx => {
                 let requestResult = await (ctx.GetResult(DoRequest,"getTokenResponse"));
-                // logger.debug(requestResult);
+                logger.debug(requestResult);
                 let responseBody = requestResult.body;
                 let scopes:string[] = responseBody.scope.split(" ");
                 logger.debug(responseBody.access_token);
@@ -186,13 +186,14 @@ export const Tests = ((environment:E2ETestEnvironment) => {
             .Then(async ctx => {
                 let requestResult = await (ctx.GetResult(DoRequest));
                 // let ssa = (await (ctx.GetResult(SetValue,"SSA"))).value
-
+                let token = `${await ctx.GetTestContext(RegisterSymbols.Context.RegisterToken).GetValue("token")}`
                 if (typeof requestResult.response.headers['content-type'] == 'undefined' || /^application\/jwt(; ?charset=utf-8)?$/.test(requestResult.response.headers['content-type']) == false) {
-                    // throw `GetSoftwareStatementAssertion response type is not 'application/jwt', but '${requestResult.response.headers['content-type']}'`;
+                    throw `GetSoftwareStatementAssertion response type is not 'application/jwt', but '${requestResult.response.headers['content-type']}'`;
                 }
 
                 let responseJwt = requestResult.body;
                 logger.debug(responseJwt);
+                
                 JWT.decode(responseJwt,{complete:true})
 
             }).Keep(RegisterSymbols.Context.GetSSA)

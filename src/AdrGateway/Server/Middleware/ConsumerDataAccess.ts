@@ -26,29 +26,31 @@ interface DataAccessRequestParams {
         ipAddress: string,
         userAgent: string
     }
-    backendBaseUri:string
+    backendBaseUri: string
     consentId: number
 }
 
-const headerSchema:Schema = {
-    "x-adrgw-present": {isBoolean: {errorMessage: "must be boolean"}, toBoolean: true},
-    "x-adrgw-last-authenticated": {isISO8601: {errorMessage: "must be and ISO8601 date time"}},
-    "x-adrgw-ip-address": {isIP:{errorMessage: "must be an IP address"}, optional: true},
-    "x-adrgw-user-agent": {isString:{errorMessage: "must be a string value"}, optional: true},
-    "x-adrgw-backend-base": {isURL:{errorMessage: "must be a URL", options:{require_tld:false}}, optional: true},
-    "": {custom: {
-        options: async (value):Promise<boolean> => {
-            if (value.present) {
-                if (!value.ipAddress) throw 'x-adrgw-ipAddress must be supplied when x-adrgw-present'
-                if (!value.userAgent) throw 'x-adrgw-userAgent must be supplied when x-adrgw-present'
+const headerSchema: Schema = {
+    "x-adrgw-present": { isBoolean: { errorMessage: "must be boolean" }, toBoolean: true },
+    "x-adrgw-last-authenticated": { isISO8601: { errorMessage: "must be and ISO8601 date time" } },
+    "x-adrgw-ip-address": { isIP: { errorMessage: "must be an IP address" }, optional: true },
+    "x-adrgw-user-agent": { isString: { errorMessage: "must be a string value" }, optional: true },
+    "x-adrgw-backend-base": { isURL: { errorMessage: "must be a URL", options: { require_tld: false } }, optional: true },
+    "": {
+        custom: {
+            options: async (value): Promise<boolean> => {
+                if (value.present) {
+                    if (!value.ipAddress) throw 'x-adrgw-ipAddress must be supplied when x-adrgw-present'
+                    if (!value.userAgent) throw 'x-adrgw-userAgent must be supplied when x-adrgw-present'
+                }
+                return true;
             }
-            return true;
         }
-      }},
+    },
 };
 
 class ConsumerDataAccessError extends Error {
-    constructor(public err:any, public res?:AxiosResponse<any>) {
+    constructor(public err: any, public res?: AxiosResponse<any>) {
         super()
     }
 }
@@ -59,9 +61,9 @@ class ConsumerDataAccessMiddleware {
     constructor(
         @inject("Logger") private logger: winston.Logger,
         @inject("EcosystemErrorFilter") private ecosystemErrorFilter: EcosystemErrorFilter,
-        @inject("ClientCertificateInjector") private clientCertInjector:ClientCertificateInjector,
-        @inject("AdrGatewayConfig") private config:(() => Promise<AdrGatewayConfig>),
-        private consentManager:ConsentRequestLogManager,
+        @inject("ClientCertificateInjector") private clientCertInjector: ClientCertificateInjector,
+        @inject("AdrGatewayConfig") private config: (() => Promise<AdrGatewayConfig>),
+        private consentManager: ConsentRequestLogManager,
         private connector: DefaultConnector
     ) { }
 
@@ -69,25 +71,25 @@ class ConsumerDataAccessMiddleware {
         return await this.consentManager.GetConsent(consentId)
     }
 
-    handler = (resourcePath: string | ((x:Dictionary<string>) => string), scope:string) => {
-        let validationErrorMiddleware = (req:express.Request,res:express.Response,next: NextFunction) => {
+    handler = (resourcePath: string | ((x: Dictionary<string>) => string), scope: string, dafaultAPIVersion: number = 1) => {
+        let validationErrorMiddleware = (req: express.Request, res: express.Response, next: NextFunction) => {
             const errors = validationResult(req);
             if (!errors.isEmpty()) {
-              return res.status(400).json({ errors: errors.array() });
+                return res.status(400).json({ errors: errors.array() });
             }
             next();
         }
 
-        let Responder = async (req:express.Request,res:express.Response) => {
-            let resolvedResourcePath:string;
+        let Responder = async (req: express.Request, res: express.Response) => {
+            let resolvedResourcePath: string;
             if (typeof resourcePath == 'string') {
                 resolvedResourcePath = resourcePath
             } else {
                 resolvedResourcePath = resourcePath(req.params)
             }
-    
+
             let m = <any>matchedData(req);
-            let params:DataAccessRequestParams = {
+            let params: DataAccessRequestParams = {
                 consentId: m.consentId,
                 user: {
                     lastAuthenticated: m["x-adrgw-last-authenticated"],
@@ -98,7 +100,7 @@ class ConsumerDataAccessMiddleware {
                 backendBaseUri: m["x-adrgw-backend-base"]
             }
 
-            let consent:ConsentRequestLog;
+            let consent: ConsentRequestLog;
             try {
                 consent = await this.GetActiveConsent(m.consentId);
             } catch {
@@ -110,7 +112,7 @@ class ConsumerDataAccessMiddleware {
                     try {
                         consent = await this.connector.ConsentCurrentAccessToken(consent).GetWithHealing()
                     } catch (err) {
-                        this.logger.error("ConsumerDataAccess error",err)
+                        this.logger.error("ConsumerDataAccess error", err)
                         const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err, "Error accessing consumer data: Unable to get access token");
                         return res.status(500).json(formattedError || "Error accessing consumer data: Unable to get access token")
                     }
@@ -126,72 +128,83 @@ class ConsumerDataAccessMiddleware {
                     } else {
                         return res.status(403).json("No current access or refresh token for unknown reason")
                     }
-                    
+
                 }
             }
-    
+
             try {
-                await this.connector.ConsumerDataAccessCredentials(consent,resolvedResourcePath).GetWithHealing({
+                await this.connector.ConsumerDataAccessCredentials(consent, resolvedResourcePath).GetWithHealing({
                     validator: async (o) => {
-                        await this.ForwardRequest(o.DataHolderBrandMetadata,resolvedResourcePath,o.Consent,params,req,res);
+                        await this.ForwardRequest(o.DataHolderBrandMetadata, resolvedResourcePath, o.Consent, params, req, res, dafaultAPIVersion);
                         return true;
                     }
                 });
             } catch (err) {
-                this.logger.error("ConsumerDataAccess error",err)
+                this.logger.error("ConsumerDataAccess error", err)
                 const formattedError = this.ecosystemErrorFilter.formatEcosystemError(err, "Error accessing consumer data");
                 return res.status(500).json(formattedError || "Error accessing consumer data");
             }
 
         };
-    
+
         // TODO add client authorization
         return _.concat(
-            checkSchema(headerSchema,['headers']),
+            checkSchema(headerSchema, ['headers']),
             [
-                param('consentId').isInt({min:1}).bail(),
+                param('consentId').isInt({ min: 1 }).bail(),
                 validationErrorMiddleware,
                 // Responder
                 Responder
             ])
     }
-    
-    ForwardRequest = async (dh: DataHolderRegisterMetadata, resourcePath: string, consent: ConsentRequestLog, params:DataAccessRequestParams, req: express.Request, res:express.Response) =>{
 
-        let url = new URL(urljoin(dh.endpointDetail.resourceBaseUri,resourcePath))
+    ForwardRequest = async (dh: DataHolderRegisterMetadata, resourcePath: string, consent: ConsentRequestLog, params: DataAccessRequestParams, req: express.Request, res: express.Response, dafaultAPIVersion: number = 1) => {
+
+        let url = new URL(urljoin(dh.endpointDetail.resourceBaseUri, resourcePath))
 
         // forward query string parameters
-        for (let [key,value] of Object.entries(req.query)) {
-            url.searchParams.append(key,<string>value)
+        for (let [key, value] of Object.entries(req.query)) {
+            url.searchParams.append(key, <string>value)
         }
-        
+
         let requestId = uuid.v4(); //default if none valid supplied
         let suppliedRequestId = req.header("x-fapi-interaction-id");
         if (typeof suppliedRequestId === "string" && suppliedRequestId.length) {
             requestId = suppliedRequestId
         }
 
+        this.logger.info("Default API version for ", { url, dafaultAPIVersion })
+
         let headers = <any>{
             Authorization: `Bearer ${consent.accessToken}`,
-            "x-v":"1",
-            "content-type":"application/json",
-            "accept":"application/json",
-            "x-fapi-interaction-id":requestId,
-            "x-fapi-auth-date":moment(params.user.lastAuthenticated).utc().format('ddd, DD MMM YYYY HH:mm:ss [GMT]'),
+            "x-v": dafaultAPIVersion.toString(),
+            "content-type": "application/json",
+            "accept": "application/json",
+            "x-fapi-interaction-id": requestId,
+            "x-fapi-auth-date": moment(params.user.lastAuthenticated).utc().format('ddd, DD MMM YYYY HH:mm:ss [GMT]'),
         }
+
+        this.logger.info("ADRGateway Consumer data access", params.user)
 
         if (params.user.present) {
             headers["x-fapi-customer-ip-address"] = params.user.ipAddress
-            headers["x-cds-User-Agent"] = params.user.userAgent
+            headers["x-cds-User-Agent"] = params.user.userAgent // incase still being used
+            headers["x-cds-client-headers"] = Buffer.from(params.user.userAgent).toString('base64');
+        }
+        // add support multiple versions
+        if (typeof req.header("x-v") === "string") {
+            headers["x-v"] = req.header("x-v");
+        }
+        if (typeof req.header("x-min-v") === "string") {
+            headers["x-min-v"] = req.header("x-min-v");
         }
 
-
-        let options:AxiosRequestConfig = {
+        let options: AxiosRequestConfig = {
             method: <AxiosRequestConfig["method"]>req.method,
             data: req.body,
             url: url.toString(),
             headers: headers,
-            responseType:"json"
+            responseType: "json"
         }
 
         this.logger.debug({
@@ -200,10 +213,12 @@ class ConsumerDataAccessMiddleware {
             url: url.toString(),
             method: req.method,
             requestId,
-            headers,
+            headers
         })
 
-        this.clientCertInjector.inject(options,consent.softwareProductId);
+        headers['x-raw-link-url'] = options.url;
+
+        this.clientCertInjector.inject(options, consent.softwareProductId);
 
         try {
             let dhRes = await axios.request(options);
@@ -213,27 +228,27 @@ class ConsumerDataAccessMiddleware {
             res.statusMessage = dhRes.statusText
 
             let xFapiReceived = dhRes.headers['x-fapi-interaction-id'];
-            res.set('x-fapi-interaction-id',xFapiReceived);
+            res.set('x-fapi-interaction-id', xFapiReceived);
             if (xFapiReceived !== requestId) {
-                res.set('x-fapi-interaction-id-expected',requestId);
+                res.set('x-fapi-interaction-id-expected', requestId);
                 throw 'x-fapi-interaction-id in response did not match request';
             }
             if (typeof xFapiReceived != 'string') throw 'Expected exactly one x-fapi-interaction-id header in response';
 
-            let body:{links:any} = dhRes.data;
+            let body: { links: any } = dhRes.data;
 
             if (body.links) {
-                let newLinks:Dictionary<string> = {};
-                for (let [k,v] of Object.entries(body.links)) {
+                let newLinks: Dictionary<string> = {};
+                for (let [k, v] of Object.entries(body.links)) {
                     if (typeof v == 'string') {
                         let oldUrl = new URL(v);
                         // "." is necessary to make a relative URL
                         let config = (await this.config());
                         let configuredBackendBase = config.BackEndBaseUri;
-                        let newUrl = params.backendBaseUri ? new URL(params.backendBaseUri) : new URL("."+req.url,configuredBackendBase);
+                        let newUrl = params.backendBaseUri ? new URL(params.backendBaseUri) : new URL("." + req.url, configuredBackendBase);
                         newUrl.search = "";
-                        oldUrl.searchParams.forEach((v,k) => {
-                            newUrl.searchParams.append(k,v);
+                        oldUrl.searchParams.forEach((v, k) => {
+                            newUrl.searchParams.append(k, v);
                         });
                         newLinks[k] = decodeURIComponent(newUrl.toString());
                     }
@@ -241,7 +256,7 @@ class ConsumerDataAccessMiddleware {
 
                 body.links = newLinks;
             }
-
+            
             res.json(body);
 
         } catch (err) {
@@ -257,4 +272,4 @@ class ConsumerDataAccessMiddleware {
 
 }
 
-export {ConsumerDataAccessMiddleware}
+export { ConsumerDataAccessMiddleware }

@@ -48,7 +48,7 @@ class ConsentConfirmationMiddleware {
             const getNominalParams = () => {
                 return {
                     authCode: getBodyString('code'),
-                    idToken: getBodyString('id_token'),
+                    idToken: getBodyString('id_token'), // to change to auth code flow in future (2023)
                     state: getBodyString('state')
                 }  
             }
@@ -103,7 +103,8 @@ class ConsentConfirmationMiddleware {
                 requestedScopes: JSON.parse(updatedConsent.requestedScopesJson),
                 missingScopes: missingScopes,
                 isActive: isActive,
-                success
+                success,
+                arrangementId: updatedConsent.arrangementId
             })
             
         } catch (err) {

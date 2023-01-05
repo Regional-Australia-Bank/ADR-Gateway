@@ -10,6 +10,7 @@ import qs from "qs"
 import { ClientCertificateInjector } from "../../../Common/Services/ClientCertificateInjection";
 import { CreateAssertion } from "../../../Common/Connectivity/Assertions";
 import moment from 'moment'
+import { setAuthState, getAuthState, generateCodeVerifier, sha256CodeVerifier } from '../../../Common/SecurityProfile/Util'
 
 interface AuthSignatureRequest {
   adrSigningJwk: JWK.Key,
@@ -28,26 +29,30 @@ interface AuthSignatureRequest {
   issuer: string
 }
 
-const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $: {
+const FetchRequestUri = async (cert: ClientCertificateInjector, signed: string, $: {
   DataHolderOidc: Types.DataholderOidcResponse,
   SoftwareProductConfig: Types.SoftwareProductConnectivityConfig,
   CheckAndUpdateClientRegistration: Types.DataHolderRegistration,
   DataRecipientJwks: Types.JWKS.KeyStore
-}, queryParams : {
+}, queryParams: {
   scope: string,
-  response_type: string
+  response_type: string,
+  code_challenge: string,
+  code_challenge_method: string
 }) => {
 
   const url = $.DataHolderOidc.pushed_authorization_request_endpoint;
 
   const data = qs.stringify(_.merge({
     request: signed
-  },{
+  }, {
     "client_id": $.CheckAndUpdateClientRegistration.clientId,
     "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
     "client_assertion": CreateAssertion($.CheckAndUpdateClientRegistration.clientId, url, $.DataRecipientJwks),
     scope: queryParams.scope,
-    response_type: queryParams.response_type
+    response_type: queryParams.response_type,
+    "code_challenge": queryParams.code_challenge,
+    "code_challenge_method": queryParams.code_challenge_method
   }))
 
   let options: AxiosRequestConfig = {
@@ -59,8 +64,40 @@ const FetchRequestUri = async (cert: ClientCertificateInjector, signed:string, $
 
   cert.inject(options, $.SoftwareProductConfig.ProductId);
   let response = await axios.request(options);
-  return {request_uri: response.data.request_uri}
+  return { request_uri: response.data.request_uri }
 }
+
+// For future PKCE full implementation
+
+// export const RetreiveIdTokenWithPKCEFlow = async (cert: ClientCertificateInjector, $: {
+//   DataHolderOidc: Types.DataholderOidcResponse,
+//   SoftwareProductConfig: Types.SoftwareProductConnectivityConfig,
+//   clientId: string,
+// }, queryParams: {
+//   code_verifier: string,
+//   code: string
+// }) => {
+
+//   const url = $.DataHolderOidc.token_endpoint;
+
+//   const data = qs.stringify({
+//     "client_id": $.clientId,
+//     "code_verifier": queryParams.code_verifier,
+//     "grant_type": 'authorization_code',
+//     "code": queryParams.code
+//   })
+
+//   let options: AxiosRequestConfig = {
+//     method: 'POST',
+//     url,
+//     data,
+//     responseType: "json",
+//   }
+
+//   cert.inject(options, $.SoftwareProductConfig.ProductId);
+//   let response = await axios.request(options);
+//   return { id_token: response.data.id_token }
+// }
 
 export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, req: AuthSignatureRequest, $: {
   ConsentRequestParams: ConsentRequestParams,
@@ -76,16 +113,33 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
 
   if (url.protocol != 'https:') throw 'Cannot create an authorization request for a non-https endpoint.'
 
-  let queryParams = {
-    response_type: "code id_token",
+  // support PKCE 
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = sha256CodeVerifier(codeVerifier);
+  await setAuthState(req.state, codeVerifier, codeChallenge); // store these for later 
+
+  let pkceQueryParams = {
+    response_type: "code id_token", // backward support for id_token
     client_id: req.clientId,
     redirect_uri: req.callbackUrl,
     scope: req.scopes.join(" "),
     nonce: req.nonce,
     state: req.state,
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256'
   }
 
-  for (let [k, v] of Object.entries(queryParams)) {
+  // hybrid auth flow
+  // let queryParams = {
+  //   response_type: "code id_token",
+  //   client_id: req.clientId,
+  //   redirect_uri: req.callbackUrl,
+  //   scope: req.scopes.join(" "),
+  //   nonce: req.nonce,
+  //   state: req.state,
+  // }
+
+  for (let [k, v] of Object.entries(pkceQueryParams)) {
     url.searchParams.append(k, v);
   }
 
@@ -99,12 +153,12 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
       "sharing_duration": req.sharingDuration,
       "userinfo": {
         "acr": acrSpec,
-        "refresh_token_expires_at": { "essential": true },
+        "refresh_token_expires_at": { "essential": false },
         "cdr_arrangement_id": { "essential": true }
       },
       "id_token": {
         "acr": acrSpec,
-        "refresh_token_expires_at": { "essential": true },
+        "refresh_token_expires_at": { "essential": false },
         "cdr_arrangement_id": { "essential": true }
       }
     }
@@ -119,10 +173,10 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
     (<any>claimsPart).claims.cdr_arrangement_id = req.existingArrangementId
   }
 
-  let payload = _.merge(queryParams, claimsPart);
+  let payload = _.merge(pkceQueryParams, claimsPart);
 
   // change to let to allow adding of Not before
-  let signingOptions : {algorithm : string, audience : string, expiresIn: string, header: object, issuer: string, notBefore? : string } = {
+  let signingOptions: { algorithm: string, audience: string, expiresIn: string, header: object, issuer: string, notBefore?: string } = {
     algorithm: 'PS256',
     audience: req.issuer,
     expiresIn: '1 hour',
@@ -130,7 +184,7 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
       typ: 'JWT'
     },
     issuer: req.clientId,
-    notBefore : '0s' // NBF bug 2919 //
+    notBefore: '0s' // NBF bug 2919 //
   }
 
   let usePar: boolean = false;
@@ -147,7 +201,7 @@ export const getAuthPostGetRequestUrl = async (cert: ClientCertificateInjector, 
   )
 
   if (usePar) {
-    const {request_uri} = await FetchRequestUri(cert,signed,$,payload)
+    const { request_uri } = await FetchRequestUri(cert, signed, $, payload)
     url.searchParams.append('request_uri', request_uri);
   } else {
     url.searchParams.append('request', signed);

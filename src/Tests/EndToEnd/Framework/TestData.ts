@@ -226,6 +226,19 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
 
             return assertion;
         }
+
+        const CreateDhCdrArrangementIdJwt = async (cdr_arrangement_id:string) => {
+            let claims = {
+                cdr_arrangement_id: cdr_arrangement_id
+            }
+    
+            let jwks = env.Config.SystemUnderTest.DhRevokePrivateJwks
+            let jwk = jwks.get({use:'sig',alg:"PS256"});
+    
+            let assertion = JWT.sign(claims,jwk);    
+
+            return assertion;
+        }
         
         const CreateAssertionWithoutKey = async (endpoint:string, excludedKey:string) => {
             const clientId = await TestData.dataRecipient.clientId();
@@ -260,6 +273,7 @@ const GenerateTestDataFromScratch = async (env:E2ETestEnvironment) => {
             TestData,
             CreateAssertion,
             CreateDhBearerAuthJwt,
+            CreateDhCdrArrangementIdJwt,
             CreateAssertionWithoutKey,
             CreateAssertionDirty,
             AdrGatewayConfig

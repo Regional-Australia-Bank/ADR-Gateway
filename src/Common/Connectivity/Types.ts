@@ -46,15 +46,15 @@ export interface IdTokenValidationParts {
   nonce: string,
   c_hash: string,
   s_hash?: string,
-  sharing_expires_at: number,
-  refresh_token_expires_at: number
+  sharing_expires_at?: number,
+  refresh_token_expires_at?: number
 }
 
 export class AccessToken {
   constructor (public accessToken:string, public expiresAt: Date) {}
 }
 
-export type UserInfoResponse = object & {refresh_token_expires_at:number,sharing_expires_at:number};
+export type UserInfoResponse = object & {refresh_token_expires_at?:number,sharing_expires_at?:number};
 
 export interface TokenResponse {
   "access_token":string,

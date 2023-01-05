@@ -1,4 +1,4 @@
-import {Entity, Column, BaseEntity,PrimaryGeneratedColumn, Connection, Not, IsNull, MoreThan} from "typeorm";
+import {Entity, Column, BaseEntity,PrimaryGeneratedColumn, Connection, Not, IsNull, MoreThan, MoreThanOrEqual} from "typeorm";
 import {inject, injectable} from "tsyringe";
 import "reflect-metadata";
 import winston = require("winston");
@@ -282,6 +282,21 @@ class ConsentRequestLogManager {
             revocationDate: MoreThan(moment().subtract(7,'days').toDate()),
             refreshToken: Not(IsNull()),
             id: MoreThan(cursor?.id || -1)
+        })
+        return consent;
+    }
+
+    GetConsentsWithSharingGreaterThanToday = async (systemId:string, cursor: ConsentRequestLog|undefined):Promise<ConsentRequestLog|undefined> => {
+        let consent = await ((await this.connection)).manager.findOne(ConsentRequestLog,{
+            where: [{
+                adrSystemId:systemId,
+                revocationPropagationDate: IsNull(),
+                revocationDate: IsNull(),
+                refreshToken: Not(IsNull()),
+                sharingEndDate: MoreThanOrEqual(moment().toDate()),
+                id: MoreThan(cursor?.id || -1)
+            }]
+           
         })
         return consent;
     }

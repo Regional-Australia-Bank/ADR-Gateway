@@ -4,10 +4,12 @@ import _ from "lodash";
 import { AccessToken, AdrConnectivityConfig, DataHolderRegisterMetadata } from "../Types";
 import { NoneFoundError } from "../Errors";
 import urljoin from "url-join";
-import * as Types from "../Types"
+import * as Types from "../Types";
+import { GetRegisterAPIVersionConfig } from "../../../AdrGateway/Config";
 
 const GetDataHoldersResponse = async (accessToken:string, nextUrl:string, cert:ClientCertificateInjector):Promise<DataHolderRegisterMetadata[]> => {
-  let response = await axios.get(nextUrl,cert.inject({responseType:"json", headers:{Authorization: `Bearer ${accessToken}`}}))
+  let config = GetRegisterAPIVersionConfig();
+  let response = await axios.get(nextUrl,cert.inject({responseType:"json", headers:{Authorization: `Bearer ${accessToken}`, "x-v": config.DefaultAPIVersion.getDataHolder }},null))
   let responseObject = response.data;
   if (typeof responseObject.meta != 'object' || typeof responseObject.links != 'object') {
       throw 'Response from register for GetDataHolders is not conformant'
@@ -56,16 +58,20 @@ export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
     AdrConnectivityConfig:Types.AdrConnectivityConfig
 }) => {
 
+
     if (!$.AdrConnectivityConfig.CheckDataholderStatusEndpoint) {
         return "OK"
     }
+
+    let config = GetRegisterAPIVersionConfig();
 
     let options = cert.injectCa({
         responseType:"json",
         headers: {
             "accept":"application/json",
-            "x-v":1,
-        }
+            "x-v": config.DefaultAPIVersion.getDataHolderStatus,
+        },
+        maxRedirects: 5,    // over write axios default redirect from 0 to 5
     });
     let url = urljoin($.DataHolderBrandMetadata.endpointDetail.publicBaseUri,'cds-au/v1/discovery/status')
     
@@ -76,7 +82,6 @@ export const DataHolderStatus = async (cert: ClientCertificateInjector, $:{
                 status: Types.DataHolderStatus
             }
         } = response.data;
-      
         if (responseObject && responseObject.data && responseObject.data.status) {
             return responseObject.data.status
         } else {

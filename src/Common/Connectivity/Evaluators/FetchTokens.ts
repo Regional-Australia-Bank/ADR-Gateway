@@ -8,13 +8,15 @@ import moment from "moment"
 import { axios } from "../../Axios/axios"
 import winston from "winston"
 import { ConsentRequestLogManager } from "../../Entities/ConsentRequestLog"
+import { getAuthState } from '../../SecurityProfile/Util'
+import { Consent } from "../../../MockServices/DhServer/Entities/Consent"
 
-export const SyncRefreshTokenStatus = async (consentManager:ConsentRequestLogManager, logger: winston.Logger, cert: ClientCertificateInjector, $: {
+export const SyncRefreshTokenStatus = async (consentManager: ConsentRequestLogManager, logger: winston.Logger, cert: ClientCertificateInjector, $: {
     Consent: Types.ConsentRequestLog,
     DataRecipientJwks: Types.JWKS.KeyStore,
     DataHolderOidc: Types.DataholderOidcResponse,
     CheckAndUpdateClientRegistration: Types.DataHolderRegistration
-}):Promise<Types.RefreshTokenStatus> => {
+}): Promise<Types.RefreshTokenStatus> => {
 
     // if we don't have a refresh token, nothing to do
     if (!$.Consent.refreshToken) {
@@ -25,7 +27,7 @@ export const SyncRefreshTokenStatus = async (consentManager:ConsentRequestLogMan
 
     // If we know it has already timed out, say so directly
     if (!$.Consent.HasCurrentRefreshToken()) {
-        await consentManager.RevokeConsent($.Consent,"DataHolder");
+        await consentManager.RevokeConsent($.Consent, "DataHolder");
         return {
             active: false
         }
@@ -38,7 +40,7 @@ export const SyncRefreshTokenStatus = async (consentManager:ConsentRequestLogMan
         url: $.DataHolderOidc.introspection_endpoint,
         responseType: "json",
         data: qs.stringify({
-            "token_type_hint":"refresh_token",
+            "token_type_hint": "refresh_token",
             "token": $.Consent.refreshToken,
             "client_id": $.CheckAndUpdateClientRegistration.clientId,
             "client_assertion_type": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
@@ -46,17 +48,17 @@ export const SyncRefreshTokenStatus = async (consentManager:ConsentRequestLogMan
         })
     }
 
-    let response:AxiosResponse<{active:boolean}> = await axios.request(cert.inject(options,$.Consent.softwareProductId));
-  
+    let response: AxiosResponse<{ active: boolean }> = await axios.request(cert.inject(options, $.Consent.softwareProductId));
+
     if (!response.data.active) {
-        await consentManager.RevokeConsent($.Consent,"DataHolder");
+        await consentManager.RevokeConsent($.Consent, "DataHolder");
         return {
             active: false
-        }        
+        }
     } else {
         return {
             active: true
-        }        
+        }
     }
 
 }
@@ -69,7 +71,9 @@ export const FetchTokens = async (logger: winston.Logger, cert: ClientCertificat
     CheckAndUpdateClientRegistration: Types.DataHolderRegistration
 }) => {
     let additionalParams = <any>{}
-
+    
+    // this is where i pull the LRU lbary to get codeVerifier (PKCE)
+    const responseData = await getAuthState($.Consent.state)
     const grantParams: Types.TokenGrantParams = $.AuthCode ? { grant_type: "authorization_code", code: $.AuthCode } : { grant_type: "refresh_token" };
 
     if (grantParams.grant_type == 'refresh_token') {
@@ -78,6 +82,9 @@ export const FetchTokens = async (logger: winston.Logger, cert: ClientCertificat
 
     if (grantParams.grant_type == 'authorization_code') {
         additionalParams["redirect_uri"] = $.Consent.redirectUri
+        if(responseData){
+            additionalParams["code_verifier"] = responseData.code_verifier
+        }
     }
 
     let options: AxiosRequestConfig = {
@@ -91,7 +98,7 @@ export const FetchTokens = async (logger: winston.Logger, cert: ClientCertificat
         }, additionalParams))
     }
 
-    cert.inject(options,$.Consent.softwareProductId);
+    cert.inject(options, $.Consent.softwareProductId);
     const tokenRequestTime = moment.utc().toDate();
     let response = await axios.request(options);
 

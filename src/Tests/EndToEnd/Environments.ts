@@ -42,6 +42,28 @@ export interface EndToEndTestingConfig {
             FrontEndUrls: {
                 JWKSEndpoint: string
                 RevocationEndpoint: string
+            },
+            DefaultAPIVersion?: {
+                getAccounts: number,
+                getBulkBalance: number,
+                getBalancesForSpecificAccount: number,
+                getAccountBalance: number,
+                getAccountDetail: number,
+                getTransactionsForAccount: number,
+                getTransactionDetail: number,
+                getDirectDebitsForAccount: number,
+                getBulkDirectDebits: number,
+                getDirectDebitsForSpecificAccounts: number,
+                getScheduledPaymentsForAccount: number,
+                getScheduledPaymentsBulk: number,
+                getScheduledPaymentsForSpecificAccount: number,
+                getPayees: number,
+                getPayeeDetail: number,
+                getProduct: number,
+                getProductDetail: number,
+                getCustomer: number,
+                getCustomerDetail: number,
+                getStatus: number
             }
         }>
         DhRevokePrivateJwks?: JWKS.KeyStore
@@ -53,7 +75,7 @@ export interface EndToEndTestingConfig {
         AdrDb?: ConnectionOptions | true
         SoftwareProduct?: ServiceDefinitionParameterized<MockSoftwareProductConfig>
         AdrJwks?: ServiceDefinitionParameterized<AdrJwksConfig>
-        AdrGateway?: ServiceDefinitionParameterized<Partial<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port">>>
+        AdrGateway?: ServiceDefinitionParameterized<Partial<Pick<AdrGatewayConfig,"BackEndBaseUri"|"Port"|"DefaultAPIVersion">>>
         Connectivity?: ServiceDefinitionParameterized<AdrConnectivityConfig>
         AdrServer?: ServiceDefinitionParameterized<AdrServerConfig>
         TestHttpsProxy?: true
