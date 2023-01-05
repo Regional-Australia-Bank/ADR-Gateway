@@ -57,10 +57,9 @@ export class DeleteArrangementMiddleware {
         let RevocationResponder = async (req: express.Request, res: express.Response, next: NextFunction) => {
 
             let m: {
-                cdr_arrangement_jwt: string
+                cdr_arrangement_jwt: string,
+                cdr_arrangement_id: string | undefined,
             } = <any>matchedData(req);
-
-            console.log("Delete arrangement call", m.cdr_arrangement_jwt)
 
             // verify the cdr_arrangement_jwt 
             let authHeader = req.headers['authorization']
@@ -77,22 +76,62 @@ export class DeleteArrangementMiddleware {
                     return true;
                 }
             });
+            let config = await this.configFn()
+            let requestedUri: string;
+            let applicationBase: string = config.SecurityProfile.JoseApplicationBaseUrl;
+            try {
+                if (typeof applicationBase == 'undefined') throw new Error("JoseApplicationBaseUrl is not configured");
+                if (typeof req?.route?.path == 'undefined') throw new Error("Request cannot be parsed")
 
+                if (config.SecurityProfile.AudienceRewriteRules && config.SecurityProfile.AudienceRewriteRules[req.path]) {
+                    requestedUri = urljoin(applicationBase, config.SecurityProfile.AudienceRewriteRules[req.path]);
+                } else {
+                    requestedUri = urljoin(applicationBase, req.path);
+                }
+            }
+            catch (err) {
+                throw new Error("Request uri cannot be parsed")
+            }
+            
+            // Commented out and use the compelte false just in case we dont get all the fields
+
+            // let verified = <JWT.completeResult | undefined>undefined;
+            // verified = JWT.verify(m.cdr_arrangement_jwt, jwks, {
+            //     complete: true,
+            //     audience: [requestedUri, applicationBase],
+            //     issuer: assumedClientId,
+            //     subject: assumedClientId,
+            //     algorithms: ["PS256", "ES256"]
+            // });
             let verified = <object | undefined>undefined;
-
-            // verify cdr_arrangement_jwt
+           
             verified = JWT.verify(m.cdr_arrangement_jwt, jwks, {
-                complete: false,    // set as false since we may not get all the jwt claims from this
+                complete: false,
                 algorithms: ["PS256", "ES256"]
             });
 
             // further checks aside from jose processing
             if (typeof verified == 'undefined') throw 'Verified JWT payload expected, but is undefined'
 
-            // decode the cdr_arrangement_id from the cdr_arrangement_jwt
+            // decode the 
             let bodyPayload: {
                 cdr_arrangement_id?: string,
             } = JWT.decode(m.cdr_arrangement_jwt)
+
+            // if cdr_arrangement_id exist from the body we need to validate it
+            if(m.cdr_arrangement_id){
+                if(m.cdr_arrangement_id !== bodyPayload.cdr_arrangement_id) {
+                    return res.status(400).json({
+                        errors: [
+                            {
+                                "code": "urn:au-cds:error:cds-banking:DeleteArrangement/NotMatched",
+                                "title": "cdr_arrangement_id not matched",
+                                "detail": `cdr_arrangement_id from the body does not match the cdr_arrangement_id from the jwt`
+                            }
+                        ]
+                    });
+                }
+            }
 
             // this is end
 
@@ -163,6 +202,7 @@ export class DeleteArrangementMiddleware {
         return [
             urlencoded({ extended: true }),
             body('cdr_arrangement_jwt').isString(),
+            body('cdr_arrangement_id').isString().optional(),
             validationErrorMiddleware,
             RevocationResponder
         ];

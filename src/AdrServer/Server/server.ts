@@ -9,7 +9,6 @@ import uuid from "uuid"
 import http from "http"
 import { DefaultConnector } from "../../Common/Connectivity/Connector.generated";
 import { DeleteArrangementMiddleware } from "./Handlers/DeleteArrangement";
-import { DeleteArrangementMiddleware_new } from "./Handlers/DeleteArrangement_new";
 
 const requestCorrelationMiddleware = (req, res: http.ServerResponse, next) => {
     req.correlationId = uuid.v4()
@@ -22,7 +21,7 @@ export class AdrServer {
     constructor(
         @inject("Logger") private logger: winston.Logger,
         private revocationMiddleware: RevokeMiddleware,
-        private deleteArrangementMiddleware: DeleteArrangementMiddleware_new,
+        private deleteArrangementMiddleware: DeleteArrangementMiddleware,
         private connector: DefaultConnector,
         private clientBearerJwtVerificationMiddleware: ClientBearerJwtVerificationMiddleware
     ) { }
