@@ -11,7 +11,7 @@
     "axios": "^0.21.1",
     "base64url": "^3.0.1",
     "body-parser": "^1.19.0",
-    "class-validator": "^0.11.0",
+    "class-validator": "^0.14.0",
     "convict": "^5.2.1",
     "cors": "^2.8.5",
     "crypto-js": "4.1.1",
